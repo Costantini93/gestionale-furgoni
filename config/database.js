@@ -13,7 +13,11 @@ const dbWrapper = {
   run: function(sql, params, callback) {
     try {
       const stmt = db.prepare(sql);
-      const result = stmt.run(...(Array.isArray(params) ? params : [params].filter(Boolean)));
+      // Filtra undefined e converti params in array
+      const cleanParams = Array.isArray(params) 
+        ? params.map(p => p === undefined ? null : p)
+        : (params !== undefined ? [params] : []);
+      const result = stmt.run(...cleanParams);
       if (callback) callback(null, result);
       return result;
     } catch (err) {
@@ -25,7 +29,11 @@ const dbWrapper = {
   get: function(sql, params, callback) {
     try {
       const stmt = db.prepare(sql);
-      const result = stmt.get(...(Array.isArray(params) ? params : [params].filter(Boolean)));
+      // Filtra undefined e converti params in array
+      const cleanParams = Array.isArray(params) 
+        ? params.map(p => p === undefined ? null : p)
+        : (params !== undefined ? [params] : []);
+      const result = stmt.get(...cleanParams);
       if (callback) callback(null, result);
       return result;
     } catch (err) {
@@ -37,13 +45,21 @@ const dbWrapper = {
   all: function(sql, params, callback) {
     try {
       const stmt = db.prepare(sql);
-      const result = stmt.all(...(Array.isArray(params) ? params : [params].filter(Boolean)));
+      // Filtra undefined e converti params in array
+      const cleanParams = Array.isArray(params) 
+        ? params.map(p => p === undefined ? null : p)
+        : (params !== undefined ? [params] : []);
+      const result = stmt.all(...cleanParams);
       if (callback) callback(null, result);
       return result;
     } catch (err) {
       if (callback) callback(err);
       throw err;
     }
+  },
+  
+  exec: function(sql) {
+    return db.exec(sql);
   }
 };
 
