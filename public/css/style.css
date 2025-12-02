@@ -1321,3 +1321,27 @@ body::before {
   }
 }
 
+/* ===== SELEZIONE MULTIPLA REPORT ===== */
+.report-checkbox,
+#selectAll {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #6366f1;
+}
+
+.report-checkbox:hover,
+#selectAll:hover {
+  transform: scale(1.1);
+}
+
+/* Evidenzia righe selezionate */
+tr:has(.report-checkbox:checked) {
+  background: rgba(99, 102, 241, 0.1) !important;
+  border-left: 4px solid #6366f1 !important;
+}
+
+tr:has(.report-checkbox:checked):hover {
+  background: rgba(99, 102, 241, 0.15) !important;
+}
+

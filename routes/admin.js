@@ -179,6 +179,44 @@ router.post('/report/delete/:reportId', requireAdmin, (req, res) => {
   });
 });
 
+// Elimina report multipli
+router.post('/report/delete-multiple', requireAdmin, (req, res) => {
+  const reportIds = req.body['reportIds[]'];
+  
+  if (!reportIds || reportIds.length === 0) {
+    req.flash('error', 'Nessun report selezionato');
+    return res.redirect('/admin/dashboard');
+  }
+
+  // Converti a array se è un singolo valore
+  const ids = Array.isArray(reportIds) ? reportIds : [reportIds];
+  
+  let deletedCount = 0;
+  let errors = 0;
+
+  // Elimina ogni report
+  ids.forEach((id, index) => {
+    Report.delete(id, (err) => {
+      if (err) {
+        console.error(`Errore eliminazione report ${id}:`, err);
+        errors++;
+      } else {
+        deletedCount++;
+      }
+
+      // Quando abbiamo processato tutti, redirect
+      if (index === ids.length - 1) {
+        if (errors > 0) {
+          req.flash('error', `${deletedCount} report eliminati, ${errors} errori`);
+        } else {
+          req.flash('success', `${deletedCount} report eliminati con successo!`);
+        }
+        res.redirect('/admin/dashboard');
+      }
+    });
+  });
+});
+
 // Esporta in Excel
 router.get('/export', requireAdmin, (req, res) => {
   const riderId = req.query.rider;

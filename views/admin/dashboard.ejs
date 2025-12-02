@@ -89,7 +89,15 @@
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
         <h3 style="margin: 0;">📦 Report Consegne</h3>
         
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <button 
+            id="deleteSelectedBtn" 
+            class="btn" 
+            onclick="deleteSelected()" 
+            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: none;">
+            🗑️ Elimina Selezionati (<span id="selectedCount">0</span>)
+          </button>
+          
           <button class="btn btn-secondary" onclick="filterStatus('all')" id="btnAll">
             📋 Tutti (<span id="countAll">0</span>)
           </button>
@@ -109,6 +117,9 @@
           <table class="data-table">
             <thead>
               <tr>
+                <th style="width: 40px;">
+                  <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" title="Seleziona tutti">
+                </th>
                 <th>Data</th>
                 <th>Rider</th>
                 <th>📍 Stato</th>
@@ -126,6 +137,9 @@
             <tbody>
               <% reports.forEach(report => { %>
                 <tr id="row-<%= report.id %>" class="<%= report.status === 'partito' ? 'row-in-viaggio' : '' %>">
+                  <td>
+                    <input type="checkbox" class="report-checkbox" value="<%= report.id %>" onchange="updateDeleteButton()">
+                  </td>
                   <td><%= formatDate(report.data_giorno) %></td>
                   <td><strong><%= report.nome %> <%= report.cognome %></strong></td>
                   <td>
@@ -507,7 +521,79 @@
         }
       });
     }
+
+    // ===== SELEZIONE MULTIPLA E ELIMINAZIONE =====
+    function toggleSelectAll() {
+      const selectAllCheckbox = document.getElementById('selectAll');
+      const checkboxes = document.querySelectorAll('.report-checkbox');
+      
+      checkboxes.forEach(checkbox => {
+        // Solo seleziona checkbox visibili
+        const row = checkbox.closest('tr');
+        if (row.style.display !== 'none') {
+          checkbox.checked = selectAllCheckbox.checked;
+        }
+      });
+      
+      updateDeleteButton();
+    }
+
+    function updateDeleteButton() {
+      const checkedBoxes = document.querySelectorAll('.report-checkbox:checked');
+      const deleteBtn = document.getElementById('deleteSelectedBtn');
+      const selectedCountSpan = document.getElementById('selectedCount');
+      
+      if (checkedBoxes.length > 0) {
+        deleteBtn.style.display = 'block';
+        selectedCountSpan.textContent = checkedBoxes.length;
+      } else {
+        deleteBtn.style.display = 'none';
+      }
+
+      // Aggiorna stato "Seleziona tutti"
+      const allCheckboxes = Array.from(document.querySelectorAll('.report-checkbox'));
+      const visibleCheckboxes = allCheckboxes.filter(cb => cb.closest('tr').style.display !== 'none');
+      const allVisibleChecked = visibleCheckboxes.length > 0 && visibleCheckboxes.every(cb => cb.checked);
+      document.getElementById('selectAll').checked = allVisibleChecked;
+    }
+
+    function deleteSelected() {
+      const checkedBoxes = document.querySelectorAll('.report-checkbox:checked');
+      const ids = Array.from(checkedBoxes).map(cb => cb.value);
+      
+      if (ids.length === 0) return;
+
+      const confirmMsg = `Sei sicuro di voler eliminare ${ids.length} report selezionati?\n\n⚠️ Questa azione è irreversibile!`;
+      
+      if (confirm(confirmMsg)) {
+        // Crea form per inviare array di IDs
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/report/delete-multiple';
+        
+        ids.forEach(id => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'reportIds[]';
+          input.value = id;
+          form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+
+    // Reset selezione quando cambia filtro
+    const originalFilterStatus = filterStatus;
+    filterStatus = function(status) {
+      originalFilterStatus(status);
+      document.getElementById('selectAll').checked = false;
+      document.querySelectorAll('.report-checkbox').forEach(cb => cb.checked = false);
+      updateDeleteButton();
+    };
   </script>
 </body>
 </html>
+
 
