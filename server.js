@@ -68,7 +68,7 @@ app.use('/admin', adminRoutes);
 app.get('/debug-db', (req, res) => {
   const db = require('./config/database');
   try {
-    const users = db.all('SELECT id, username, nome, cognome, role, first_login FROM users', []);
+    const users = db.all('SELECT id, username, password, nome, cognome, role, first_login FROM users', []);
     const dbPath = require('path').join(__dirname, 'database.db');
     const fs = require('fs');
     const exists = fs.existsSync(dbPath);
@@ -76,6 +76,31 @@ app.get('/debug-db', (req, res) => {
       dbPath,
       dbExists: exists,
       users: users || []
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
+// Debug login endpoint
+app.post('/debug-login', async (req, res) => {
+  const bcrypt = require('bcryptjs');
+  const db = require('./config/database');
+  const { username, password } = req.body;
+  
+  try {
+    const user = db.get('SELECT * FROM users WHERE username = ?', [username]);
+    if (!user) {
+      return res.json({ error: 'User not found' });
+    }
+    
+    const match = await bcrypt.compare(password, user.password);
+    res.json({
+      userFound: true,
+      passwordMatch: match,
+      username: user.username,
+      role: user.role,
+      passwordHash: user.password
     });
   } catch (error) {
     res.json({ error: error.message });
