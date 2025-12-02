@@ -12,6 +12,12 @@ console.log('Connesso al database SQLite');
 const dbWrapper = {
   run: function(sql, params, callback) {
     try {
+      // Se params è una funzione, è il callback (nessun parametro)
+      if (typeof params === 'function') {
+        callback = params;
+        params = [];
+      }
+      
       const stmt = db.prepare(sql);
       // Filtra undefined e converti params in array
       const cleanParams = Array.isArray(params) 
@@ -22,12 +28,18 @@ const dbWrapper = {
       return result;
     } catch (err) {
       if (callback) callback(err);
-      throw err;
+      else throw err;
     }
   },
   
   get: function(sql, params, callback) {
     try {
+      // Se params è una funzione, è il callback (nessun parametro)
+      if (typeof params === 'function') {
+        callback = params;
+        params = [];
+      }
+      
       const stmt = db.prepare(sql);
       // Filtra undefined e converti params in array
       const cleanParams = Array.isArray(params) 
@@ -38,12 +50,18 @@ const dbWrapper = {
       return result;
     } catch (err) {
       if (callback) callback(err);
-      throw err;
+      else throw err;
     }
   },
   
   all: function(sql, params, callback) {
     try {
+      // Se params è una funzione, è il callback (nessun parametro)
+      if (typeof params === 'function') {
+        callback = params;
+        params = [];
+      }
+      
       const stmt = db.prepare(sql);
       // Filtra undefined e converti params in array
       const cleanParams = Array.isArray(params) 
@@ -54,7 +72,7 @@ const dbWrapper = {
       return result;
     } catch (err) {
       if (callback) callback(err);
-      throw err;
+      else throw err;
     }
   },
   
