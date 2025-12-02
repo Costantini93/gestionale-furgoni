@@ -64,6 +64,24 @@ app.use('/auth', authRoutes);
 app.use('/rider', riderRoutes);
 app.use('/admin', adminRoutes);
 
+// Debug endpoint - REMOVE IN PRODUCTION
+app.get('/debug-db', (req, res) => {
+  const db = require('./config/database');
+  try {
+    const users = db.all('SELECT id, username, nome, cognome, role, first_login FROM users', []);
+    const dbPath = require('path').join(__dirname, 'database.db');
+    const fs = require('fs');
+    const exists = fs.existsSync(dbPath);
+    res.json({
+      dbPath,
+      dbExists: exists,
+      users: users || []
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
 // Home page - redirect to login
 app.get('/', (req, res) => {
   if (req.session.userId) {
