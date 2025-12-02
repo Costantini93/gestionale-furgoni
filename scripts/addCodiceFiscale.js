@@ -1,20 +1,20 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const path = require('path');
 
 const dbPath = path.join(__dirname, '..', 'database.db');
-const db = new sqlite3.Database(dbPath);
+const db = new Database(dbPath);
 
 console.log('Aggiunta colonna codice_fiscale alla tabella users...');
 
-db.run('ALTER TABLE users ADD COLUMN codice_fiscale TEXT', (err) => {
-  if (err) {
-    if (err.message.includes('duplicate')) {
-      console.log('✓ Colonna codice_fiscale già presente');
-    } else {
-      console.error('Errore:', err.message);
-    }
+try {
+  db.exec('ALTER TABLE users ADD COLUMN codice_fiscale TEXT');
+  console.log('✓ Colonna codice_fiscale aggiunta con successo!');
+} catch (err) {
+  if (err.message.includes('duplicate')) {
+    console.log('✓ Colonna codice_fiscale già presente');
   } else {
-    console.log('✓ Colonna codice_fiscale aggiunta con successo!');
+    console.error('Errore:', err.message);
   }
-  db.close();
-});
+}
+
+db.close();

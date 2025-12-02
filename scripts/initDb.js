@@ -1,16 +1,16 @@
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
 const dbPath = path.join(__dirname, '..', 'database.db');
-const db = new sqlite3.Database(dbPath);
+const db = new Database(dbPath);
 
 async function initDatabase() {
   console.log('Inizializzazione database...');
 
-  db.serialize(async () => {
+  try {
     // Tabella utenti
-    db.run(`
+    db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
@@ -21,13 +21,11 @@ async function initDatabase() {
         first_login INTEGER DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
-    `, (err) => {
-      if (err) console.error('Errore creazione tabella users:', err);
-      else console.log('✓ Tabella users creata');
-    });
+    `);
+    console.log('✓ Tabella users creata');
 
     // Tabella report giornalieri
-    db.run(`
+    db.exec(`
       CREATE TABLE IF NOT EXISTS daily_reports (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -46,70 +44,35 @@ async function initDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id),
         UNIQUE(user_id, data_giorno)
       )
-    `, (err) => {
-      if (err) console.error('Errore creazione tabella daily_reports:', err);
-      else console.log('✓ Tabella daily_reports creata');
-    });
+    `);
+    console.log('✓ Tabella daily_reports creata');
 
-    // Aspetta che le tabelle siano create
-    setTimeout(async () => {
-      try {
-        // Password hash per tutti gli utenti (1234)
-        const defaultPassword = await bcrypt.hash('1234', 10);
+    // Password hash per tutti gli utenti (admin123)
+    const defaultPassword = await bcrypt.hash('admin123', 10);
 
-        // Inserisci utente admin
-        db.run(
-          `INSERT OR IGNORE INTO users (username, password, nome, cognome, role, first_login) 
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          ['admin', defaultPassword, 'Admin', 'Sistema', 'admin', 1],
-          (err) => {
-            if (err) console.error('Errore inserimento admin:', err);
-            else console.log('✓ Utente admin creato (username: admin, password: 1234)');
-          }
-        );
+    // Inserisci utente admin
+    const insertAdmin = db.prepare(`
+      INSERT OR IGNORE INTO users (username, password, nome, cognome, role, first_login) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    insertAdmin.run('admin', defaultPassword, 'Admin', 'Sistema', 'admin', 0);
+    console.log('✓ Utente admin creato (username: admin, password: admin123)');
 
-        // Inserisci alcuni rider di esempio
-        const riders = [
-          { username: 'mario_rossi', nome: 'Mario', cognome: 'Rossi' },
-          { username: 'luigi_verdi', nome: 'Luigi', cognome: 'Verdi' },
-          { username: 'anna_bianchi', nome: 'Anna', cognome: 'Bianchi' }
-        ];
-
-        riders.forEach(rider => {
-          db.run(
-            `INSERT OR IGNORE INTO users (username, password, nome, cognome, role, first_login) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [rider.username, defaultPassword, rider.nome, rider.cognome, 'rider', 1],
-            (err) => {
-              if (err) console.error(`Errore inserimento ${rider.username}:`, err);
-              else console.log(`✓ Rider ${rider.nome} ${rider.cognome} creato (username: ${rider.username}, password: 1234)`);
-            }
-          );
-        });
-
-        setTimeout(() => {
-          console.log('\n=================================');
-          console.log('Database inizializzato con successo!');
-          console.log('=================================');
-          console.log('\nCredenziali di accesso:');
-          console.log('ADMIN:');
-          console.log('  Username: admin');
-          console.log('  Password: 1234');
-          console.log('\nRIDER (esempi):');
-          console.log('  Username: mario_rossi | Password: 1234');
-          console.log('  Username: luigi_verdi | Password: 1234');
-          console.log('  Username: anna_bianchi | Password: 1234');
-          console.log('\nAl primo accesso verrà richiesto il cambio password.');
-          console.log('=================================\n');
-          
-          db.close();
-        }, 1000);
-      } catch (error) {
-        console.error('Errore durante l\'inizializzazione:', error);
-        db.close();
-      }
-    }, 500);
-  });
+    console.log('\n=================================');
+    console.log('Database inizializzato con successo!');
+    console.log('=================================');
+    console.log('\nCredenziali di accesso:');
+    console.log('ADMIN:');
+    console.log('  Username: admin');
+    console.log('  Password: admin123');
+    console.log('=================================\n');
+    
+    db.close();
+  } catch (error) {
+    console.error('Errore durante l\'inizializzazione:', error);
+    db.close();
+    process.exit(1);
+  }
 }
 
 initDatabase();
