@@ -221,9 +221,28 @@ body::before {
 
 .form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.2rem;
   margin-bottom: 1rem;
+}
+
+/* Mobile: forzare singola colonna */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+  
+  .form-group {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 .checkbox-label {
@@ -620,11 +639,6 @@ body::before {
 
   .card {
     padding: 1.2rem;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-    gap: 1rem;
   }
 
   .admin-controls {
