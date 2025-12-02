@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin - Gestionale Furgoni</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-content">
+      <div class="nav-left">
+        <h1>� Gestionale Consegne - ADMIN</h1>
+      </div>
+      <div class="nav-right">
+        <a href="/admin/dipendenti" class="btn btn-primary">👥 Gestione Dipendenti</a>
+        <span class="user-info">
+          👤 <%= user.nome %> <%= user.cognome %> (Admin)
+        </span>
+        <a href="/auth/logout" class="btn btn-secondary">🚪 Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2>📊 Dashboard Amministratore</h2>
+
+    <% if (success && success.length > 0) { %>
+      <div class="alert alert-success">
+        ✅ <%= success[0] %>
+      </div>
+    <% } %>
+
+    <% if (error && error.length > 0) { %>
+      <div class="alert alert-error">
+        ⚠️ <%= error[0] %>
+      </div>
+    <% } %>
+
+    <!-- Filtri avanzati -->
+    <div class="card">
+      <h3>🔍 Ricerca Avanzata</h3>
+      <form method="GET" action="/admin/dashboard">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="searchRider">� Dipendente:</label>
+            <select id="searchRider" name="rider">
+              <option value="">Tutti i Rider</option>
+              <% riders.forEach(rider => { %>
+                <option value="<%= rider.id %>">
+                  <%= rider.nome %> <%= rider.cognome %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="searchData">📅 Data:</label>
+            <input type="text" id="searchData" name="data" placeholder="GG/MM/AAAA" pattern="\d{2}/\d{2}/\d{4}">
+          </div>
+
+          <div class="form-group">
+            <label for="searchRotta">🗺️ Codice Rotta:</label>
+            <input type="text" id="searchRotta" name="rotta" placeholder="ES: R001">
+          </div>
+
+          <div class="form-group">
+            <label for="searchTarga">🚐 Targa:</label>
+            <input type="text" id="searchTarga" name="targa" placeholder="ES: AB123CD">
+          </div>
+        </div>
+
+        <div class="form-row" style="gap: 1rem; margin-top: 1rem;">
+          <button type="submit" class="btn btn-primary">
+            🔍 Cerca
+          </button>
+          <a href="/admin/dashboard" class="btn btn-secondary">
+            🔄 Resetta Filtri
+          </a>
+          <a href="/admin/export" class="btn btn-success">
+            📥 Esporta in Excel
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tabella report -->
+    <div class="card">
+      <h3>� Report Consegne</h3>
+      
+      <% if (reports.length === 0) { %>
+        <p class="no-data">Nessun report disponibile.</p>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Rider</th>
+                <th>Targa</th>
+                <th>Rotta</th>
+                <th>Km Partenza</th>
+                <th>Km Rientro</th>
+                <th>Km Percorsi</th>
+                <th>Orario</th>
+                <th>📸 Foto</th>
+                <th>Firma</th>
+                <th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% reports.forEach(report => { %>
+                <tr id="row-<%= report.id %>">
+                  <td><%= formatDate(report.data_giorno) %></td>
+                  <td><strong><%= report.nome %> <%= report.cognome %></strong></td>
+                  <td><%= report.targa_furgone %></td>
+                  <td><%= report.codice_rotta %></td>
+                  <td><%= report.km_partenza %></td>
+                  <td><%= report.km_rientro %></td>
+                  <td><strong><%= report.km_rientro - report.km_partenza %></strong></td>
+                  <td><%= report.orario_rientro %></td>
+                  <td>
+                    <div class="photo-thumbnails">
+                      <% if (report.foto_posteriore) { %>
+                        <img src="<%= report.foto_posteriore %>" class="photo-thumb" alt="Posteriore" 
+                             onclick="openPhotoModal('<%= report.foto_posteriore %>', 'Foto Posteriore - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_anteriore) { %>
+                        <img src="<%= report.foto_anteriore %>" class="photo-thumb" alt="Anteriore"
+                             onclick="openPhotoModal('<%= report.foto_anteriore %>', 'Foto Anteriore - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_lato_destro) { %>
+                        <img src="<%= report.foto_lato_destro %>" class="photo-thumb" alt="Lato Destro"
+                             onclick="openPhotoModal('<%= report.foto_lato_destro %>', 'Lato Destro - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_lato_sinistro) { %>
+                        <img src="<%= report.foto_lato_sinistro %>" class="photo-thumb" alt="Lato Sinistro"
+                             onclick="openPhotoModal('<%= report.foto_lato_sinistro %>', 'Lato Sinistro - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_interno) { %>
+                        <img src="<%= report.foto_interno %>" class="photo-thumb" alt="Interno"
+                             onclick="openPhotoModal('<%= report.foto_interno %>', 'Interno - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (!report.foto_posteriore && !report.foto_anteriore && !report.foto_lato_destro && !report.foto_lato_sinistro && !report.foto_interno) { %>
+                        <span style="color: #94a3b8; font-size: 0.85rem;">Nessuna foto</span>
+                      <% } %>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (report.firma) { %>
+                      <span class="badge badge-success">✓</span>
+                    <% } else { %>
+                      <span class="badge badge-error">✗</span>
+                    <% } %>
+                  </td>
+                  <td class="actions">
+                    <button onclick="editReport(<%= report.id %>)" class="btn-icon" title="Modifica">
+                      ✏️
+                    </button>
+                    <button onclick="deleteReport(<%= report.id %>)" class="btn-icon" title="Elimina">
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Modal Modifica Report -->
+  <div id="editModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeEditModal()">&times;</span>
+      <h3>✏️ Modifica Report</h3>
+      <form id="editForm" method="POST">
+        <input type="hidden" id="edit_report_id" name="report_id">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit_targa_furgone">Targa Furgone</label>
+            <input type="text" id="edit_targa_furgone" name="targa_furgone" required>
+          </div>
+
+          <div class="form-group">
+            <label for="edit_codice_rotta">Codice Rotta</label>
+            <input type="text" id="edit_codice_rotta" name="codice_rotta" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit_km_partenza">Km Partenza</label>
+            <input type="number" id="edit_km_partenza" name="km_partenza" required>
+          </div>
+
+          <div class="form-group">
+            <label for="edit_km_rientro">Km Rientro</label>
+            <input type="number" id="edit_km_rientro" name="km_rientro" required>
+          </div>
+
+          <div class="form-group">
+            <label for="edit_orario_rientro">Orario Rientro</label>
+            <input type="time" id="edit_orario_rientro" name="orario_rientro" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit_numero_scheda_dkv">Numero Scheda DKV</label>
+            <input type="text" id="edit_numero_scheda_dkv" name="numero_scheda_dkv">
+          </div>
+
+          <div class="form-group">
+            <label for="edit_importo_rifornimento">Importo Rifornimento (€)</label>
+            <input type="number" id="edit_importo_rifornimento" name="importo_rifornimento" step="0.01">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit_numero_aziendale">Numero Aziendale</label>
+            <input type="text" id="edit_numero_aziendale" name="numero_aziendale">
+          </div>
+
+          <div class="form-group">
+            <label for="edit_pacchi_resi">Pacchi Resi</label>
+            <input type="number" id="edit_pacchi_resi" name="pacchi_resi" min="0">
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" class="btn btn-primary">💾 Salva Modifiche</button>
+          <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Annulla</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const reportsData = <%- JSON.stringify(reports) %>;
+
+    function filterByRider(riderId) {
+      if (riderId) {
+        window.location.href = '/admin/reports/rider/' + riderId;
+      } else {
+        window.location.href = '/admin/dashboard';
+      }
+    }
+
+    function editReport(reportId) {
+      const report = reportsData.find(r => r.id === reportId);
+      if (!report) return;
+
+      document.getElementById('edit_report_id').value = report.id;
+      document.getElementById('edit_targa_furgone').value = report.targa_furgone;
+      document.getElementById('edit_codice_rotta').value = report.codice_rotta;
+      document.getElementById('edit_km_partenza').value = report.km_partenza;
+      document.getElementById('edit_km_rientro').value = report.km_rientro;
+      document.getElementById('edit_orario_rientro').value = report.orario_rientro;
+      document.getElementById('edit_numero_scheda_dkv').value = report.numero_scheda_dkv || '';
+      document.getElementById('edit_importo_rifornimento').value = report.importo_rifornimento || '';
+      document.getElementById('edit_numero_aziendale').value = report.numero_aziendale || '';
+      document.getElementById('edit_pacchi_resi').value = report.pacchi_resi || '';
+
+      document.getElementById('editForm').action = '/admin/report/update/' + reportId;
+      document.getElementById('editModal').style.display = 'block';
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    function deleteReport(reportId) {
+      if (confirm('Sei sicuro di voler eliminare questo report?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/report/delete/' + reportId;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+
+    // Funzione per aprire il modal delle foto
+    function openPhotoModal(photoUrl, caption) {
+      // Rimuovi modal esistente se presente
+      const existingModal = document.getElementById('photoModal');
+      if (existingModal) {
+        existingModal.remove();
+      }
+
+      // Crea il modal
+      const modal = document.createElement('div');
+      modal.id = 'photoModal';
+      modal.className = 'photo-modal';
+      modal.innerHTML = `
+        <span class="photo-modal-close" onclick="closePhotoModal()">&times;</span>
+        <img class="photo-modal-content" src="${photoUrl}" alt="${caption}">
+        <div class="photo-modal-caption">${caption}</div>
+      `;
+      document.body.appendChild(modal);
+
+      // Mostra il modal
+      setTimeout(() => {
+        modal.style.display = 'flex';
+      }, 10);
+    }
+
+    function closePhotoModal() {
+      const modal = document.getElementById('photoModal');
+      if (modal) {
+        modal.style.display = 'none';
+        setTimeout(() => {
+          modal.remove();
+        }, 300);
+      }
+    }
+
+    // Chiudi modal cliccando fuori
+    window.onclick = function(event) {
+      const editModal = document.getElementById('editModal');
+      const photoModal = document.getElementById('photoModal');
+      
+      if (event.target == editModal) {
+        closeEditModal();
+      }
+      if (event.target == photoModal) {
+        closePhotoModal();
+      }
+    }
+
+    // Ripopola i campi di ricerca se ci sono filtri attivi
+    document.addEventListener('DOMContentLoaded', function() {
+      <% if (searchFilters) { %>
+        <% if (searchFilters.rider) { %>
+          document.getElementById('searchRider').value = '<%= searchFilters.rider %>';
+        <% } %>
+        <% if (searchFilters.data) { %>
+          document.getElementById('searchData').value = '<%= searchFilters.data %>';
+        <% } %>
+        <% if (searchFilters.rotta) { %>
+          document.getElementById('searchRotta').value = '<%= searchFilters.rotta %>';
+        <% } %>
+        <% if (searchFilters.targa) { %>
+          document.getElementById('searchTarga').value = '<%= searchFilters.targa %>';
+        <% } %>
+      <% } %>
+    });
+  </script>
+</body>
+</html>

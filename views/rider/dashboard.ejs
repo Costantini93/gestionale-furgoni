@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Rider - Gestionale Furgoni</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-content">
+      <div class="nav-left">
+        <h1>� Gestionale Consegne</h1>
+      </div>
+      <div class="nav-right">
+        <span class="user-info">
+          👤 <%= user.nome %> <%= user.cognome %>
+        </span>
+        <a href="/auth/logout" class="btn btn-secondary">🚪 Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2>🚚 Dashboard Rider</h2>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Loading Spinner -->
+    <div class="spinner-overlay" id="loadingSpinner" style="display: none;">
+      <div class="spinner"></div>
+    </div>
+
+    <% if (success && success.length > 0) { %>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          showToast('✅ <%= success[0] %>', 'success');
+        });
+      </script>
+    <% } %>
+
+    <% if (error && error.length > 0) { %>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          showToast('⚠️ <%= error[0] %>', 'error');
+        });
+      </script>
+    <% } %>
+
+    <!-- Form inserimento dati giornalieri -->
+    <div class="card">
+      <h3>📝 Inserisci Dati Giornalieri</h3>
+      <form action="/rider/report/create" method="POST" id="reportForm" enctype="multipart/form-data">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="data_giorno">📅 Data *</label>
+            <input type="date" id="data_giorno" name="data_giorno" required>
+            <input type="hidden" id="data_giorno_formatted" name="data_giorno_formatted">
+          </div>
+
+          <div class="form-group">
+            <label for="targa_furgone">🚐 Targa Furgone *</label>
+            <input type="text" id="targa_furgone" name="targa_furgone" placeholder="ES: AB123CD" required>
+          </div>
+
+          <div class="form-group">
+            <label for="codice_rotta">🗺️ Codice Rotta *</label>
+            <input type="text" id="codice_rotta" name="codice_rotta" placeholder="ES: R001" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="km_partenza">Km Partenza *</label>
+            <input type="number" id="km_partenza" name="km_partenza" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="km_rientro">Km Rientro *</label>
+            <input type="number" id="km_rientro" name="km_rientro" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="orario_rientro">Orario Rientro *</label>
+            <input type="time" id="orario_rientro" name="orario_rientro" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="numero_scheda_dkv">Numero Scheda DKV</label>
+            <input type="text" id="numero_scheda_dkv" name="numero_scheda_dkv" placeholder="Opzionale">
+          </div>
+
+          <div class="form-group">
+            <label for="importo_rifornimento">Importo Rifornimento (€)</label>
+            <input type="number" id="importo_rifornimento" name="importo_rifornimento" step="0.01" min="0" placeholder="0.00">
+          </div>
+
+          <div class="form-group">
+            <label for="numero_aziendale">Numero Aziendale</label>
+            <input type="text" id="numero_aziendale" name="numero_aziendale" placeholder="Opzionale">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pacchi_resi">Numero Pacchi Resi</label>
+            <input type="number" id="pacchi_resi" name="pacchi_resi" min="0" placeholder="0">
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="firma" name="firma" required>
+              <span class="checkbox-text">✍️ FIRMA - Confermo i dati inseriti *</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Sezione Foto Furgone -->
+        <div class="form-section">
+          <h4 style="color: #6366f1; margin-bottom: 1rem;">📸 Foto del Furgone (Obbligatorie)</h4>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Scatta o carica 5 foto del furgone prima di partire
+          </p>
+
+          <div class="foto-grid">
+            <div class="foto-upload-box">
+              <label for="foto_posteriore" class="foto-label">
+                <span>📸 Foto Posteriore *</span>
+                <input type="file" id="foto_posteriore" name="foto_posteriore" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_posteriore"></div>
+              <div class="foto-upload-progress" id="progress_posteriore">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_posteriore">✓</div>
+            </div>
+
+            <div class="foto-upload-box">
+              <label for="foto_anteriore" class="foto-label">
+                <span>📸 Foto Anteriore *</span>
+                <input type="file" id="foto_anteriore" name="foto_anteriore" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_anteriore"></div>
+              <div class="foto-upload-progress" id="progress_anteriore">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_anteriore">✓</div>
+            </div>
+
+            <div class="foto-upload-box">
+              <label for="foto_lato_destro" class="foto-label">
+                <span>📸 Lato Destro *</span>
+                <input type="file" id="foto_lato_destro" name="foto_lato_destro" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_lato_destro"></div>
+              <div class="foto-upload-progress" id="progress_lato_destro">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_lato_destro">✓</div>
+            </div>
+
+            <div class="foto-upload-box">
+              <label for="foto_lato_sinistro" class="foto-label">
+                <span>📸 Lato Sinistro *</span>
+                <input type="file" id="foto_lato_sinistro" name="foto_lato_sinistro" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_lato_sinistro"></div>
+              <div class="foto-upload-progress" id="progress_lato_sinistro">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_lato_sinistro">✓</div>
+            </div>
+
+            <div class="foto-upload-box">
+              <label for="foto_interno" class="foto-label">
+                <span>📸 Interno *</span>
+                <input type="file" id="foto_interno" name="foto_interno" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_interno"></div>
+              <div class="foto-upload-progress" id="progress_interno">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_interno">✓</div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          💾 Salva Dati Giornalieri
+        </button>
+      </form>
+    </div>
+
+    <!-- Storico report -->
+    <div class="card">
+      <h3>📊 I Tuoi Report</h3>
+      
+      <% if (reports.length === 0) { %>
+        <p class="no-data">Nessun report inserito.</p>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Targa</th>
+                <th>Rotta</th>
+                <th>Km Partenza</th>
+                <th>Km Rientro</th>
+                <th>Km Percorsi</th>
+                <th>Orario Rientro</th>
+                <th>📸 Foto</th>
+                <th>Firma</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% reports.forEach(report => { %>
+                <tr>
+                  <td><%= formatDate(report.data_giorno) %></td>
+                  <td><%= report.targa_furgone %></td>
+                  <td><%= report.codice_rotta %></td>
+                  <td><%= report.km_partenza %></td>
+                  <td><%= report.km_rientro %></td>
+                  <td><strong><%= report.km_rientro - report.km_partenza %></strong></td>
+                  <td><%= report.orario_rientro %></td>
+                  <td>
+                    <div class="photo-thumbnails">
+                      <% if (report.foto_posteriore) { %>
+                        <img src="<%= report.foto_posteriore %>" class="photo-thumb" alt="Posteriore" 
+                             onclick="openPhotoModal('<%= report.foto_posteriore %>', 'Foto Posteriore - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_anteriore) { %>
+                        <img src="<%= report.foto_anteriore %>" class="photo-thumb" alt="Anteriore"
+                             onclick="openPhotoModal('<%= report.foto_anteriore %>', 'Foto Anteriore - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_lato_destro) { %>
+                        <img src="<%= report.foto_lato_destro %>" class="photo-thumb" alt="Lato Destro"
+                             onclick="openPhotoModal('<%= report.foto_lato_destro %>', 'Lato Destro - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_lato_sinistro) { %>
+                        <img src="<%= report.foto_lato_sinistro %>" class="photo-thumb" alt="Lato Sinistro"
+                             onclick="openPhotoModal('<%= report.foto_lato_sinistro %>', 'Lato Sinistro - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_interno) { %>
+                        <img src="<%= report.foto_interno %>" class="photo-thumb" alt="Interno"
+                             onclick="openPhotoModal('<%= report.foto_interno %>', 'Interno - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (report.firma) { %>
+                      <span class="badge badge-success">✓</span>
+                    <% } else { %>
+                      <span class="badge badge-error">✗</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <script>
+    // Toast Notification System
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <span class="toast-icon">${type === 'success' ? '✓' : '⚠'}</span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Imposta la data di oggi nel date picker
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    document.getElementById('data_giorno').value = `${year}-${month}-${day}`;
+
+    // Compressione e Watermark Immagini
+    async function compressAndWatermarkImage(file, inputId) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Ridimensiona se troppo grande (max 1920px)
+            let width = img.width;
+            let height = img.height;
+            const maxSize = 1920;
+            
+            if (width > maxSize || height > maxSize) {
+              if (width > height) {
+                height = (height / width) * maxSize;
+                width = maxSize;
+              } else {
+                width = (width / height) * maxSize;
+                height = maxSize;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Disegna immagine
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Aggiungi watermark
+            const watermarkText = `${new Date().toLocaleString('it-IT')} - <%= user.nome %> <%= user.cognome %>`;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, height - 40, width, 40);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(watermarkText, 10, height - 15);
+            
+            // Converti in WebP con compressione
+            canvas.toBlob((blob) => {
+              resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), {
+                type: 'image/webp',
+                lastModified: Date.now()
+              }));
+            }, 'image/webp', 0.85);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Gestione foto con progress e feedback
+    const fotoInputs = ['foto_posteriore', 'foto_anteriore', 'foto_lato_destro', 'foto_lato_sinistro', 'foto_interno'];
+    
+    fotoInputs.forEach(inputId => {
+      const input = document.getElementById(inputId);
+      const preview = document.getElementById('preview_' + inputId.replace('foto_', ''));
+      const progress = document.getElementById('progress_' + inputId.replace('foto_', ''));
+      const success = document.getElementById('success_' + inputId.replace('foto_', ''));
+      const label = input.closest('.foto-label');
+      
+      input.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          // Mostra progress
+          progress.classList.add('active');
+          
+          try {
+            // Comprimi e aggiungi watermark
+            const processedFile = await compressAndWatermarkImage(file, inputId);
+            
+            // Crea anteprima
+            const reader = new FileReader();
+            reader.onload = function(event) {
+              preview.innerHTML = `<img src="${event.target.result}" alt="Anteprima">`;
+              preview.classList.add('active');
+              label.classList.add('has-image');
+              
+              // Nascondi progress, mostra success
+              progress.classList.remove('active');
+              success.classList.add('active');
+              
+              setTimeout(() => {
+                success.classList.remove('active');
+              }, 1500);
+              
+              showToast(`Foto ${inputId.replace('foto_', '').replace('_', ' ')} caricata e ottimizzata!`, 'success');
+            };
+            reader.readAsDataURL(processedFile);
+            
+            // Sostituisci il file originale con quello processato
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(processedFile);
+            input.files = dataTransfer.files;
+            
+          } catch (error) {
+            progress.classList.remove('active');
+            showToast('Errore nel processamento dell\'immagine', 'error');
+          }
+        }
+      });
+    });
+
+    // Autocomplete per Targa e Rotta
+    const targaInput = document.getElementById('targa_furgone');
+    const rottaInput = document.getElementById('codice_rotta');
+    
+    // Raccogli targhe e rotte esistenti dalla tabella
+    const existingData = {
+      targhe: new Set(),
+      rotte: new Set()
+    };
+    
+    document.querySelectorAll('.data-table tbody tr').forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length > 1) {
+        existingData.targhe.add(cells[1].textContent.trim());
+        existingData.rotte.add(cells[2].textContent.trim());
+      }
+    });
+    
+    // Aggiungi datalist per autocomplete
+    if (existingData.targhe.size > 0) {
+      const targaDatalist = document.createElement('datalist');
+      targaDatalist.id = 'targa-list';
+      existingData.targhe.forEach(targa => {
+        const option = document.createElement('option');
+        option.value = targa;
+        targaDatalist.appendChild(option);
+      });
+      document.body.appendChild(targaDatalist);
+      targaInput.setAttribute('list', 'targa-list');
+    }
+    
+    if (existingData.rotte.size > 0) {
+      const rottaDatalist = document.createElement('datalist');
+      rottaDatalist.id = 'rotta-list';
+      existingData.rotte.forEach(rotta => {
+        const option = document.createElement('option');
+        option.value = rotta;
+        rottaDatalist.appendChild(option);
+      });
+      document.body.appendChild(rottaDatalist);
+      rottaInput.setAttribute('list', 'rotta-list');
+    }
+
+    // Mostra spinner al submit
+    document.getElementById('reportForm').addEventListener('submit', function() {
+      document.getElementById('loadingSpinner').style.display = 'flex';
+    });
+
+    // Modal per visualizzare foto
+    function openPhotoModal(photoUrl, caption) {
+      const modal = document.createElement('div');
+      modal.className = 'photo-modal active';
+      modal.innerHTML = `
+        <div class="photo-modal-content">
+          <button class="photo-modal-close" onclick="this.closest('.photo-modal').remove()">×</button>
+          <img src="${photoUrl}" alt="${caption}">
+          <div class="photo-modal-caption">${caption}</div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+

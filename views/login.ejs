@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Gestionale Furgoni</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-page">
+  <div class="login-container">
+    <div class="login-box">
+      <h1>� Gestionale Consegne</h1>
+      <h2>Accedi al Sistema</h2>
+      
+      <% if (error && error.length > 0) { %>
+        <div class="alert alert-error">
+          ⚠️ <%= error[0] %>
+        </div>
+      <% } %>
+      
+      <% if (success && success.length > 0) { %>
+        <div class="alert alert-success">
+          ✅ <%= success[0] %>
+        </div>
+      <% } %>
+
+      <form action="/auth/login" method="POST">
+        <div class="form-group">
+          <label for="username">👤 Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username" 
+            placeholder="nome_cognome"
+            required 
+            autofocus
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">🔒 Password</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            placeholder="Inserisci la password"
+            required
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          🚀 Accedi
+        </button>
+      </form>
+
+      <div class="login-info">
+        <p><small>💡 Al primo accesso verrà richiesto il cambio password</small></p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

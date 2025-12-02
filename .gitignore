@@ -1,0 +1,9 @@
+node_modules/
+database.db
+*.log
+.DS_Store
+.env
+public/uploads/foto_furgoni/*.jpg
+public/uploads/foto_furgoni/*.png
+public/uploads/foto_furgoni/*.webp
+!public/uploads/foto_furgoni/.gitkeep
