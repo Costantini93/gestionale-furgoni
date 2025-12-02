@@ -219,8 +219,16 @@
     <div class="modal-content">
       <span class="close" onclick="closeEditModal()">&times;</span>
       <h3>✏️ Modifica Report</h3>
+      
+      <div id="statusWarning" style="display: none; background: rgba(245, 158, 11, 0.2); border: 2px solid #f59e0b; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <p style="margin: 0; color: #fbbf24; font-weight: 600;">
+          ⚠️ Questo report è ancora "In Viaggio". Inserisci KM Rientro e Orario per completarlo.
+        </p>
+      </div>
+
       <form id="editForm" method="POST">
         <input type="hidden" id="edit_report_id" name="report_id">
+        <input type="hidden" id="edit_current_status" name="current_status">
         
         <div class="form-row">
           <div class="form-group">
@@ -236,19 +244,27 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="edit_km_partenza">Km Partenza</label>
+            <label for="edit_km_partenza">Km Partenza *</label>
             <input type="number" id="edit_km_partenza" name="km_partenza" required>
           </div>
 
           <div class="form-group">
-            <label for="edit_km_rientro">Km Rientro</label>
-            <input type="number" id="edit_km_rientro" name="km_rientro" required>
+            <label for="edit_km_rientro">
+              Km Rientro <span id="labelKmOptional" style="color: #94a3b8; font-size: 0.85rem;">(Opzionale se in viaggio)</span>
+            </label>
+            <input type="number" id="edit_km_rientro" name="km_rientro">
           </div>
 
           <div class="form-group">
-            <label for="edit_orario_rientro">Orario Rientro</label>
-            <input type="time" id="edit_orario_rientro" name="orario_rientro" required>
+            <label for="edit_orario_rientro">
+              Orario Rientro <span id="labelOrarioOptional" style="color: #94a3b8; font-size: 0.85rem;">(Opzionale se in viaggio)</span>
+            </label>
+            <input type="time" id="edit_orario_rientro" name="orario_rientro">
           </div>
+        </div>
+
+        <div id="kmCalculationEdit" style="margin-top: 1rem; padding: 1rem; background: #10b981; border-radius: 8px; display: none;">
+          <strong style="color: white; font-size: 1.1rem;">📊 KM Percorsi: <span id="kmPercorsiEdit">0</span></strong>
         </div>
 
         <div class="form-row">
@@ -299,19 +315,58 @@
       if (!report) return;
 
       document.getElementById('edit_report_id').value = report.id;
+      document.getElementById('edit_current_status').value = report.status || 'completato';
       document.getElementById('edit_targa_furgone').value = report.targa_furgone;
       document.getElementById('edit_codice_rotta').value = report.codice_rotta;
       document.getElementById('edit_km_partenza').value = report.km_partenza;
-      document.getElementById('edit_km_rientro').value = report.km_rientro;
-      document.getElementById('edit_orario_rientro').value = report.orario_rientro;
+      document.getElementById('edit_km_rientro').value = report.km_rientro || '';
+      document.getElementById('edit_orario_rientro').value = report.orario_rientro || '';
       document.getElementById('edit_numero_scheda_dkv').value = report.numero_scheda_dkv || '';
       document.getElementById('edit_importo_rifornimento').value = report.importo_rifornimento || '';
       document.getElementById('edit_numero_aziendale').value = report.numero_aziendale || '';
       document.getElementById('edit_pacchi_resi').value = report.pacchi_resi || '';
 
+      // Mostra warning se status = 'partito'
+      const statusWarning = document.getElementById('statusWarning');
+      if (report.status === 'partito') {
+        statusWarning.style.display = 'block';
+      } else {
+        statusWarning.style.display = 'none';
+      }
+
+      // Calcola km percorsi se disponibili
+      updateKmCalculationEdit();
+
       document.getElementById('editForm').action = '/admin/report/update/' + reportId;
       document.getElementById('editModal').style.display = 'block';
     }
+
+    // Calcola KM percorsi in tempo reale nel form edit
+    function updateKmCalculationEdit() {
+      const kmPartenza = parseInt(document.getElementById('edit_km_partenza').value);
+      const kmRientro = parseInt(document.getElementById('edit_km_rientro').value);
+      
+      if (kmPartenza && kmRientro && kmRientro >= kmPartenza) {
+        const kmPercorsi = kmRientro - kmPartenza;
+        document.getElementById('kmPercorsiEdit').textContent = kmPercorsi;
+        document.getElementById('kmCalculationEdit').style.display = 'block';
+      } else {
+        document.getElementById('kmCalculationEdit').style.display = 'none';
+      }
+    }
+
+    // Aggiungi listener per aggiornamento real-time
+    document.addEventListener('DOMContentLoaded', function() {
+      const kmPartenzaInput = document.getElementById('edit_km_partenza');
+      const kmRientroInput = document.getElementById('edit_km_rientro');
+      
+      if (kmPartenzaInput) {
+        kmPartenzaInput.addEventListener('input', updateKmCalculationEdit);
+      }
+      if (kmRientroInput) {
+        kmRientroInput.addEventListener('input', updateKmCalculationEdit);
+      }
+    });
 
     function closeEditModal() {
       document.getElementById('editModal').style.display = 'none';

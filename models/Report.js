@@ -150,19 +150,22 @@ const ReportModel = {
       numero_scheda_dkv,
       importo_rifornimento,
       numero_aziendale,
-      pacchi_resi
+      pacchi_resi,
+      status
     } = reportData;
 
     db.run(
       `UPDATE daily_reports SET 
         targa_furgone = ?, codice_rotta = ?, km_partenza = ?, 
         km_rientro = ?, orario_rientro = ?, numero_scheda_dkv = ?,
-        importo_rifornimento = ?, numero_aziendale = ?, pacchi_resi = ?
+        importo_rifornimento = ?, numero_aziendale = ?, pacchi_resi = ?,
+        status = ?
        WHERE id = ?`,
       [
         targa_furgone, codice_rotta, km_partenza,
         km_rientro, orario_rientro, numero_scheda_dkv,
-        importo_rifornimento, numero_aziendale, pacchi_resi, reportId
+        importo_rifornimento, numero_aziendale, pacchi_resi,
+        status || 'completato', reportId
       ],
       callback
     );

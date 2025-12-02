@@ -122,19 +122,32 @@ router.post('/report/update/:reportId', requireAdmin, (req, res) => {
     numero_scheda_dkv,
     importo_rifornimento,
     numero_aziendale,
-    pacchi_resi
+    pacchi_resi,
+    current_status
   } = req.body;
+
+  // Determina il nuovo status
+  let newStatus = current_status || 'completato';
+  
+  // Se km_rientro e orario_rientro sono presenti, status diventa 'completato'
+  if (km_rientro && orario_rientro) {
+    newStatus = 'completato';
+  } else if (current_status === 'partito') {
+    // Se era in viaggio e non sono stati inseriti i dati, rimane in viaggio
+    newStatus = 'partito';
+  }
 
   const reportData = {
     targa_furgone,
     codice_rotta,
     km_partenza,
-    km_rientro,
-    orario_rientro,
+    km_rientro: km_rientro || null,
+    orario_rientro: orario_rientro || null,
     numero_scheda_dkv: numero_scheda_dkv || null,
     importo_rifornimento: importo_rifornimento || null,
     numero_aziendale: numero_aziendale || null,
-    pacchi_resi: pacchi_resi || null
+    pacchi_resi: pacchi_resi || null,
+    status: newStatus
   };
 
   Report.update(reportId, reportData, (err) => {
@@ -144,7 +157,8 @@ router.post('/report/update/:reportId', requireAdmin, (req, res) => {
       return res.redirect('/admin/dashboard');
     }
 
-    req.flash('success', 'Report aggiornato con successo!');
+    const statusMsg = newStatus === 'completato' ? ' e status aggiornato a "Rientrato"' : '';
+    req.flash('success', `Report aggiornato con successo${statusMsg}!`);
     res.redirect('/admin/dashboard');
   });
 });
