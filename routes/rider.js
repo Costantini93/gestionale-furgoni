@@ -34,32 +34,40 @@ const upload = multer({
 
 // Dashboard rider
 router.get('/dashboard', requireRider, (req, res) => {
-  // Ottieni i report del rider
+  // Ottieni i report completati del rider
   Report.getByUserId(req.session.userId, (err, reports) => {
     if (err) {
       console.error(err);
       return res.status(500).send('Errore del server');
     }
 
-    const successMessages = req.flash('success');
-    const errorMessages = req.flash('error');
-    console.log('📬 Flash messages nella GET:', { success: successMessages, error: errorMessages });
+    // Ottieni i report aperti (in viaggio)
+    Report.getOpenReports(req.session.userId, (err2, openReports) => {
+      if (err2) {
+        console.error(err2);
+        return res.status(500).send('Errore del server');
+      }
 
-    res.render('rider/dashboard', {
-      user: {
-        id: req.session.userId,
-        username: req.session.username,
-        nome: req.session.nome,
-        cognome: req.session.cognome
-      },
-      reports: reports || [],
-      success: successMessages,
-      error: errorMessages
+      const successMessages = req.flash('success');
+      const errorMessages = req.flash('error');
+
+      res.render('rider/dashboard', {
+        user: {
+          id: req.session.userId,
+          username: req.session.username,
+          nome: req.session.nome,
+          cognome: req.session.cognome
+        },
+        reports: reports || [],
+        openReports: openReports || [],
+        success: successMessages,
+        error: errorMessages
+      });
     });
   });
 });
 
-// Crea nuovo report con foto
+// Crea nuovo report (SOLO PARTENZA)
 router.post('/report/create', requireRider, upload.fields([
   { name: 'foto_posteriore', maxCount: 1 },
   { name: 'foto_anteriore', maxCount: 1 },
@@ -72,8 +80,6 @@ router.post('/report/create', requireRider, upload.fields([
     targa_furgone,
     codice_rotta,
     km_partenza,
-    km_rientro,
-    orario_rientro,
     numero_scheda_dkv,
     importo_rifornimento,
     numero_aziendale,
@@ -81,10 +87,9 @@ router.post('/report/create', requireRider, upload.fields([
     firma
   } = req.body;
 
-  // Validazione base
-  if (!data_giorno || !targa_furgone || !codice_rotta || !km_partenza || 
-      !km_rientro || !orario_rientro || !firma) {
-    req.flash('error', 'Compila tutti i campi obbligatori');
+  // Validazione base (solo campi partenza)
+  if (!data_giorno || !targa_furgone || !codice_rotta || !km_partenza || !firma) {
+    req.flash('error', 'Compila tutti i campi obbligatori per la partenza');
     req.session.save((saveErr) => {
       if (saveErr) console.error('Errore save session:', saveErr);
       return res.redirect('/rider/dashboard');
@@ -92,7 +97,7 @@ router.post('/report/create', requireRider, upload.fields([
     return;
   }
 
-  // Verifica se esiste già un report per questo giorno
+  // Verifica se esiste già un report PARTITO per questo giorno
   Report.checkExisting(req.session.userId, data_giorno, (err, existing) => {
     if (err) {
       console.error('Errore checkExisting:', err);
@@ -106,11 +111,9 @@ router.post('/report/create', requireRider, upload.fields([
 
     if (existing) {
       console.log(`⚠️ Tentativo di duplicato - User: ${req.session.userId}, Data: ${data_giorno}`);
-      req.flash('error', `Hai già inserito i dati per il ${data_giorno}. Non puoi inserire dati duplicati per la stessa data.`);
-      console.log('📮 Flash impostato. Contenuto sessione prima del save:', req.session.flash);
+      req.flash('error', `Hai già registrato una partenza per il ${data_giorno}. Completa prima il rientro.`);
       req.session.save((saveErr) => {
         if (saveErr) console.error('Errore save session:', saveErr);
-        console.log('💾 Sessione salvata. Contenuto:', req.session.flash);
         return res.redirect('/rider/dashboard');
       });
       return;
@@ -123,15 +126,15 @@ router.post('/report/create', requireRider, upload.fields([
     const foto_lato_sinistro = req.files['foto_lato_sinistro'] ? '/uploads/foto_furgoni/' + req.files['foto_lato_sinistro'][0].filename : null;
     const foto_interno = req.files['foto_interno'] ? '/uploads/foto_furgoni/' + req.files['foto_interno'][0].filename : null;
 
-    // Crea il report
+    // Crea il report con status 'partito' (km_rientro e orario_rientro = NULL)
     const reportData = {
       user_id: req.session.userId,
       data_giorno,
       targa_furgone,
       codice_rotta,
       km_partenza,
-      km_rientro,
-      orario_rientro,
+      km_rientro: null,
+      orario_rientro: null,
       numero_scheda_dkv: numero_scheda_dkv || null,
       importo_rifornimento: importo_rifornimento || null,
       numero_aziendale: numero_aziendale || null,
@@ -141,7 +144,8 @@ router.post('/report/create', requireRider, upload.fields([
       foto_anteriore,
       foto_lato_destro,
       foto_lato_sinistro,
-      foto_interno
+      foto_interno,
+      status: 'partito'
     };
 
     Report.create(reportData, (err) => {
@@ -156,8 +160,91 @@ router.post('/report/create', requireRider, upload.fields([
         return;
       }
 
-      logActivity(req.session.userId, 'REPORT_CREATE', `Report creato per ${data_giorno} - Targa: ${targa_furgone}, Rotta: ${codice_rotta}`, req);
-      req.flash('success', 'Dati giornalieri salvati con successo!');
+      logActivity(req.session.userId, 'REPORT_PARTENZA', `Partenza registrata per ${data_giorno} - Targa: ${targa_furgone}, Rotta: ${codice_rotta}, KM: ${km_partenza}`, req);
+      req.flash('success', '🚚 Partenza registrata! Buon viaggio! Ricorda di completare il rientro.');
+      req.session.save((saveErr) => {
+        if (saveErr) console.error('Errore save session:', saveErr);
+        res.redirect('/rider/dashboard');
+      });
+    });
+  });
+});
+
+// Completa rientro
+router.post('/report/complete/:id', requireRider, (req, res) => {
+  const reportId = req.params.id;
+  const { km_rientro, orario_rientro } = req.body;
+
+  // Validazione
+  if (!km_rientro || !orario_rientro) {
+    req.flash('error', 'Inserisci km e orario di rientro');
+    req.session.save((saveErr) => {
+      if (saveErr) console.error('Errore save session:', saveErr);
+      return res.redirect('/rider/dashboard');
+    });
+    return;
+  }
+
+  // Verifica che il report appartenga all'utente e sia aperto
+  Report.getById(reportId, (err, report) => {
+    if (err || !report) {
+      req.flash('error', 'Report non trovato');
+      req.session.save((saveErr) => {
+        if (saveErr) console.error('Errore save session:', saveErr);
+        return res.redirect('/rider/dashboard');
+      });
+      return;
+    }
+
+    if (report.user_id !== req.session.userId) {
+      req.flash('error', 'Non autorizzato');
+      req.session.save((saveErr) => {
+        if (saveErr) console.error('Errore save session:', saveErr);
+        return res.redirect('/rider/dashboard');
+      });
+      return;
+    }
+
+    if (report.status !== 'partito') {
+      req.flash('error', 'Questo report è già stato completato');
+      req.session.save((saveErr) => {
+        if (saveErr) console.error('Errore save session:', saveErr);
+        return res.redirect('/rider/dashboard');
+      });
+      return;
+    }
+
+    // Validazione: km_rientro deve essere >= km_partenza
+    if (parseInt(km_rientro) < parseInt(report.km_partenza)) {
+      req.flash('error', `I km di rientro (${km_rientro}) non possono essere inferiori ai km di partenza (${report.km_partenza})`);
+      req.session.save((saveErr) => {
+        if (saveErr) console.error('Errore save session:', saveErr);
+        return res.redirect('/rider/dashboard');
+      });
+      return;
+    }
+
+    // Completa il rientro
+    const returnData = {
+      km_rientro,
+      orario_rientro
+    };
+
+    Report.completeReturn(reportId, returnData, (err) => {
+      if (err) {
+        console.error(err);
+        logActivity(req.session.userId, 'REPORT_COMPLETE_ERROR', `Errore completamento report ${reportId}`, req);
+        req.flash('error', 'Errore durante il completamento del rientro');
+        req.session.save((saveErr) => {
+          if (saveErr) console.error('Errore save session:', saveErr);
+          return res.redirect('/rider/dashboard');
+        });
+        return;
+      }
+
+      const kmPercorsi = parseInt(km_rientro) - parseInt(report.km_partenza);
+      logActivity(req.session.userId, 'REPORT_COMPLETATO', `Rientro completato per ${report.data_giorno} - KM percorsi: ${kmPercorsi}`, req);
+      req.flash('success', `✅ Rientro completato! KM percorsi: ${kmPercorsi}`);
       req.session.save((saveErr) => {
         if (saveErr) console.error('Errore save session:', saveErr);
         res.redirect('/rider/dashboard');

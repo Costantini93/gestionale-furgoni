@@ -48,15 +48,47 @@
       </script>
     <% } %>
 
-    <!-- Form inserimento dati giornalieri -->
+    <!-- Sezione Report Aperti (DA COMPLETARE) -->
+    <% if (openReports && openReports.length > 0) { %>
+      <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, #fef3c7 0%, #fef9e6 100%);">
+        <h3 style="color: #f59e0b;">⚠️ Report da Completare</h3>
+        <p style="color: #92400e; margin-bottom: 1rem;">
+          Hai <strong><%= openReports.length %></strong> rientro/i da registrare:
+        </p>
+        
+        <% openReports.forEach(report => { %>
+          <div class="open-report-card">
+            <div class="open-report-info">
+              <h4>📅 <%= formatDate(report.data_giorno) %></h4>
+              <p>
+                🚐 <strong><%= report.targa_furgone %></strong> | 
+                🗺️ Rotta: <strong><%= report.codice_rotta %></strong> | 
+                📏 KM Partenza: <strong><%= report.km_partenza %></strong>
+              </p>
+            </div>
+            
+            <button 
+              class="btn btn-warning" 
+              onclick="openCompleteModal(<%= report.id %>, '<%= formatDate(report.data_giorno) %>', '<%= report.targa_furgone %>', <%= report.km_partenza %>)"
+              style="background: #f59e0b; min-width: 180px;">
+              ✅ Completa Rientro
+            </button>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <!-- Form inserimento PARTENZA -->
     <div class="card">
-      <h3>📝 Inserisci Dati Giornalieri</h3>
+      <h3>🚀 Registra Partenza</h3>
+      <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Compila i dati e scatta le 5 foto del furgone prima di partire
+      </p>
       <form action="/rider/report/create" method="POST" id="reportForm" enctype="multipart/form-data">
         <div class="form-row">
           <div class="form-group">
-            <label for="data_giorno">📅 Data *</label>
+            <label for="data_giorno">� Data *</label>
             <input type="date" id="data_giorno" name="data_giorno" required>
-            <input type="hidden" id="data_giorno_formatted" name="data_giorno_formatted">
           </div>
 
           <div class="form-group">
@@ -72,48 +104,36 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="km_partenza">Km Partenza *</label>
+            <label for="km_partenza">📏 Km Partenza *</label>
             <input type="number" id="km_partenza" name="km_partenza" min="0" required>
           </div>
 
           <div class="form-group">
-            <label for="km_rientro">Km Rientro *</label>
-            <input type="number" id="km_rientro" name="km_rientro" min="0" required>
-          </div>
-
-          <div class="form-group">
-            <label for="orario_rientro">Orario Rientro *</label>
-            <input type="time" id="orario_rientro" name="orario_rientro" required>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="numero_scheda_dkv">Numero Scheda DKV</label>
+            <label for="numero_scheda_dkv">🔖 Numero Scheda DKV</label>
             <input type="text" id="numero_scheda_dkv" name="numero_scheda_dkv" placeholder="Opzionale">
           </div>
 
           <div class="form-group">
-            <label for="importo_rifornimento">Importo Rifornimento (€)</label>
+            <label for="importo_rifornimento">⛽ Importo Rifornimento (€)</label>
             <input type="number" id="importo_rifornimento" name="importo_rifornimento" step="0.01" min="0" placeholder="0.00">
-          </div>
-
-          <div class="form-group">
-            <label for="numero_aziendale">Numero Aziendale</label>
-            <input type="text" id="numero_aziendale" name="numero_aziendale" placeholder="Opzionale">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="pacchi_resi">Numero Pacchi Resi</label>
+            <label for="numero_aziendale">📞 Numero Aziendale</label>
+            <input type="text" id="numero_aziendale" name="numero_aziendale" placeholder="Opzionale">
+          </div>
+
+          <div class="form-group">
+            <label for="pacchi_resi">📦 Numero Pacchi Resi</label>
             <input type="number" id="pacchi_resi" name="pacchi_resi" min="0" placeholder="0">
           </div>
 
           <div class="form-group">
             <label class="checkbox-label">
               <input type="checkbox" id="firma" name="firma" required>
-              <span class="checkbox-text">✍️ FIRMA - Confermo i dati inseriti *</span>
+              <span class="checkbox-text">✍️ FIRMA - Confermo i dati *</span>
             </label>
           </div>
         </div>
@@ -189,17 +209,65 @@
         </div>
 
         <button type="submit" class="btn btn-primary">
-          💾 Salva Dati Giornalieri
+          � Registra Partenza
         </button>
       </form>
     </div>
 
-    <!-- Storico report -->
+    <!-- Modal Completa Rientro -->
+    <div id="completeModal" class="photo-modal">
+      <div class="photo-modal-content" style="max-width: 500px;">
+        <button class="photo-modal-close" onclick="closeCompleteModal()">×</button>
+        <h3 style="color: #6366f1; margin-bottom: 1rem;">🏁 Completa Rientro</h3>
+        
+        <div id="modalReportInfo" style="background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <!-- Info report compilata da JS -->
+        </div>
+
+        <form id="completeForm" method="POST" action="">
+          <div class="form-group">
+            <label for="km_rientro_modal">📏 Km Rientro *</label>
+            <input 
+              type="number" 
+              id="km_rientro_modal" 
+              name="km_rientro" 
+              min="0" 
+              required
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="orario_rientro_modal">🕐 Orario Rientro *</label>
+            <input 
+              type="time" 
+              id="orario_rientro_modal" 
+              name="orario_rientro" 
+              required
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
+          </div>
+
+          <div id="kmCalculation" style="margin-top: 1rem; padding: 1rem; background: #10b981; border-radius: 8px; display: none;">
+            <strong style="color: white; font-size: 1.1rem;">📊 KM Percorsi: <span id="kmPercorsi">0</span></strong>
+          </div>
+
+          <div class="form-row" style="margin-top: 1.5rem; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeCompleteModal()" style="flex: 1;">
+              ❌ Annulla
+            </button>
+            <button type="submit" class="btn btn-success" style="flex: 1; background: #10b981;">
+              ✅ Conferma Rientro
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Storico report COMPLETATI -->
     <div class="card">
-      <h3>📊 I Tuoi Report</h3>
+      <h3>📊 Storico Report Completati</h3>
       
-      <% if (reports.length === 0) { %>
-        <p class="no-data">Nessun report inserito.</p>
+      <% if (reports.filter(r => r.status === 'completato').length === 0) { %>
+        <p class="no-data">Nessun report completato ancora.</p>
       <% } else { %>
         <div class="table-responsive">
           <table class="data-table">
@@ -217,7 +285,7 @@
               </tr>
             </thead>
             <tbody>
-              <% reports.forEach(report => { %>
+              <% reports.filter(r => r.status === 'completato').forEach(report => { %>
                 <tr>
                   <td><%= formatDate(report.data_giorno) %></td>
                   <td><%= report.targa_furgone %></td>
@@ -462,7 +530,78 @@
         }
       });
     }
+
+    // ===== MODAL COMPLETA RIENTRO =====
+    let currentReportId = null;
+    let currentKmPartenza = 0;
+
+    function openCompleteModal(reportId, dataGiorno, targa, kmPartenza) {
+      currentReportId = reportId;
+      currentKmPartenza = parseInt(kmPartenza);
+      
+      // Imposta info report nel modal
+      document.getElementById('modalReportInfo').innerHTML = `
+        <p style="margin: 0; color: #e2e8f0;">
+          <strong>📅 Data:</strong> ${dataGiorno}<br>
+          <strong>🚐 Targa:</strong> ${targa}<br>
+          <strong>📏 KM Partenza:</strong> ${kmPartenza}
+        </p>
+      `;
+      
+      // Imposta action del form
+      document.getElementById('completeForm').action = `/rider/report/complete/${reportId}`;
+      
+      // Imposta ora attuale
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('orario_rientro_modal').value = `${hours}:${minutes}`;
+      
+      // Reset km rientro
+      document.getElementById('km_rientro_modal').value = '';
+      document.getElementById('kmCalculation').style.display = 'none';
+      
+      // Mostra modal
+      document.getElementById('completeModal').classList.add('active');
+    }
+
+    function closeCompleteModal() {
+      document.getElementById('completeModal').classList.remove('active');
+      currentReportId = null;
+      currentKmPartenza = 0;
+    }
+
+    // Calcola KM percorsi in tempo reale
+    document.getElementById('km_rientro_modal').addEventListener('input', function() {
+      const kmRientro = parseInt(this.value);
+      if (kmRientro && kmRientro >= currentKmPartenza) {
+        const kmPercorsi = kmRientro - currentKmPartenza;
+        document.getElementById('kmPercorsi').textContent = kmPercorsi;
+        document.getElementById('kmCalculation').style.display = 'block';
+      } else {
+        document.getElementById('kmCalculation').style.display = 'none';
+      }
+    });
+
+    // Valida KM rientro prima del submit
+    document.getElementById('completeForm').addEventListener('submit', function(e) {
+      const kmRientro = parseInt(document.getElementById('km_rientro_modal').value);
+      if (kmRientro < currentKmPartenza) {
+        e.preventDefault();
+        showToast(`⚠️ I KM di rientro (${kmRientro}) non possono essere inferiori ai KM di partenza (${currentKmPartenza})`, 'error');
+        return false;
+      }
+      document.getElementById('loadingSpinner').style.display = 'flex';
+    });
+
+    // Chiudi modal cliccando fuori
+    document.getElementById('completeModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeCompleteModal();
+      }
+    });
   </script>
 </body>
 </html>
+
 

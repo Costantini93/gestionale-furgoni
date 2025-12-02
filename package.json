@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "init-db": "node scripts/initDb.js",
-    "build": "npm install --build-from-source && node scripts/initDb.js && node scripts/addCodiceFiscale.js && node scripts/addFotoColumns.js && node scripts/addActivityLog.js"
+    "build": "npm install --build-from-source && node scripts/initDb.js && node scripts/addCodiceFiscale.js && node scripts/addFotoColumns.js && node scripts/addActivityLog.js && node scripts/addStatusColumn.js"
   },
   "keywords": [
     "consegne",

@@ -1,7 +1,7 @@
 const db = require('../config/database');
 
 const ReportModel = {
-  // Crea nuovo report giornaliero
+  // Crea nuovo report giornaliero (PARTENZA)
   create: (reportData, callback) => {
     const {
       user_id,
@@ -20,7 +20,8 @@ const ReportModel = {
       foto_anteriore,
       foto_lato_destro,
       foto_lato_sinistro,
-      foto_interno
+      foto_interno,
+      status
     } = reportData;
 
     db.run(
@@ -29,14 +30,14 @@ const ReportModel = {
         km_partenza, km_rientro, orario_rientro, numero_scheda_dkv,
         importo_rifornimento, numero_aziendale, pacchi_resi, firma,
         foto_posteriore, foto_anteriore, foto_lato_destro, 
-        foto_lato_sinistro, foto_interno
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        foto_lato_sinistro, foto_interno, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         user_id, data_giorno, targa_furgone, codice_rotta,
         km_partenza, km_rientro, orario_rientro, numero_scheda_dkv,
         importo_rifornimento, numero_aziendale, pacchi_resi, firma,
         foto_posteriore, foto_anteriore, foto_lato_destro,
-        foto_lato_sinistro, foto_interno
+        foto_lato_sinistro, foto_interno, status || 'partito'
       ],
       callback
     );
@@ -79,11 +80,61 @@ const ReportModel = {
     );
   },
 
-  // Verifica se esiste già un report per un utente in una data
+  // Verifica se esiste già un report PARTITO per un utente in una data
   checkExisting: (userId, date, callback) => {
     db.get(
-      'SELECT id FROM daily_reports WHERE user_id = ? AND data_giorno = ?',
-      [userId, date],
+      'SELECT id FROM daily_reports WHERE user_id = ? AND data_giorno = ? AND status = ?',
+      [userId, date, 'partito'],
+      callback
+    );
+  },
+
+  // Ottieni report aperti (in viaggio) per un utente
+  getOpenReports: (userId, callback) => {
+    db.all(
+      `SELECT * FROM daily_reports 
+       WHERE user_id = ? AND status = 'partito' 
+       ORDER BY data_giorno DESC, created_at DESC`,
+      [userId],
+      callback
+    );
+  },
+
+  // Ottieni tutti i report aperti (admin)
+  getAllOpenReports: (callback) => {
+    db.all(
+      `SELECT r.*, u.username, u.nome, u.cognome 
+       FROM daily_reports r 
+       JOIN users u ON r.user_id = u.id 
+       WHERE r.status = 'partito'
+       ORDER BY r.data_giorno DESC, r.created_at DESC`,
+      callback
+    );
+  },
+
+  // Ottieni singolo report per ID
+  getById: (reportId, callback) => {
+    db.get(
+      `SELECT r.*, u.username, u.nome, u.cognome 
+       FROM daily_reports r 
+       JOIN users u ON r.user_id = u.id 
+       WHERE r.id = ?`,
+      [reportId],
+      callback
+    );
+  },
+
+  // Completa rientro (aggiorna km_rientro, orario_rientro, status)
+  completeReturn: (reportId, returnData, callback) => {
+    const { km_rientro, orario_rientro, note_rientro } = returnData;
+    
+    db.run(
+      `UPDATE daily_reports SET 
+        km_rientro = ?, 
+        orario_rientro = ?, 
+        status = 'completato'
+       WHERE id = ?`,
+      [km_rientro, orario_rientro, reportId],
       callback
     );
   },
