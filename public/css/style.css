@@ -1168,6 +1168,38 @@ body::before {
 
 /* ===== NUOVI STILI PER SISTEMA PARTENZA/RIENTRO ===== */
 
+/* Animazione pulse per badge "In Viaggio" */
+@keyframes pulse-warning {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+}
+
+/* Badge warning con animazione */
+.badge-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #fb923c 100%);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-block;
+  animation: pulse-warning 2s infinite;
+}
+
+/* Evidenzia riga report in viaggio */
+.row-in-viaggio {
+  background: rgba(245, 158, 11, 0.05) !important;
+  border-left: 4px solid #f59e0b !important;
+}
+
+.row-in-viaggio:hover {
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
 /* Card report aperti (da completare) */
 .open-report-card {
   display: flex;

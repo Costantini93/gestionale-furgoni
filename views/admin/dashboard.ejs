@@ -86,7 +86,21 @@
 
     <!-- Tabella report -->
     <div class="card">
-      <h3>� Report Consegne</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin: 0;">📦 Report Consegne</h3>
+        
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button class="btn btn-secondary" onclick="filterStatus('all')" id="btnAll">
+            📋 Tutti (<span id="countAll">0</span>)
+          </button>
+          <button class="btn btn-warning" onclick="filterStatus('partito')" id="btnPartito">
+            🚚 In Viaggio (<span id="countPartito">0</span>)
+          </button>
+          <button class="btn btn-success" onclick="filterStatus('completato')" id="btnCompletato">
+            ✅ Rientrati (<span id="countCompletato">0</span>)
+          </button>
+        </div>
+      </div>
       
       <% if (reports.length === 0) { %>
         <p class="no-data">Nessun report disponibile.</p>
@@ -97,6 +111,7 @@
               <tr>
                 <th>Data</th>
                 <th>Rider</th>
+                <th>📍 Stato</th>
                 <th>Targa</th>
                 <th>Rotta</th>
                 <th>Km Partenza</th>
@@ -110,15 +125,44 @@
             </thead>
             <tbody>
               <% reports.forEach(report => { %>
-                <tr id="row-<%= report.id %>">
+                <tr id="row-<%= report.id %>" class="<%= report.status === 'partito' ? 'row-in-viaggio' : '' %>">
                   <td><%= formatDate(report.data_giorno) %></td>
                   <td><strong><%= report.nome %> <%= report.cognome %></strong></td>
+                  <td>
+                    <% if (report.status === 'partito') { %>
+                      <span class="badge badge-warning" style="background: linear-gradient(135deg, #f59e0b 0%, #fb923c 100%); animation: pulse-warning 2s infinite;">
+                        🚚 In Viaggio
+                      </span>
+                    <% } else { %>
+                      <span class="badge badge-success">
+                        ✅ Rientrato
+                      </span>
+                    <% } %>
+                  </td>
                   <td><%= report.targa_furgone %></td>
                   <td><%= report.codice_rotta %></td>
                   <td><%= report.km_partenza %></td>
-                  <td><%= report.km_rientro %></td>
-                  <td><strong><%= report.km_rientro - report.km_partenza %></strong></td>
-                  <td><%= report.orario_rientro %></td>
+                  <td>
+                    <% if (report.km_rientro) { %>
+                      <%= report.km_rientro %>
+                    <% } else { %>
+                      <span style="color: #94a3b8; font-style: italic;">--</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (report.km_rientro) { %>
+                      <strong><%= report.km_rientro - report.km_partenza %></strong>
+                    <% } else { %>
+                      <span style="color: #94a3b8; font-style: italic;">--</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (report.orario_rientro) { %>
+                      <%= report.orario_rientro %>
+                    <% } else { %>
+                      <span style="color: #94a3b8; font-style: italic;">--</span>
+                    <% } %>
+                  </td>
                   <td>
                     <div class="photo-thumbnails">
                       <% if (report.foto_posteriore) { %>
@@ -347,7 +391,68 @@
           document.getElementById('searchTarga').value = '<%= searchFilters.targa %>';
         <% } %>
       <% } %>
+
+      // Inizializza contatori stato
+      updateStatusCounts();
     });
+
+    // ===== FILTRO RAPIDO PER STATO =====
+    let currentFilter = 'all';
+
+    function updateStatusCounts() {
+      const allRows = document.querySelectorAll('.data-table tbody tr');
+      let countPartito = 0;
+      let countCompletato = 0;
+
+      allRows.forEach(row => {
+        if (row.classList.contains('row-in-viaggio')) {
+          countPartito++;
+        } else {
+          countCompletato++;
+        }
+      });
+
+      document.getElementById('countAll').textContent = allRows.length;
+      document.getElementById('countPartito').textContent = countPartito;
+      document.getElementById('countCompletato').textContent = countCompletato;
+
+      // Evidenzia se ci sono rider in viaggio
+      const btnPartito = document.getElementById('btnPartito');
+      if (countPartito > 0) {
+        btnPartito.style.animation = 'pulse-warning 2s infinite';
+      }
+    }
+
+    function filterStatus(status) {
+      currentFilter = status;
+      const allRows = document.querySelectorAll('.data-table tbody tr');
+      
+      // Reset stili bottoni
+      document.getElementById('btnAll').style.opacity = '0.6';
+      document.getElementById('btnPartito').style.opacity = '0.6';
+      document.getElementById('btnCompletato').style.opacity = '0.6';
+
+      // Evidenzia bottone attivo
+      if (status === 'all') {
+        document.getElementById('btnAll').style.opacity = '1';
+      } else if (status === 'partito') {
+        document.getElementById('btnPartito').style.opacity = '1';
+      } else {
+        document.getElementById('btnCompletato').style.opacity = '1';
+      }
+
+      // Filtra righe
+      allRows.forEach(row => {
+        if (status === 'all') {
+          row.style.display = '';
+        } else if (status === 'partito') {
+          row.style.display = row.classList.contains('row-in-viaggio') ? '' : 'none';
+        } else if (status === 'completato') {
+          row.style.display = row.classList.contains('row-in-viaggio') ? 'none' : '';
+        }
+      });
+    }
   </script>
 </body>
 </html>
+
