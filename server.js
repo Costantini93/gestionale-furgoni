@@ -6,8 +6,10 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Trust proxy for Render.com (needed for secure cookies)
-app.set('trust proxy', 1);
+// Trust proxy for Render.com
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // Session secret from environment or default
 const SESSION_SECRET = process.env.SESSION_SECRET || 'gestionale-furgoni-secret-key-2025-change-in-production';
@@ -25,8 +27,8 @@ app.use(session({
   cookie: { 
     maxAge: 24 * 60 * 60 * 1000, // 24 ore
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // HTTPS in production
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    secure: false, // Disabled for now to test
+    sameSite: 'lax'
   }
 }));
 
