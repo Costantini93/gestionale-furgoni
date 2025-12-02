@@ -1,12 +1,30 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const dbPath = path.join(__dirname, '..', 'database.db');
+// PERSISTENZA DATI SU RENDER
+// Se esiste /opt/render/project/src/data (disco Render), usa quello
+// Altrimenti usa directory locale (sviluppo)
+let dbDir;
+const renderDataPath = '/opt/render/project/src/data';
+
+if (fs.existsSync(renderDataPath)) {
+  // Ambiente Render con disco persistente
+  dbDir = renderDataPath;
+  console.log('🔵 RENDER: Uso disco persistente:', renderDataPath);
+} else {
+  // Sviluppo locale
+  dbDir = path.join(__dirname, '..');
+  console.log('💻 LOCAL: Uso directory progetto');
+}
+
+const dbPath = path.join(dbDir, 'database.db');
+console.log('📂 Database path:', dbPath);
 
 // Create database connection with better-sqlite3
 const db = new Database(dbPath, { verbose: console.log });
 
-console.log('Connesso al database SQLite');
+console.log('✅ Connesso al database SQLite');
 
 // Wrapper per compatibilità con sqlite3 API
 const dbWrapper = {
