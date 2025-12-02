@@ -8,6 +8,7 @@ const User = require('../models/User');
 
 // Dashboard admin con ricerca avanzata
 router.get('/dashboard', requireAdmin, (req, res) => {
+  console.log('Admin dashboard accessed by:', req.session.username);
   let { rider, data, rotta, targa } = req.query;
 
   // Converti data italiana (GG/MM/AAAA) in formato SQL (YYYY-MM-DD) se necessario
@@ -18,55 +19,64 @@ router.get('/dashboard', requireAdmin, (req, res) => {
     }
   }
 
-  Report.getAll((err, allReports) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send('Errore del server');
-    }
-
-    // Applica i filtri
-    let filteredReports = allReports || [];
-
-    if (rider) {
-      filteredReports = filteredReports.filter(r => r.user_id == rider);
-    }
-
-    if (data) {
-      filteredReports = filteredReports.filter(r => r.data_giorno === data);
-    }
-
-    if (rotta) {
-      filteredReports = filteredReports.filter(r => 
-        r.codice_rotta && r.codice_rotta.toLowerCase().includes(rotta.toLowerCase())
-      );
-    }
-
-    if (targa) {
-      filteredReports = filteredReports.filter(r => 
-        r.targa_furgone && r.targa_furgone.toLowerCase().includes(targa.toLowerCase())
-      );
-    }
-
-    User.getAllRiders((err, riders) => {
+  try {
+    Report.getAll((err, allReports) => {
       if (err) {
-        console.error(err);
-        return res.status(500).send('Errore del server');
+        console.error('Error getting reports:', err);
+        return res.status(500).send('Errore del server - reports');
       }
 
-      res.render('admin/dashboard', {
-        user: {
-          nome: req.session.nome,
-          cognome: req.session.cognome
-        },
-        reports: filteredReports,
-        riders: riders || [],
-        selectedRider: rider || null,
-        searchFilters: { rider, data: req.query.data, rotta, targa },
-        success: req.flash('success'),
-        error: req.flash('error')
+      console.log('Reports fetched:', allReports ? allReports.length : 0);
+
+      // Applica i filtri
+      let filteredReports = allReports || [];
+
+      if (rider) {
+        filteredReports = filteredReports.filter(r => r.user_id == rider);
+      }
+
+      if (data) {
+        filteredReports = filteredReports.filter(r => r.data_giorno === data);
+      }
+
+      if (rotta) {
+        filteredReports = filteredReports.filter(r => 
+          r.codice_rotta && r.codice_rotta.toLowerCase().includes(rotta.toLowerCase())
+        );
+      }
+
+      if (targa) {
+        filteredReports = filteredReports.filter(r => 
+          r.targa_furgone && r.targa_furgone.toLowerCase().includes(targa.toLowerCase())
+        );
+      }
+
+      User.getAllRiders((err, riders) => {
+        if (err) {
+          console.error('Error getting riders:', err);
+          return res.status(500).send('Errore del server - riders');
+        }
+
+        console.log('Riders fetched:', riders ? riders.length : 0);
+
+        res.render('admin/dashboard', {
+          user: {
+            nome: req.session.nome,
+            cognome: req.session.cognome
+          },
+          reports: filteredReports,
+          riders: riders || [],
+          selectedRider: rider || null,
+          searchFilters: { rider, data: req.query.data, rotta, targa },
+          success: req.flash('success'),
+          error: req.flash('error')
+        });
       });
     });
-  });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).send('Errore del server: ' + error.message);
+  }
 });
 
 // Filtra per rider
