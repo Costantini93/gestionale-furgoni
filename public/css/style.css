@@ -1345,3 +1345,28 @@ tr:has(.report-checkbox:checked):hover {
   background: rgba(99, 102, 241, 0.15) !important;
 }
 
+/* ===== ORDINAMENTO TABELLA ===== */
+.sortable {
+  user-select: none;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.sortable:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.sort-icon {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.85em;
+  opacity: 0.5;
+  transition: all 0.2s;
+  font-weight: normal;
+  color: #94a3b8;
+}
+
+.sortable:hover .sort-icon {
+  opacity: 0.8;
+}
+

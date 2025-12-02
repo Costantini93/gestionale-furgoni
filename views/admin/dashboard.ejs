@@ -120,14 +120,28 @@
                 <th style="width: 40px;">
                   <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" title="Seleziona tutti">
                 </th>
-                <th>Data</th>
-                <th>Rider</th>
-                <th>📍 Stato</th>
-                <th>Targa</th>
-                <th>Rotta</th>
-                <th>Km Partenza</th>
+                <th class="sortable" onclick="sortTable('data_giorno')" style="cursor: pointer;">
+                  Data <span class="sort-icon" id="sort-data_giorno">⇅</span>
+                </th>
+                <th class="sortable" onclick="sortTable('rider')" style="cursor: pointer;">
+                  Rider <span class="sort-icon" id="sort-rider">⇅</span>
+                </th>
+                <th class="sortable" onclick="sortTable('status')" style="cursor: pointer;">
+                  📍 Stato <span class="sort-icon" id="sort-status">⇅</span>
+                </th>
+                <th class="sortable" onclick="sortTable('targa_furgone')" style="cursor: pointer;">
+                  Targa <span class="sort-icon" id="sort-targa_furgone">⇅</span>
+                </th>
+                <th class="sortable" onclick="sortTable('codice_rotta')" style="cursor: pointer;">
+                  Rotta <span class="sort-icon" id="sort-codice_rotta">⇅</span>
+                </th>
+                <th class="sortable" onclick="sortTable('km_partenza')" style="cursor: pointer;">
+                  Km Partenza <span class="sort-icon" id="sort-km_partenza">⇅</span>
+                </th>
                 <th>Km Rientro</th>
-                <th>Km Percorsi</th>
+                <th class="sortable" onclick="sortTable('km_percorsi')" style="cursor: pointer;">
+                  Km Percorsi <span class="sort-icon" id="sort-km_percorsi">⇅</span>
+                </th>
                 <th>Orario</th>
                 <th>📸 Foto</th>
                 <th>Firma</th>
@@ -136,7 +150,15 @@
             </thead>
             <tbody>
               <% reports.forEach(report => { %>
-                <tr id="row-<%= report.id %>" class="<%= report.status === 'partito' ? 'row-in-viaggio' : '' %>">
+                <tr id="row-<%= report.id %>" 
+                    class="<%= report.status === 'partito' ? 'row-in-viaggio' : '' %>"
+                    data-data_giorno="<%= report.data_giorno %>"
+                    data-rider="<%= report.nome %> <%= report.cognome %>"
+                    data-status="<%= report.status %>"
+                    data-targa_furgone="<%= report.targa_furgone %>"
+                    data-codice_rotta="<%= report.codice_rotta %>"
+                    data-km_partenza="<%= report.km_partenza %>"
+                    data-km_percorsi="<%= report.km_rientro ? report.km_rientro - report.km_partenza : 0 %>">
                   <td>
                     <input type="checkbox" class="report-checkbox" value="<%= report.id %>" onchange="updateDeleteButton()">
                   </td>
@@ -571,10 +593,11 @@
         form.method = 'POST';
         form.action = '/admin/report/delete-multiple';
         
+        // Usa 'reportIds' senza [] per compatibilità Express
         ids.forEach(id => {
           const input = document.createElement('input');
           input.type = 'hidden';
-          input.name = 'reportIds[]';
+          input.name = 'reportIds';  // Cambiato da 'reportIds[]'
           input.value = id;
           form.appendChild(input);
         });
@@ -592,6 +615,67 @@
       document.querySelectorAll('.report-checkbox').forEach(cb => cb.checked = false);
       updateDeleteButton();
     };
+
+    // ===== ORDINAMENTO TABELLA =====
+    let currentSort = { column: null, direction: 'asc' };
+
+    function sortTable(column) {
+      const tbody = document.querySelector('#data-table tbody');
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      
+      // Determina direzione ordinamento
+      if (currentSort.column === column) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSort.column = column;
+        currentSort.direction = 'asc';
+      }
+      
+      // Ordina le righe
+      rows.sort((a, b) => {
+        let aValue = a.getAttribute(`data-${column}`) || '';
+        let bValue = b.getAttribute(`data-${column}`) || '';
+        
+        // Gestisci diversi tipi di dati
+        if (column === 'data_giorno') {
+          // Confronto date (formato YYYY-MM-DD)
+          aValue = new Date(aValue);
+          bValue = new Date(bValue);
+        } else if (column === 'km_partenza' || column === 'km_percorsi') {
+          // Confronto numeri
+          aValue = parseFloat(aValue) || 0;
+          bValue = parseFloat(bValue) || 0;
+        } else if (column === 'status') {
+          // Ordine personalizzato per status: partito prima di completato
+          const statusOrder = { 'partito': 0, 'completato': 1 };
+          aValue = statusOrder[aValue] || 2;
+          bValue = statusOrder[bValue] || 2;
+        } else {
+          // Confronto stringhe (case insensitive)
+          aValue = aValue.toLowerCase();
+          bValue = bValue.toLowerCase();
+        }
+        
+        if (aValue < bValue) return currentSort.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return currentSort.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+      
+      // Riappende le righe ordinate
+      rows.forEach(row => tbody.appendChild(row));
+      
+      // Aggiorna icone ordinamento
+      document.querySelectorAll('.sort-icon').forEach(icon => {
+        icon.textContent = '⇅';
+        icon.style.opacity = '0.5';
+      });
+      
+      const currentIcon = document.getElementById(`sort-${column}`);
+      if (currentIcon) {
+        currentIcon.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
+        currentIcon.style.opacity = '1';
+      }
+    }
   </script>
 </body>
 </html>

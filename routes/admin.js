@@ -181,7 +181,11 @@ router.post('/report/delete/:reportId', requireAdmin, (req, res) => {
 
 // Elimina report multipli
 router.post('/report/delete-multiple', requireAdmin, (req, res) => {
-  const reportIds = req.body['reportIds[]'];
+  // Express può ricevere l'array in diversi formati
+  const reportIds = req.body.reportIds || req.body['reportIds[]'] || [];
+  
+  console.log('Body ricevuto:', req.body);
+  console.log('Report IDs:', reportIds);
   
   if (!reportIds || reportIds.length === 0) {
     req.flash('error', 'Nessun report selezionato');
@@ -191,12 +195,17 @@ router.post('/report/delete-multiple', requireAdmin, (req, res) => {
   // Converti a array se è un singolo valore
   const ids = Array.isArray(reportIds) ? reportIds : [reportIds];
   
+  console.log('IDs da eliminare:', ids);
+  
   let deletedCount = 0;
   let errors = 0;
+  let completed = 0;
 
   // Elimina ogni report
-  ids.forEach((id, index) => {
+  ids.forEach((id) => {
     Report.delete(id, (err) => {
+      completed++;
+      
       if (err) {
         console.error(`Errore eliminazione report ${id}:`, err);
         errors++;
@@ -205,7 +214,7 @@ router.post('/report/delete-multiple', requireAdmin, (req, res) => {
       }
 
       // Quando abbiamo processato tutti, redirect
-      if (index === ids.length - 1) {
+      if (completed === ids.length) {
         if (errors > 0) {
           req.flash('error', `${deletedCount} report eliminati, ${errors} errori`);
         } else {
