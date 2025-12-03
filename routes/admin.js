@@ -1078,15 +1078,87 @@ router.post('/maintenance/resolve/:id', requireAdmin, (req, res) => {
   const { id } = req.params;
   const { resolution_notes } = req.body;
 
-  Maintenance.updateStatus(id, 'resolved', req.session.userId, resolution_notes, (err) => {
-    if (err) {
+  // Prima ottieni i dettagli della manutenzione
+  const db = require('../config/database');
+  db.get('SELECT vehicle_id FROM maintenance_requests WHERE id = ?', [id], (err, request) => {
+    if (err || !request) {
       console.error(err);
-      req.flash('error', 'Errore durante la risoluzione');
+      req.flash('error', 'Errore nel recupero della richiesta');
       return res.redirect('/admin/maintenance');
     }
 
-    req.flash('success', 'Richiesta manutenzione risolta!');
-    res.redirect('/admin/maintenance');
+    Maintenance.updateStatus(id, 'resolved', req.session.userId, resolution_notes, (err) => {
+      if (err) {
+        console.error(err);
+        req.flash('error', 'Errore durante la risoluzione');
+        return res.redirect('/admin/maintenance');
+      }
+
+      // Libera il veicolo dalla manutenzione
+      db.run('UPDATE vehicles SET in_manutenzione = 0 WHERE id = ?', [request.vehicle_id], (err) => {
+        if (err) console.error('Errore aggiornamento veicolo:', err);
+      });
+
+      req.flash('success', 'Richiesta manutenzione risolta!');
+      res.redirect('/admin/maintenance');
+    });
+  });
+});
+
+// Cambia stato manutenzione (pending -> in_riparazione -> resolved)
+router.post('/maintenance/change-status/:id', requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { new_status } = req.body;
+
+  if (!['pending', 'in_riparazione', 'resolved'].includes(new_status)) {
+    req.flash('error', 'Stato non valido');
+    return res.redirect('/admin/maintenance');
+  }
+
+  // Prima ottieni i dettagli della manutenzione per prendere il vehicle_id
+  const db = require('../config/database');
+  db.get('SELECT vehicle_id FROM maintenance_requests WHERE id = ?', [id], (err, request) => {
+    if (err || !request) {
+      console.error(err);
+      req.flash('error', 'Errore nel recupero della richiesta');
+      return res.redirect('/admin/maintenance');
+    }
+
+    Maintenance.changeStatus(id, new_status, (err) => {
+      if (err) {
+        console.error(err);
+        req.flash('error', 'Errore durante il cambio stato');
+        return res.redirect('/admin/maintenance');
+      }
+
+      // Se passo a in_riparazione, segno il veicolo come in manutenzione
+      if (new_status === 'in_riparazione') {
+        db.run('UPDATE vehicles SET in_manutenzione = 1 WHERE id = ?', [request.vehicle_id], (err) => {
+          if (err) console.error('Errore aggiornamento veicolo:', err);
+        });
+      } 
+      // Se risolvo, libero il veicolo
+      else if (new_status === 'resolved') {
+        db.run('UPDATE vehicles SET in_manutenzione = 0 WHERE id = ?', [request.vehicle_id], (err) => {
+          if (err) console.error('Errore aggiornamento veicolo:', err);
+        });
+      }
+      // Se torno a pending, libero il veicolo
+      else if (new_status === 'pending') {
+        db.run('UPDATE vehicles SET in_manutenzione = 0 WHERE id = ?', [request.vehicle_id], (err) => {
+          if (err) console.error('Errore aggiornamento veicolo:', err);
+        });
+      }
+
+      const statusMessages = {
+        'pending': '⏳ Richiesta riportata in attesa',
+        'in_riparazione': '🔧 Manutenzione presa in carico',
+        'resolved': '✅ Manutenzione completata'
+      };
+
+      req.flash('success', statusMessages[new_status]);
+      res.redirect('/admin/maintenance');
+    });
   });
 });
 

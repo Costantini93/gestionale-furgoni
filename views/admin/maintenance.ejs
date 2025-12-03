@@ -80,7 +80,7 @@
         </div>
         <div class="stat-content">
           <h3 style="color: #3b82f6;">
-            <%= requests.filter(r => r.status === 'in-progress').length %>
+            <%= requests.filter(r => r.status === 'in_riparazione').length %>
           </h3>
           <p>In Riparazione</p>
         </div>
@@ -119,7 +119,7 @@
             <div>
               <% if (request.status === 'pending') { %>
                 <span class="maintenance-status status-pending">⏳ In Attesa</span>
-              <% } else if (request.status === 'in-progress') { %>
+              <% } else if (request.status === 'in_riparazione') { %>
                 <span class="maintenance-status status-in-progress">🔧 In Riparazione</span>
               <% } else { %>
                 <span class="maintenance-status status-completed">✅ Risolto</span>
@@ -158,11 +158,38 @@
             </div>
           </div>
 
-          <% if (request.status !== 'resolved') { %>
-            <button onclick="resolveRequest(<%= request.id %>)" class="btn-gradient" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-              ✅ Segna come Risolto
-            </button>
-          <% } else if (request.resolution_notes) { %>
+          <!-- Pulsanti cambio stato -->
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <% if (request.status === 'pending') { %>
+              <!-- Da pending -> in_riparazione -->
+              <form action="/admin/maintenance/change-status/<%= request.id %>" method="POST" style="display: inline;">
+                <input type="hidden" name="new_status" value="in_riparazione">
+                <button type="submit" class="btn-gradient" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                  🔧 Prendi in Carico
+                </button>
+              </form>
+              <!-- Da pending -> resolved (diretto) -->
+              <button onclick="resolveRequest(<%= request.id %>)" class="btn-gradient" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                ✅ Risolvi Subito
+              </button>
+            <% } else if (request.status === 'in_riparazione') { %>
+              <!-- Da in_riparazione -> resolved -->
+              <button onclick="resolveRequest(<%= request.id %>)" class="btn-gradient" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                ✅ Segna come Risolto
+              </button>
+              <!-- Da in_riparazione -> pending (torna indietro) -->
+              <form action="/admin/maintenance/change-status/<%= request.id %>" method="POST" style="display: inline;">
+                <input type="hidden" name="new_status" value="pending">
+                <button type="submit" class="btn btn-secondary">
+                  ⏳ Rimetti in Attesa
+                </button>
+              </form>
+            <% } else if (request.status === 'resolved') { %>
+              <!-- Già risolto - mostra solo note -->
+            <% } %>
+          </div>
+
+          <% if (request.status === 'resolved' && request.resolution_notes) { %>
             <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; border-radius: 8px;">
               <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #10b981;">
                 ✅ Risoluzione:

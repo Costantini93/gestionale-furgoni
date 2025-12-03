@@ -45,7 +45,7 @@ class Vehicle {
   }
 
   static getAvailable(callback) {
-    db.all('SELECT * FROM vehicles WHERE status = ? ORDER BY targa', ['disponibile'], callback);
+    db.all('SELECT * FROM vehicles WHERE status = ? AND (in_manutenzione = 0 OR in_manutenzione IS NULL) ORDER BY targa', ['disponibile'], callback);
   }
 
   static getById(id, callback) {
@@ -214,12 +214,36 @@ class Maintenance {
   }
 
   static updateStatus(id, status, resolved_by, resolution_notes, callback) {
+    const updates = ['status = ?'];
+    const params = [status];
+    
+    if (status === 'resolved') {
+      updates.push('resolved_at = datetime("now")');
+      updates.push('resolved_by = ?');
+      updates.push('resolution_notes = ?');
+      params.push(resolved_by, resolution_notes);
+    } else if (status === 'in_riparazione') {
+      // Solo aggiorna lo status, non resolved_at
+      params.push(id);
+    } else {
+      params.push(id);
+    }
+    
+    if (status !== 'in_riparazione') {
+      params.push(id);
+    }
+    
     db.run(
-      `UPDATE maintenance_requests 
-       SET status = ?, resolved_by = ?, resolution_notes = ?, 
-           resolved_at = datetime('now')
-       WHERE id = ?`,
-      [status, resolved_by, resolution_notes, id],
+      `UPDATE maintenance_requests SET ${updates.join(', ')} WHERE id = ?`,
+      params,
+      callback
+    );
+  }
+
+  static changeStatus(id, newStatus, callback) {
+    db.run(
+      `UPDATE maintenance_requests SET status = ? WHERE id = ?`,
+      [newStatus, id],
       callback
     );
   }
