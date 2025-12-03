@@ -70,7 +70,9 @@
                     <%= vehicle.model %> (<%= vehicle.anno %>)
                   </p>
                 </div>
-                <input type="checkbox" class="vehicle-checkbox" value="<%= vehicle.id %>" onchange="updateResetButton()" style="width: 20px; height: 20px; cursor: pointer;">
+                <% if (vehicle.status === 'assegnato') { %>
+                  <input type="checkbox" class="vehicle-checkbox" value="<%= vehicle.id %>" onchange="updateResetButton()" style="width: 20px; height: 20px; cursor: pointer;">
+                <% } %>
               </div>
               
               <% if (vehicle.status === 'assegnato' && vehicle.current_assignment) { %>
