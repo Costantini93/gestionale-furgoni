@@ -17,19 +17,19 @@
         <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>
       </div>
       <ul class="sidebar-menu">
-        <li><a href="/admin/dashboard">📊 Dashboard</a></li>
-        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>
-        <li><a href="/admin/dipendenti">👥 Gestione Dipendenti</a></li>
-        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>
+        <li><a href="/admin/dashboard">Dashboard</a></li>
+        <li><a href="/admin/vehicles">Gestione Furgoni</a></li>
+        <li><a href="/admin/dipendenti">Gestione Dipendenti</a></li>
+        <li><a href="/admin/assignments">Assegnamenti</a></li>
         <li>
           <a href="/admin/maintenance" class="active">
-            🔧 Manutenzioni
+            Manutenzioni
             <% if (pendingMaintenanceCount > 0) { %>
               <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px; font-weight: 600;"><%= pendingMaintenanceCount %></span>
             <% } %>
           </a>
         </li>
-        <li><a href="/auth/logout">🚪 Logout</a></li>
+        <li><a href="/auth/logout">Logout</a></li>
       </ul>
     </aside>
 
@@ -50,167 +50,131 @@
 
       <div class="container">
     <div class="section-header">
-      <h2>🔧 Sistema Gestione Manutenzioni</h2>
+      <h2>Sistema Gestione Manutenzioni</h2>
     </div>
 
     <% if (success && success.length > 0) { %>
-      <div class="alert alert-success">✅ <%= success[0] %></div>
+      <div class="alert alert-success"><%= success[0] %></div>
     <% } %>
     <% if (error && error.length > 0) { %>
-      <div class="alert alert-error">⚠️ <%= error[0] %></div>
+      <div class="alert alert-error"><%= error[0] %></div>
     <% } %>
 
     <!-- Stats -->
     <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 2rem;">
       <div class="stat-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(249, 115, 22, 0.2) 100%); border-color: rgba(245, 158, 11, 0.3);">
         <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
-          ⏳
+          <%= requests.filter(r => r.status === 'pending').length %>
         </div>
         <div class="stat-content">
-          <h3 style="color: #f59e0b;">
-            <%= requests.filter(r => r.status === 'pending').length %>
-          </h3>
-          <p>In Attesa</p>
+          <h3 style="color: #f59e0b;">In Attesa</h3>
+          <p>Richieste da prendere in carico</p>
         </div>
       </div>
 
       <div class="stat-card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%); border-color: rgba(59, 130, 246, 0.3);">
         <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-          🔧
+          <%= requests.filter(r => r.status === 'in_riparazione').length %>
         </div>
         <div class="stat-content">
-          <h3 style="color: #3b82f6;">
-            <%= requests.filter(r => r.status === 'in_riparazione').length %>
-          </h3>
-          <p>In Riparazione</p>
+          <h3 style="color: #3b82f6;">In Riparazione</h3>
+          <p>Attualmente in corso</p>
         </div>
       </div>
 
       <div class="stat-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%); border-color: rgba(16, 185, 129, 0.3);">
         <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-          ✅
+          <%= requests.filter(r => r.status === 'resolved').length %>
         </div>
         <div class="stat-content">
-          <h3 style="color: #10b981;">
-            <%= requests.filter(r => r.status === 'resolved').length %>
-          </h3>
-          <p>Risolte</p>
+          <h3 style="color: #10b981;">Risolte</h3>
+          <p>Completate con successo</p>
         </div>
       </div>
     </div>
 
     <!-- Lista Richieste -->
-    <% if (requests && requests.length > 0) { %>
-      <% requests.forEach(request => { %>
-        <div class="maintenance-card">
-          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-            <div style="flex: 1;">
-              <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #f8fafc;">
-                🚐 <%= request.targa %> - <%= request.modello %>
-              </h3>
-              <p style="margin: 0; color: #94a3b8; font-size: 0.875rem;">
-                Segnalato da: <%= request.reporter_name %>
-              </p>
-              <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.75rem;">
-                <%= new Date(request.created_at).toLocaleString('it-IT') %>
-              </p>
-            </div>
-
-            <div>
-              <% if (request.status === 'pending') { %>
-                <span class="maintenance-status status-pending">⏳ In Attesa</span>
-              <% } else if (request.status === 'in_riparazione') { %>
-                <span class="maintenance-status status-in-progress">🔧 In Riparazione</span>
-              <% } else { %>
-                <span class="maintenance-status status-completed">✅ Risolto</span>
-              <% } %>
-            </div>
-          </div>
-
-          <div style="padding: 1rem; background: rgba(15, 23, 42, 0.5); border-radius: 10px; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: start; gap: 0.5rem;">
-              <span style="font-size: 1.25rem;">⚠️</span>
-              <div style="flex: 1;">
-                <p style="margin: 0; color: #e2e8f0; font-weight: 600; margin-bottom: 0.5rem;">
-                  Problema Segnalato:
-                </p>
-                <p style="margin: 0; color: #cbd5e1;">
-                  <%= request.issue_description %>
-                </p>
-              </div>
-            </div>
-
-            <div style="margin-top: 0.75rem; display: inline-flex; align-items: center; gap: 0.5rem;">
-              <span style="font-weight: 600; color: #94a3b8; font-size: 0.875rem;">Priorità:</span>
-              <% if (request.priority === 'alta') { %>
-                <span class="badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;">
-                  🔴 ALTA
-                </span>
-              <% } else if (request.priority === 'media') { %>
-                <span class="badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;">
-                  🟡 MEDIA
-                </span>
-              <% } else { %>
-                <span class="badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
-                  🟢 BASSA
-                </span>
-              <% } %>
-            </div>
-          </div>
-
-          <!-- Pulsanti cambio stato -->
-          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <% if (request.status === 'pending') { %>
-              <!-- Da pending -> in_riparazione -->
-              <form action="/admin/maintenance/change-status/<%= request.id %>" method="POST" style="display: inline;">
-                <input type="hidden" name="new_status" value="in_riparazione">
-                <button type="submit" class="btn-gradient" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                  🔧 Prendi in Carico
-                </button>
-              </form>
-              <!-- Da pending -> resolved (diretto) -->
-              <button onclick="resolveRequest(<%= request.id %>)" class="btn-gradient" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                ✅ Risolvi Subito
-              </button>
-            <% } else if (request.status === 'in_riparazione') { %>
-              <!-- Da in_riparazione -> resolved -->
-              <button onclick="resolveRequest(<%= request.id %>)" class="btn-gradient" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                ✅ Segna come Risolto
-              </button>
-              <!-- Da in_riparazione -> pending (torna indietro) -->
-              <form action="/admin/maintenance/change-status/<%= request.id %>" method="POST" style="display: inline;">
-                <input type="hidden" name="new_status" value="pending">
-                <button type="submit" class="btn btn-secondary">
-                  ⏳ Rimetti in Attesa
-                </button>
-              </form>
-            <% } else if (request.status === 'resolved') { %>
-              <!-- Già risolto - mostra solo note -->
-            <% } %>
-          </div>
-
-          <% if (request.status === 'resolved' && request.resolution_notes) { %>
-            <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; border-radius: 8px;">
-              <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #10b981;">
-                ✅ Risoluzione:
-              </p>
-              <p style="margin: 0; color: #cbd5e1;">
-                <%= request.resolution_notes %>
-              </p>
-              <p style="margin: 0.5rem 0 0 0; color: #64748b; font-size: 0.75rem;">
-                Risolto il <%= new Date(request.resolved_at).toLocaleString('it-IT') %>
-              </p>
-            </div>
-          <% } %>
-        </div>
-      <% }) %>
-    <% } else { %>
-      <div class="glass-card">
-        <p style="text-align: center; color: #94a3b8; margin: 3rem 0; font-size: 1.125rem;">
-          🎉 Nessuna richiesta di manutenzione! Tutti i furgoni funzionano perfettamente.
-        </p>
+    <div class="card">
+      <div class="card-header">
+        <h3>Richieste di Manutenzione</h3>
       </div>
-    <% } %>
+      <div class="card-body">
+        <% if (requests && requests.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Furgone</th>
+                  <th>Segnalato da</th>
+                  <th>Problema</th>
+                  <th>Priorità</th>
+                  <th>Stato</th>
+                  <th>Data</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% requests.forEach(request => { %>
+                  <tr>
+                    <td><strong><%= request.targa %></strong><br><small><%= request.modello %></small></td>
+                    <td><%= request.reporter_name %></td>
+                    <td><%= request.issue_description %></td>
+                    <td>
+                      <% if (request.priority === 'alta') { %>
+                        <span class="badge badge-danger">Alta</span>
+                      <% } else if (request.priority === 'media') { %>
+                        <span class="badge" style="background:#f59e0b;">Media</span>
+                      <% } else { %>
+                        <span class="badge badge-success">Bassa</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (request.status === 'pending') { %>
+                        <span class="badge" style="background:#f59e0b;">In Attesa</span>
+                      <% } else if (request.status === 'in_riparazione') { %>
+                        <span class="badge badge-primary">In Riparazione</span>
+                      <% } else { %>
+                        <span class="badge badge-success">Risolto</span>
+                      <% } %>
+                    </td>
+                    <td><small><%= new Date(request.created_at).toLocaleDateString('it-IT') %></small></td>
+                    <td>
+                      <% if (request.status === 'pending') { %>
+                        <form action="/admin/maintenance/change-status/<%= request.id %>" method="POST" style="display: inline;">
+                          <input type="hidden" name="new_status" value="in_riparazione">
+                          <button type="submit" class="btn btn-sm btn-primary">Prendi in Carico</button>
+                        </form>
+                        <button onclick="resolveRequest(<%= request.id %>)" class="btn btn-sm btn-success">Risolvi</button>
+                      <% } else if (request.status === 'in_riparazione') { %>
+                        <button onclick="resolveRequest(<%= request.id %>)" class="btn btn-sm btn-success">Segna Risolto</button>
+                        <form action="/admin/maintenance/change-status/<%= request.id %>" method="POST" style="display: inline;">
+                          <input type="hidden" name="new_status" value="pending">
+                          <button type="submit" class="btn btn-sm btn-secondary">Rimetti in Attesa</button>
+                        </form>
+                      <% } else { %>
+                        <span class="badge badge-success">Completato</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                  <% if (request.status === 'resolved' && request.resolution_notes) { %>
+                    <tr>
+                      <td colspan="7" style="background:#f8fafc;padding:1rem;">
+                        <strong>Risoluzione:</strong> <%= request.resolution_notes %>
+                        <br><small>Risolto il <%= new Date(request.resolved_at).toLocaleString('it-IT') %></small>
+                      </td>
+                    </tr>
+                  <% } %>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>Nessuna richiesta di manutenzione! Tutti i furgoni funzionano perfettamente.</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
   </div>
 
   <!-- Modal Risoluzione -->

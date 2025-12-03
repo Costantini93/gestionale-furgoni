@@ -45,6 +45,14 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    // Verifica che l'utente sia attivo
+    if (user.is_active === 0) {
+      return res.render('login', { 
+        error: ['Account disattivato. Contatta l\'amministratore.'],
+        success: []
+      });
+    }
+
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.render('login', { 

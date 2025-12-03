@@ -17,19 +17,19 @@
         <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>
       </div>
       <ul class="sidebar-menu">
-        <li><a href="/admin/dashboard">📊 Dashboard</a></li>
-        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>
-        <li><a href="/admin/dipendenti">👥 Gestione Dipendenti</a></li>
-        <li><a href="/admin/assignments" class="active">📋 Assegnamenti</a></li>
+        <li><a href="/admin/dashboard">Dashboard</a></li>
+        <li><a href="/admin/vehicles">Gestione Furgoni</a></li>
+        <li><a href="/admin/dipendenti">Gestione Dipendenti</a></li>
+        <li><a href="/admin/assignments" class="active">Assegnamenti</a></li>
         <li>
           <a href="/admin/maintenance">
-            🔧 Manutenzioni
+            Manutenzioni
             <% if (pendingMaintenanceCount > 0) { %>
               <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px; font-weight: 600;"><%= pendingMaintenanceCount %></span>
             <% } %>
           </a>
         </li>
-        <li><a href="/auth/logout">🚪 Logout</a></li>
+        <li><a href="/auth/logout">Logout</a></li>
       </ul>
     </aside>
 
@@ -38,55 +38,55 @@
       <!-- TOPBAR -->
       <div class="topbar">
         <div class="breadcrumb">
-          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-          <span>🚗 Assegnamenti Furgoni</span>
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">Menu</button>
+          <span>Assegnamenti Furgoni</span>
         </div>
         <div class="topbar-right">
           <% if (assignments && assignments.length > 0) { %>
           <form method="POST" action="/admin/assignments/reset-all" 
-                onsubmit="return confirm('⚠️ ATTENZIONE: Terminare TUTTI gli assegnamenti attivi?\n\nTutti i furgoni torneranno disponibili.');" 
+                onsubmit="return confirm('ATTENZIONE: Terminare TUTTI gli assegnamenti attivi?\n\nTutti i furgoni torneranno disponibili.');" 
                 style="display: inline;">
             <button type="submit" class="btn btn-danger btn-sm">
-              � Termina Tutti
+              Termina Tutti
             </button>
           </form>
           <% } %>
           <div class="user-info">
-            <span>👤 <%= user.nome %> <%= user.cognome %></span>
+            <span><%= user.nome %> <%= user.cognome %></span>
           </div>
         </div>
       </div>
 
       <div class="container">
     <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
-      <h2>🚚 Sistema Assegnazione Furgoni</h2>
+      <h2>Sistema Assegnazione Furgoni</h2>
       <% if (assignments && assignments.length > 0) { %>
       <form method="POST" action="/admin/assignments/reset-all" 
-            onsubmit="return confirm('⚠️ ATTENZIONE: Terminare TUTTI gli assegnamenti attivi?\n\nTutti i furgoni torneranno disponibili.');" 
+            onsubmit="return confirm('ATTENZIONE: Terminare TUTTI gli assegnamenti attivi?\n\nTutti i furgoni torneranno disponibili.');" 
             style="display: inline;">
         <button type="submit" class="btn btn-danger" style="background: #e74c3c;">
-          🔄 Termina Tutti
+          Termina Tutti
         </button>
       </form>
       <% } %>
     </div>
 
     <% if (success && success.length > 0) { %>
-      <div class="alert alert-success">✅ <%= success[0] %></div>
+      <div class="alert alert-success"><%= success[0] %></div>
     <% } %>
     <% if (error && error.length > 0) { %>
-      <div class="alert alert-error">⚠️ <%= error[0] %></div>
+      <div class="alert alert-error"><%= error[0] %></div>
     <% } %>
 
         <!-- Form Nuova Assegnazione -->
         <div class="card">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h3>➕ Nuova Assegnazione</h3>
+            <h3>Nuova Assegnazione</h3>
             <form method="POST" action="/admin/assignments/auto-assign" 
-                  onsubmit="return confirm('⚡ Assegnazione Automatica:\n\n• Rider con furgone fisso → riceveranno il loro furgone\n• Rider senza furgone fisso → riceveranno un furgone casuale disponibile\n\nContinuare?');">
+                  onsubmit="return confirm('Assegnazione Automatica:\n\n• Rider con furgone fisso → riceveranno il loro furgone\n• Rider senza furgone fisso → riceveranno un furgone casuale disponibile\n\nContinuare?');">
               <input type="hidden" name="data_assegnazione" value="<%= new Date().toISOString().split('T')[0] %>">
               <button type="submit" class="btn" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 0.75rem 1.5rem; font-weight: 600;">
-                ⚡ Assegnazione Automatica
+                Assegnazione Automatica
               </button>
             </form>
           </div>
@@ -94,7 +94,7 @@
             <form method="POST" action="/admin/assignments/create">
         <div class="form-row">
           <div class="form-group">
-            <label>👤 Rider:</label>
+            <label>Rider:</label>
             <select name="rider_id" required>
               <option value="">Seleziona rider...</option>
               <% riders.forEach(rider => { %>
@@ -106,7 +106,7 @@
           </div>
 
           <div class="form-group">
-            <label>🚐 Furgone:</label>
+            <label>Furgone:</label>
             <select name="vehicle_id" required>
               <option value="">Seleziona furgone...</option>
               <% vehicles.forEach(vehicle => { %>
@@ -119,18 +119,18 @@
           </div>
 
           <div class="form-group">
-            <label>📅 Data Assegnazione:</label>
+            <label>Data Assegnazione:</label>
             <input type="date" name="data_assegnazione" required>
           </div>
         </div>
 
         <div class="form-group">
-          <label>📝 Note:</label>
+          <label>Note:</label>
           <textarea name="note" rows="2" placeholder="Note aggiuntive..."></textarea>
         </div>
 
               <button type="submit" class="btn btn-primary">
-                ✅ Assegna Furgone
+                Assegna Furgone
               </button>
             </form>
           </div>
@@ -139,75 +139,55 @@
         <!-- Assegnazioni Attive -->
         <div class="card">
           <div class="card-header">
-            <h3>📋 Assegnazioni Attive</h3>
+            <h3>Assegnazioni Attive</h3>
           </div>
           <div class="card-body">
-
-    <div class="features-grid">
-      <% if (assignments && assignments.length > 0) { %>
-        <% assignments.forEach(assignment => { %>
-          <div class="vehicle-card">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-              <div>
-                <h3 style="margin: 0; font-size: 1.5rem; color: #6366f1;">
-                  <%= assignment.targa %>
-                </h3>
-                <p style="margin: 0.25rem 0; color: #94a3b8; font-size: 0.875rem;">
-                  <%= assignment.modello %>
-                </p>
+            <% if (assignments && assignments.length > 0) { %>
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Targa</th>
+                      <th>Modello</th>
+                      <th>Rider</th>
+                      <th>Data Assegnazione</th>
+                      <th>Note</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% assignments.forEach(assignment => { %>
+                      <tr>
+                        <td><strong><%= assignment.targa %></strong></td>
+                        <td><%= assignment.modello %></td>
+                        <td><%= assignment.rider_name %></td>
+                        <td>
+                          <% 
+                            const dataAssegnazione = new Date(assignment.data_assegnazione);
+                            const formattedDate = dataAssegnazione.toLocaleDateString('it-IT', { 
+                              day: '2-digit', 
+                              month: '2-digit', 
+                              year: 'numeric' 
+                            });
+                          %>
+                          <%= formattedDate %>
+                        </td>
+                        <td><%= assignment.note || '-' %></td>
+                        <td>
+                          <form method="POST" action="/admin/assignments/end/<%= assignment.vehicle_id %>" style="display: inline;" onsubmit="return confirm('Terminare questo assegnamento?')">
+                            <button type="submit" class="btn btn-sm btn-warning">Termina</button>
+                          </form>
+                        </td>
+                      </tr>
+                    <% }) %>
+                  </tbody>
+                </table>
               </div>
-              <div class="vehicle-badge">
-                🚚 Assegnato
+            <% } else { %>
+              <div class="empty-state">
+                <p>Nessuna assegnazione attiva al momento</p>
               </div>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 1.25rem;">👤</span>
-                <span style="font-weight: 600;"><%= assignment.rider_name %></span>
-              </div>
-
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span style="font-size: 1.25rem;">📅</span>
-                <span>
-                  <% 
-                    const dataAssegnazione = new Date(assignment.data_assegnazione);
-                    const formattedDate = dataAssegnazione.toLocaleDateString('it-IT', { 
-                      day: '2-digit', 
-                      month: '2-digit', 
-                      year: 'numeric' 
-                    });
-                  %>
-                  <%= formattedDate %>
-                </span>
-              </div>
-
-              <% if (assignment.note) { %>
-                <div style="padding: 0.75rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; margin-top: 0.5rem;">
-                  <p style="margin: 0; font-size: 0.875rem; color: #cbd5e1;">
-                    💬 <%= assignment.note %>
-                  </p>
-                </div>
-              <% } %>
-
-              <!-- Pulsanti azione -->
-              <div style="display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(148, 163, 184, 0.2);">
-                <form method="POST" action="/admin/assignments/end/<%= assignment.vehicle_id %>" style="flex: 1;" onsubmit="return confirm('Terminare questo assegnamento?')">
-                  <button type="submit" class="btn btn-warning" style="width: 100%; font-size: 0.875rem;">
-                    🔄 Termina Assegnamento
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        <% }) %>
-      <% } else { %>
-        <div class="glass-card">
-          <p style="text-align: center; color: #94a3b8; margin: 2rem 0;">
-            📭 Nessuna assegnazione attiva al momento
-          </p>
-        </div>
-      <% } %>
+            <% } %>
     </div>
 
     <!-- Stats -->

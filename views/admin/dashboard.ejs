@@ -17,19 +17,19 @@
         <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>
       </div>
       <ul class="sidebar-menu">
-        <li><a href="/admin/dashboard" class="active">📊 Dashboard</a></li>
-        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>
-        <li><a href="/admin/dipendenti">👥 Gestione Dipendenti</a></li>
-        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>
+        <li><a href="/admin/dashboard" class="active">Dashboard</a></li>
+        <li><a href="/admin/vehicles">Gestione Furgoni</a></li>
+        <li><a href="/admin/dipendenti">Gestione Dipendenti</a></li>
+        <li><a href="/admin/assignments">Assegnamenti</a></li>
         <li>
           <a href="/admin/maintenance">
-            🔧 Manutenzioni
+            Manutenzioni
             <% if (pendingMaintenanceCount > 0) { %>
               <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px; font-weight: 600;"><%= pendingMaintenanceCount %></span>
             <% } %>
           </a>
         </li>
-        <li><a href="/auth/logout">🚪 Logout</a></li>
+        <li><a href="/auth/logout">Logout</a></li>
       </ul>
     </aside>
 
@@ -74,17 +74,17 @@
             class="btn" 
             onclick="deleteSelected()" 
             style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: none;">
-            🗑️ Elimina Selezionati (<span id="selectedCount">0</span>)
+            Elimina Selezionati (<span id="selectedCount">0</span>)
           </button>
           
           <button class="btn btn-secondary" onclick="filterStatus('all')" id="btnAll">
-            📋 Tutti (<span id="countAll">0</span>)
+            Tutti (<span id="countAll">0</span>)
           </button>
           <button class="btn btn-warning" onclick="filterStatus('partito')" id="btnPartito">
-            🚚 In Viaggio (<span id="countPartito">0</span>)
+            In Viaggio (<span id="countPartito">0</span>)
           </button>
           <button class="btn btn-success" onclick="filterStatus('completato')" id="btnCompletato">
-            ✅ Rientrati (<span id="countCompletato">0</span>)
+            Rientrati (<span id="countCompletato">0</span>)
           </button>
         </div>
       </div>
@@ -261,7 +261,7 @@
         </div>
 
         <div id="kmCalculationEdit" style="margin-top: 1rem; padding: 1rem; background: #10b981; border-radius: 8px; display: none;">
-          <strong style="color: white; font-size: 1.1rem;">📊 KM Percorsi: <span id="kmPercorsiEdit">0</span></strong>
+          <strong style="color: white; font-size: 1.1rem;">KM Percorsi: <span id="kmPercorsiEdit">0</span></strong>
         </div>
 
         <div class="form-row">

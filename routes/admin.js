@@ -344,7 +344,7 @@ router.get('/export', requireAdmin, (req, res) => {
 router.get('/dipendenti', requireAdmin, (req, res) => {
   // Ottieni tutti gli utenti (rider e admin)
   const db = require('../config/database');
-  db.all('SELECT id, username, nome, cognome, codice_fiscale, role, fixed_vehicle_id, created_at FROM users ORDER BY role, cognome, nome', (err, users) => {
+  db.all('SELECT id, username, nome, cognome, codice_fiscale, role, fixed_vehicle_id, is_active, created_at FROM users ORDER BY role, cognome, nome', (err, users) => {
     if (err) {
       console.error(err);
       return res.status(500).send('Errore del server');
@@ -377,15 +377,19 @@ router.get('/dipendenti', requireAdmin, (req, res) => {
 
 // Crea nuovo rider
 router.post('/dipendenti/create', requireAdmin, async (req, res) => {
-  const { nome, cognome, username, codice_fiscale, is_admin, fixed_vehicle_id } = req.body;
+  const { nome, cognome, username, codice_fiscale, role, fixed_vehicle_id, password, is_active } = req.body;
 
   if (!nome || !cognome || !username || !codice_fiscale) {
     req.flash('error', 'Compila tutti i campi obbligatori');
     return res.redirect('/admin/dipendenti');
   }
 
-  // Determina il ruolo
-  const role = is_admin === 'on' ? 'admin' : 'rider';
+  // Valida formato email per username
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(username)) {
+    req.flash('error', 'Inserisci un indirizzo email valido');
+    return res.redirect('/admin/dipendenti');
+  }
 
   // Valida formato codice fiscale (16 caratteri alfanumerici)
   const cfUpper = codice_fiscale.toUpperCase().trim();
@@ -394,8 +398,9 @@ router.post('/dipendenti/create', requireAdmin, async (req, res) => {
     return res.redirect('/admin/dipendenti');
   }
 
-  // Verifica che il codice fiscale non esista già
-  User.findByCodiceFiscale(cfUpper, (err, existingUser) => {
+  // Verifica che l'email non esista già
+  const db = require('../config/database');
+  db.get('SELECT * FROM users WHERE username = ?', [username], async (err, existingUser) => {
     if (err) {
       console.error(err);
       req.flash('error', 'Errore del server');
@@ -403,64 +408,37 @@ router.post('/dipendenti/create', requireAdmin, async (req, res) => {
     }
 
     if (existingUser) {
-      req.flash('error', `Codice fiscale già registrato per: ${existingUser.nome} ${existingUser.cognome}`);
+      req.flash('error', 'Email già registrata');
       return res.redirect('/admin/dipendenti');
     }
 
-    // Funzione per trovare uno username disponibile
-    const findAvailableUsername = (baseUsername, callback) => {
-      User.findSimilarUsernames(baseUsername, (err, similarUsers) => {
-        if (err) {
-          return callback(err, null);
-        }
-
-        // Se non ci sono username simili, usa quello base
-        if (!similarUsers || similarUsers.length === 0) {
-          return callback(null, baseUsername);
-        }
-
-        // Trova il numero più alto già usato
-        const existingUsernames = similarUsers.map(u => u.username);
-        let maxNumber = 0;
-
-        existingUsernames.forEach(existingUsername => {
-          if (existingUsername === baseUsername) {
-            maxNumber = Math.max(maxNumber, 1);
-          } else {
-            // Cerca pattern nome_cognome2, nome_cognome3, etc.
-            const match = existingUsername.match(new RegExp(`^${baseUsername}(\\d+)$`));
-            if (match) {
-              maxNumber = Math.max(maxNumber, parseInt(match[1]));
-            }
-          }
-        });
-
-        // Se esiste già nome_cognome, usa nome_cognome2
-        const finalUsername = maxNumber > 0 ? baseUsername + (maxNumber + 1) : baseUsername;
-        callback(null, finalUsername);
-      });
-    };
-
-    // Trova username disponibile
-    findAvailableUsername(username, async (err, availableUsername) => {
+    // Verifica che il codice fiscale non esista già
+    User.findByCodiceFiscale(cfUpper, async (err, existingCF) => {
       if (err) {
         console.error(err);
         req.flash('error', 'Errore del server');
         return res.redirect('/admin/dipendenti');
       }
 
+      if (existingCF) {
+        req.flash('error', `Codice fiscale già registrato per: ${existingCF.nome} ${existingCF.cognome}`);
+        return res.redirect('/admin/dipendenti');
+      }
+
       try {
-        // Password di default: 1234
-        const hashedPassword = await bcrypt.hash('1234', 10);
+        // Password predefinita: 1234 (o quella passata dal form)
+        const passwordToUse = password || '1234';
+        const hashedPassword = await bcrypt.hash(passwordToUse, 10);
         
         const userData = {
-          username: availableUsername,
+          username: username,
           password: hashedPassword,
           nome,
           cognome,
           codice_fiscale: cfUpper,
-          role: role,
-          fixed_vehicle_id: fixed_vehicle_id || null
+          role: role || 'rider',
+          fixed_vehicle_id: fixed_vehicle_id || null,
+          is_active: is_active === '1' ? 1 : 0
         };
 
         User.create(userData, (err) => {
@@ -470,17 +448,13 @@ router.post('/dipendenti/create', requireAdmin, async (req, res) => {
             return res.redirect('/admin/dipendenti');
           }
 
-          const roleText = role === 'admin' ? 'Amministratore' : 'Rider';
-          const message = availableUsername !== username 
-            ? `${roleText} ${nome} ${cognome} creato con successo! Username assegnato: ${availableUsername} (modificato per evitare duplicati), Password: 1234`
-            : `${roleText} ${nome} ${cognome} creato con successo! Username: ${availableUsername}, Password: 1234`;
-          
-          req.flash('success', message);
+          const roleText = role === 'admin' ? 'Amministratore' : 'Driver';
+          req.flash('success', `${roleText} ${nome} ${cognome} creato con successo! Email: ${username}, Password: ${passwordToUse}`);
           res.redirect('/admin/dipendenti');
         });
       } catch (error) {
         console.error(error);
-        req.flash('error', 'Errore durante la creazione del rider');
+        req.flash('error', 'Errore durante la creazione del driver');
         res.redirect('/admin/dipendenti');
       }
     });
@@ -490,15 +464,26 @@ router.post('/dipendenti/create', requireAdmin, async (req, res) => {
 // Aggiorna rider
 router.post('/dipendenti/update/:userId', requireAdmin, (req, res) => {
   const userId = req.params.userId;
-  const { nome, cognome, username, codice_fiscale, is_admin, fixed_vehicle_id } = req.body;
+  const { nome, cognome, username, codice_fiscale, role, fixed_vehicle_id, is_active } = req.body;
+
+  console.log('=== UPDATE DRIVER ===');
+  console.log('User ID:', userId);
+  console.log('Body received:', req.body);
+  console.log('Role value:', role);
+  console.log('Is Active:', is_active);
+  console.log('====================');
 
   if (!nome || !cognome || !username || !codice_fiscale) {
     req.flash('error', 'Compila tutti i campi obbligatori');
     return res.redirect('/admin/dipendenti');
   }
 
-  // Determina il ruolo
-  const role = is_admin === 'on' ? 'admin' : 'rider';
+  // Valida formato email per username
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(username)) {
+    req.flash('error', 'Inserisci un indirizzo email valido');
+    return res.redirect('/admin/dipendenti');
+  }
 
   // Valida formato codice fiscale
   const cfUpper = codice_fiscale.toUpperCase().trim();
@@ -520,54 +505,24 @@ router.post('/dipendenti/update/:userId', requireAdmin, (req, res) => {
       return res.redirect('/admin/dipendenti');
     }
 
-    // Funzione per trovare uno username disponibile (escludendo l'utente corrente)
-    const findAvailableUsername = (baseUsername, currentUserId, callback) => {
-      User.findSimilarUsernames(baseUsername, (err, similarUsers) => {
-        if (err) {
-          return callback(err, null);
-        }
-
-        // Se non ci sono conflitti, usa quello base
-        User.findByUsername(baseUsername, (err, existingUser) => {
-          if (err) {
-            return callback(err, null);
-          }
-
-          // Se non esiste o è l'utente stesso, ok
-          if (!existingUser || existingUser.id == currentUserId) {
-            return callback(null, baseUsername);
-          }
-
-          // Altrimenti trova un numero disponibile
-          let maxNumber = 0;
-          similarUsers.forEach(user => {
-            if (user.username === baseUsername) {
-              maxNumber = Math.max(maxNumber, 1);
-            } else {
-              const match = user.username.match(new RegExp(`^${baseUsername}(\\d+)$`));
-              if (match) {
-                maxNumber = Math.max(maxNumber, parseInt(match[1]));
-              }
-            }
-          });
-
-          const finalUsername = baseUsername + (maxNumber + 1);
-          callback(null, finalUsername);
-        });
-      });
-    };
-
-    findAvailableUsername(username, userId, (err, availableUsername) => {
+    // Verifica che l'email non sia già usata da altri
+    const db = require('../config/database');
+    db.get('SELECT * FROM users WHERE username = ? AND id != ?', [username, userId], (err, existingEmail) => {
       if (err) {
         console.error(err);
         req.flash('error', 'Errore del server');
         return res.redirect('/admin/dipendenti');
       }
 
-      const db = require('../config/database');
+      if (existingEmail) {
+        req.flash('error', 'Email già registrata da un altro utente');
+        return res.redirect('/admin/dipendenti');
+      }
+
+      // Aggiorna l'utente
       db.run(
-        'UPDATE users SET nome = ?, cognome = ?, username = ?, codice_fiscale = ?, role = ?, fixed_vehicle_id = ? WHERE id = ?',
-        [nome, cognome, availableUsername, cfUpper, role, fixed_vehicle_id || null, userId],
+        'UPDATE users SET nome = ?, cognome = ?, username = ?, codice_fiscale = ?, role = ?, fixed_vehicle_id = ?, is_active = ? WHERE id = ?',
+        [nome, cognome, username, cfUpper, role || 'rider', fixed_vehicle_id || null, is_active === '1' ? 1 : 0, userId],
         (err) => {
           if (err) {
             console.error(err);
@@ -575,12 +530,8 @@ router.post('/dipendenti/update/:userId', requireAdmin, (req, res) => {
             return res.redirect('/admin/dipendenti');
           }
 
-          const roleText = role === 'admin' ? 'Amministratore' : 'Rider';
-          const message = availableUsername !== username
-            ? `Utente aggiornato come ${roleText}! Username assegnato: ${availableUsername} (modificato per evitare duplicati)`
-            : `Utente aggiornato con successo come ${roleText}!`;
-
-          req.flash('success', message);
+          const roleText = role === 'admin' ? 'Amministratore' : 'Driver';
+          req.flash('success', `${nome} ${cognome} aggiornato con successo come ${roleText}!`);
           res.redirect('/admin/dipendenti');
         }
       );
