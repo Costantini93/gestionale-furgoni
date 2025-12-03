@@ -17,12 +17,12 @@
         <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>
       </div>
       <ul class="sidebar-menu">
-        <li><a href="/admin/dashboard">Dashboard</a></li>
-        <li><a href="/admin/vehicles" class="active">Gestione Furgoni</a></li>
-        <li><a href="/admin/dipendenti">Gestione Dipendenti</a></li>
-        <li><a href="/admin/assignments">Assegnamenti</a></li>
-        <li><a href="/admin/maintenance">Manutenzioni</a></li>
-        <li><a href="/auth/logout">Logout</a></li>
+        <li><a href="/admin/dashboard">📊 Dashboard</a></li>
+        <li><a href="/admin/vehicles" class="active">🚗 Gestione Furgoni</a></li>
+        <li><a href="/admin/dipendenti">👥 Gestione Dipendenti</a></li>
+        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>
+        <li><a href="/admin/maintenance">🔧 Manutenzioni</a></li>
+        <li><a href="/auth/logout">🚪 Logout</a></li>
       </ul>
     </aside>
 
@@ -43,7 +43,7 @@
       </div>
 
       <div class="container">
-        <h2>Gestione Furgoni</h2>
+        <h2>🚗 Gestione Furgoni</h2>
 
         <% if (success && success.length > 0) { %>
           <div class="alert alert-success">
@@ -59,7 +59,7 @@
 
         <!-- Form Aggiungi Nuovo Furgone -->
         <div class="card">
-          <h3>Aggiungi Nuovo Furgone</h3>
+          <h3>➕ Aggiungi Nuovo Furgone</h3>
           <form action="/admin/vehicles/create" method="POST">
             <div class="form-row">
               <div class="form-group">
@@ -98,14 +98,14 @@
             </div>
 
             <button type="submit" class="btn btn-primary">
-              Aggiungi Furgone
+              ➕ Aggiungi Furgone
             </button>
           </form>
         </div>
 
         <!-- Lista Furgoni -->
         <div class="card">
-          <h3>Lista Furgoni (<%= vehicles.length %>)</h3>
+          <h3>📋 Lista Furgoni (<%= vehicles.length %>)</h3>
           
           <% if (vehicles.length === 0) { %>
             <p class="no-data">Nessun furgone presente. Aggiungi il primo!</p>

@@ -328,27 +328,36 @@ router.get('/export', requireAdmin, (req, res) => {
 router.get('/dipendenti', requireAdmin, (req, res) => {
   // Ottieni tutti gli utenti (rider e admin)
   const db = require('../config/database');
-  db.all('SELECT id, username, nome, cognome, codice_fiscale, role, created_at FROM users ORDER BY role, cognome, nome', (err, users) => {
+  db.all('SELECT id, username, nome, cognome, codice_fiscale, role, fixed_vehicle_id, created_at FROM users ORDER BY role, cognome, nome', (err, users) => {
     if (err) {
       console.error(err);
       return res.status(500).send('Errore del server');
     }
 
-    res.render('admin/dipendenti', {
-      user: {
-        nome: req.session.nome,
-        cognome: req.session.cognome
-      },
-      riders: users || [],
-      success: req.flash('success'),
-      error: req.flash('error')
+    // Ottieni tutti i veicoli per il dropdown
+    Vehicle.getAll((err, vehicles) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Errore del server');
+      }
+
+      res.render('admin/dipendenti', {
+        user: {
+          nome: req.session.nome,
+          cognome: req.session.cognome
+        },
+        riders: users || [],
+        vehicles: vehicles || [],
+        success: req.flash('success'),
+        error: req.flash('error')
+      });
     });
   });
 });
 
 // Crea nuovo rider
 router.post('/dipendenti/create', requireAdmin, async (req, res) => {
-  const { nome, cognome, username, codice_fiscale, is_admin } = req.body;
+  const { nome, cognome, username, codice_fiscale, is_admin, fixed_vehicle_id } = req.body;
 
   if (!nome || !cognome || !username || !codice_fiscale) {
     req.flash('error', 'Compila tutti i campi obbligatori');
@@ -430,7 +439,8 @@ router.post('/dipendenti/create', requireAdmin, async (req, res) => {
           nome,
           cognome,
           codice_fiscale: cfUpper,
-          role: role
+          role: role,
+          fixed_vehicle_id: fixed_vehicle_id || null
         };
 
         User.create(userData, (err) => {

@@ -29,10 +29,10 @@ const UserModel = {
 
   // Crea nuovo utente
   create: (userData, callback) => {
-    const { username, password, nome, cognome, codice_fiscale, role } = userData;
+    const { username, password, nome, cognome, codice_fiscale, role, fixed_vehicle_id } = userData;
     db.run(
-      'INSERT INTO users (username, password, nome, cognome, codice_fiscale, role, first_login) VALUES (?, ?, ?, ?, ?, ?, 1)',
-      [username, password, nome, cognome, codice_fiscale, role],
+      'INSERT INTO users (username, password, nome, cognome, codice_fiscale, role, fixed_vehicle_id, first_login) VALUES (?, ?, ?, ?, ?, ?, ?, 1)',
+      [username, password, nome, cognome, codice_fiscale, role, fixed_vehicle_id || null],
       callback
     );
   },
