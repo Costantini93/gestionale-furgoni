@@ -53,12 +53,16 @@ class Vehicle {
   }
 
   static create(data, callback) {
-    const { license_plate, model, anno, note } = data;
+    const { targa, modello, anno, note, status } = data;
     db.run(
-      'INSERT INTO vehicles (license_plate, model, anno, note) VALUES (?, ?, ?, ?)',
-      [license_plate, model, anno, note],
+      'INSERT INTO vehicles (targa, modello, anno, note, status) VALUES (?, ?, ?, ?, ?)',
+      [targa, modello, anno, note || null, status || 'disponibile'],
       callback
     );
+  }
+
+  static delete(id, callback) {
+    db.run('DELETE FROM vehicles WHERE id = ?', [id], callback);
   }
 
   static updateStatus(id, status, callback) {
@@ -140,6 +144,16 @@ class Assignment {
       `UPDATE vehicle_assignments 
        SET status = 'completato', data_riconsegna = date('now')
        WHERE vehicle_id = ? AND status = 'attivo'`,
+      [vehicleId],
+      callback
+    );
+  }
+
+  static getActiveByVehicleId(vehicleId, callback) {
+    db.get(
+      `SELECT * FROM vehicle_assignments 
+       WHERE vehicle_id = ? AND status = 'attivo'
+       LIMIT 1`,
       [vehicleId],
       callback
     );

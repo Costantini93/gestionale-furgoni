@@ -760,6 +760,75 @@ router.get('/report/export', requireAdmin, (req, res) => {
   });
 });
 
+// ===== GESTIONE FURGONI =====
+router.get('/vehicles', requireAdmin, (req, res) => {
+  Vehicle.getAll((err, vehicles) => {
+    if (err) {
+      console.error('Error getting vehicles:', err);
+      req.flash('error', 'Errore nel caricamento dei veicoli');
+      return res.redirect('/admin/dashboard');
+    }
+
+    res.render('admin/vehicles', {
+      user: req.session,
+      vehicles: vehicles || [],
+      success: req.flash('success'),
+      error: req.flash('error')
+    });
+  });
+});
+
+// Aggiungi nuovo veicolo
+router.post('/vehicles/create', requireAdmin, (req, res) => {
+  const { targa, modello, anno } = req.body;
+
+  if (!targa || !modello || !anno) {
+    req.flash('error', 'Tutti i campi sono obbligatori');
+    return res.redirect('/admin/vehicles');
+  }
+
+  Vehicle.create({ targa, modello, anno, status: 'disponibile' }, (err) => {
+    if (err) {
+      console.error('Error creating vehicle:', err);
+      req.flash('error', 'Errore nella creazione del veicolo');
+      return res.redirect('/admin/vehicles');
+    }
+
+    req.flash('success', 'Veicolo aggiunto con successo');
+    res.redirect('/admin/vehicles');
+  });
+});
+
+// Elimina veicolo
+router.post('/vehicles/delete/:id', requireAdmin, (req, res) => {
+  const vehicleId = req.params.id;
+
+  // Verifica se il veicolo è assegnato
+  Assignment.getActiveByVehicleId(vehicleId, (err, assignment) => {
+    if (err) {
+      console.error('Error checking assignment:', err);
+      req.flash('error', 'Errore nella verifica degli assegnamenti');
+      return res.redirect('/admin/vehicles');
+    }
+
+    if (assignment) {
+      req.flash('error', 'Impossibile eliminare: veicolo attualmente assegnato');
+      return res.redirect('/admin/vehicles');
+    }
+
+    Vehicle.delete(vehicleId, (err) => {
+      if (err) {
+        console.error('Error deleting vehicle:', err);
+        req.flash('error', 'Errore nell\'eliminazione del veicolo');
+        return res.redirect('/admin/vehicles');
+      }
+
+      req.flash('success', 'Veicolo eliminato con successo');
+      res.redirect('/admin/vehicles');
+    });
+  });
+});
+
 // ===== VEHICLE ASSIGNMENTS =====
 router.get('/assignments', requireAdmin, (req, res) => {
   Assignment.getActive((err, assignments) => {
