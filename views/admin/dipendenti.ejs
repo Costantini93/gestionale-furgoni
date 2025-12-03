@@ -1,298 +1,593 @@
-﻿<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestione Dipendenti - Gestionale Furgoni</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <link rel="stylesheet" href="/css/premium.css">
-  <link rel="stylesheet" href="/css/clean-theme.css">
-</head>
-<body>
-  <nav class="navbar">
-    <div class="nav-content">
-      <div class="nav-left">
-        <h1>ï¿½ Gestionale Consegne - ADMIN</h1>
-      </div>
-      <div class="nav-right">
-        <a href="/admin/dashboard" class="btn btn-secondary">ðŸ“Š Dashboard</a>
-        <span class="user-info">
-          ðŸ‘¤ <%= user.nome %> <%= user.cognome %> (Admin)
-        </span>
-        <a href="/auth/logout" class="btn btn-secondary">ðŸšª Logout</a>
-      </div>
-    </div>
-  </nav>
+﻿<!DOCTYPE html><!DOCTYPE html>
 
-  <div class="container">
+<html lang="it"><html lang="it">
+
+<head><head>
+
+  <meta charset="UTF-8">  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Gestione Dipendenti - Admin</title>  <title>Gestione Dipendenti - Gestionale Furgoni</title>
+
+  <link rel="stylesheet" href="/css/clean-theme.css">  <link rel="stylesheet" href="/css/style.css">
+
+</head>  <link rel="stylesheet" href="/css/premium.css">
+
+<body>  <link rel="stylesheet" href="/css/clean-theme.css">
+
+  <!-- Overlay per chiudere sidebar su mobile --></head>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div><body>
+
+  <nav class="navbar">
+
+  <div class="app-container">    <div class="nav-content">
+
+    <!-- SIDEBAR -->      <div class="nav-left">
+
+    <aside class="sidebar" id="sidebar">        <h1>ï¿½ Gestionale Consegne - ADMIN</h1>
+
+      <div class="sidebar-header">      </div>
+
+        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>      <div class="nav-right">
+
+      </div>        <a href="/admin/dashboard" class="btn btn-secondary">ðŸ“Š Dashboard</a>
+
+      <ul class="sidebar-menu">        <span class="user-info">
+
+        <li><a href="/admin/dashboard">📊 Dashboard</a></li>          ðŸ‘¤ <%= user.nome %> <%= user.cognome %> (Admin)
+
+        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>        </span>
+
+        <li><a href="/admin/dipendenti" class="active">👥 Gestione Dipendenti</a></li>        <a href="/auth/logout" class="btn btn-secondary">ðŸšª Logout</a>
+
+        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>      </div>
+
+        <li><a href="/admin/maintenance">🔧 Manutenzioni</a></li>    </div>
+
+        <li><a href="/auth/logout">🚪 Logout</a></li>  </nav>
+
+      </ul>
+
+    </aside>  <div class="container">
+
     <h2>ðŸ‘¥ Gestione Dipendenti</h2>
 
-    <% if (success && success.length > 0) { %>
-      <div class="alert alert-success">
-        âœ… <%= success[0] %>
-      </div>
-    <% } %>
+    <!-- MAIN CONTENT -->
 
-    <% if (error && error.length > 0) { %>
-      <div class="alert alert-error">
-        âš ï¸ <%= error[0] %>
-      </div>
-    <% } %>
+    <main class="main-content">    <% if (success && success.length > 0) { %>
 
-    <!-- Form Crea Nuovo Utente -->
-    <div class="card">
+      <!-- TOPBAR -->      <div class="alert alert-success">
+
+      <div class="topbar">        âœ… <%= success[0] %>
+
+        <div class="breadcrumb">      </div>
+
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>    <% } %>
+
+          <span>Gestione Dipendenti</span>
+
+        </div>    <% if (error && error.length > 0) { %>
+
+        <div class="topbar-right">      <div class="alert alert-error">
+
+          <div class="user-info">        âš ï¸ <%= error[0] %>
+
+            <span><%= user.nome %> <%= user.cognome %></span>      </div>
+
+          </div>    <% } %>
+
+          <a href="/auth/logout" class="btn btn-secondary btn-sm">Logout</a>
+
+        </div>    <!-- Form Crea Nuovo Utente -->
+
+      </div>    <div class="card">
+
       <h3>âž• Aggiungi Nuovo Utente</h3>
-      <div class="info-box">
-        <p><strong>â„¹ï¸ Nota:</strong> Se esiste giÃ  un rider con lo stesso nome e cognome, 
+
+      <div class="container">      <div class="info-box">
+
+        <h2>👥 Gestione Dipendenti</h2>        <p><strong>â„¹ï¸ Nota:</strong> Se esiste giÃ  un rider con lo stesso nome e cognome, 
+
         lo username sarÃ  automaticamente modificato aggiungendo un numero progressivo 
-        (es: mario_rossi, mario_rossi2, mario_rossi3, ecc.)</p>
-      </div>
-      <form action="/admin/dipendenti/create" method="POST" id="createRiderForm">
-        <div class="form-row">
-          <div class="form-group">
+
+        <% if (success && success.length > 0) { %>        (es: mario_rossi, mario_rossi2, mario_rossi3, ecc.)</p>
+
+          <div class="alert alert-success">      </div>
+
+            ✅ <%= success[0] %>      <form action="/admin/dipendenti/create" method="POST" id="createRiderForm">
+
+          </div>        <div class="form-row">
+
+        <% } %>          <div class="form-group">
+
             <label for="nome">Nome *</label>
-            <input type="text" id="nome" name="nome" required onkeyup="capitalizeAndGenerate(this)">
-          </div>
 
-          <div class="form-group">
-            <label for="cognome">Cognome *</label>
+        <% if (error && error.length > 0) { %>            <input type="text" id="nome" name="nome" required onkeyup="capitalizeAndGenerate(this)">
+
+          <div class="alert alert-error">          </div>
+
+            ⚠️ <%= error[0] %>
+
+          </div>          <div class="form-group">
+
+        <% } %>            <label for="cognome">Cognome *</label>
+
             <input type="text" id="cognome" name="cognome" required onkeyup="capitalizeAndGenerate(this)">
-          </div>
 
-          <div class="form-group">
-            <label for="codice_fiscale">Codice Fiscale *</label>
-            <input type="text" id="codice_fiscale" name="codice_fiscale" 
-                   maxlength="16" 
-                   pattern="[A-Za-z0-9]{16}"
-                   placeholder="ES: RSSMRA80A01H501U"
-                   required 
-                   style="text-transform: uppercase;"
-                   onkeyup="this.value = this.value.toUpperCase()">
-            <small>16 caratteri alfanumerici</small>
-          </div>
-        </div>
+        <!-- Form Aggiungi Nuovo Utente -->          </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="username">Username (generato automaticamente) *</label>
-            <input type="text" id="username" name="username" readonly style="background: #f0f0f0; cursor: not-allowed;">
+        <div class="card">
+
+          <h3>➕ Aggiungi Nuovo Utente</h3>          <div class="form-group">
+
+          <div class="info-box" style="background: #e7f3ff; padding: 1rem; border-left: 4px solid #2196F3; margin-bottom: 1.5rem;">            <label for="codice_fiscale">Codice Fiscale *</label>
+
+            <p style="margin: 0;"><strong>ℹ️ Nota:</strong> Se esiste già un rider con lo stesso nome e cognome,             <input type="text" id="codice_fiscale" name="codice_fiscale" 
+
+            lo username sarà automaticamente modificato aggiungendo un numero progressivo                    maxlength="16" 
+
+            (es: mario_rossi, mario_rossi2, mario_rossi3, ecc.)</p>                   pattern="[A-Za-z0-9]{16}"
+
+          </div>                   placeholder="ES: RSSMRA80A01H501U"
+
+          <form action="/admin/dipendenti/create" method="POST" id="createRiderForm">                   required 
+
+            <div class="form-row">                   style="text-transform: uppercase;"
+
+              <div class="form-group">                   onkeyup="this.value = this.value.toUpperCase()">
+
+                <label for="nome">👤 Nome *</label>            <small>16 caratteri alfanumerici</small>
+
+                <input type="text" id="nome" name="nome" required onkeyup="capitalizeAndGenerate(this)">          </div>
+
+              </div>        </div>
+
+
+
+              <div class="form-group">        <div class="form-row">
+
+                <label for="cognome">👤 Cognome *</label>          <div class="form-group">
+
+                <input type="text" id="cognome" name="cognome" required onkeyup="capitalizeAndGenerate(this)">            <label for="username">Username (generato automaticamente) *</label>
+
+              </div>            <input type="text" id="username" name="username" readonly style="background: #f0f0f0; cursor: not-allowed;">
+
             <small>Formato: nome_cognome (puÃ² essere modificato dal sistema se duplicato)</small>
-          </div>
 
-          <div class="form-group">
-            <label class="checkbox-label" style="margin-top: 1.5rem;">
-              <input type="checkbox" id="is_admin" name="is_admin" onchange="updateButtonText()">
-              <span class="checkbox-text">ðŸ‘‘ Crea come AMMINISTRATORE</span>
-            </label>
-            <small>Se selezionato, l'utente avrÃ  accesso completo al sistema</small>
-          </div>
-        </div>
+              <div class="form-group">          </div>
 
-        <button type="submit" class="btn btn-primary" id="submitBtn">
+                <label for="codice_fiscale">🆔 Codice Fiscale *</label>
+
+                <input type="text" id="codice_fiscale" name="codice_fiscale"           <div class="form-group">
+
+                       maxlength="16"             <label class="checkbox-label" style="margin-top: 1.5rem;">
+
+                       pattern="[A-Za-z0-9]{16}"              <input type="checkbox" id="is_admin" name="is_admin" onchange="updateButtonText()">
+
+                       placeholder="ES: RSSMRA80A01H501U"              <span class="checkbox-text">ðŸ‘‘ Crea come AMMINISTRATORE</span>
+
+                       required             </label>
+
+                       style="text-transform: uppercase;"            <small>Se selezionato, l'utente avrÃ  accesso completo al sistema</small>
+
+                       onkeyup="this.value = this.value.toUpperCase()">          </div>
+
+                <small>16 caratteri alfanumerici</small>        </div>
+
+              </div>
+
+            </div>        <button type="submit" class="btn btn-primary" id="submitBtn">
+
           âž• Crea Rider (password: 1234)
-        </button>
-      </form>
-    </div>
 
-    <!-- Tabella Utenti Esistenti -->
-    <div class="card">
+            <div class="form-row">        </button>
+
+              <div class="form-group">      </form>
+
+                <label for="username">👨‍💼 Username (generato automaticamente) *</label>    </div>
+
+                <input type="text" id="username" name="username" readonly style="background: #f0f0f0; cursor: not-allowed;">
+
+                <small>Formato: nome_cognome (può essere modificato dal sistema se duplicato)</small>    <!-- Tabella Utenti Esistenti -->
+
+              </div>    <div class="card">
+
       <h3>ðŸ“‹ Lista Utenti</h3>
-      
-      <% if (riders.length === 0) { %>
-        <p class="no-data">Nessun utente presente.</p>
-      <% } else { %>
-        <div class="table-responsive">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Ruolo</th>
-                <th>Nome</th>
+
+              <div class="form-group">      
+
+                <label for="fixed_vehicle_id">🚗 Furgone Fisso (opzionale)</label>      <% if (riders.length === 0) { %>
+
+                <select id="fixed_vehicle_id" name="fixed_vehicle_id">        <p class="no-data">Nessun utente presente.</p>
+
+                  <option value="">Nessun furgone fisso</option>      <% } else { %>
+
+                  <% vehicles.forEach(vehicle => { %>        <div class="table-responsive">
+
+                    <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>          <table class="data-table">
+
+                  <% }) %>            <thead>
+
+                </select>              <tr>
+
+                <small>Se selezionato, questo furgone sarà sempre assegnato a questo rider</small>                <th>ID</th>
+
+              </div>                <th>Ruolo</th>
+
+            </div>                <th>Nome</th>
+
                 <th>Cognome</th>
-                <th>Codice Fiscale</th>
-                <th>Username</th>
-                <th>Data Creazione</th>
-                <th>Azioni</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% riders.forEach(rider => { %>
-                <tr id="rider-<%= rider.id %>">
+
+            <div class="form-row">                <th>Codice Fiscale</th>
+
+              <div class="form-group">                <th>Username</th>
+
+                <label class="checkbox-label" style="margin-top: 0.5rem;">                <th>Data Creazione</th>
+
+                  <input type="checkbox" id="is_admin" name="is_admin" onchange="updateButtonText()">                <th>Azioni</th>
+
+                  <span class="checkbox-text">👑 Crea come AMMINISTRATORE</span>              </tr>
+
+                </label>            </thead>
+
+                <small>Se selezionato, l'utente avrà accesso completo al sistema</small>            <tbody>
+
+              </div>              <% riders.forEach(rider => { %>
+
+            </div>                <tr id="rider-<%= rider.id %>">
+
                   <td><%= rider.id %></td>
-                  <td>
-                    <% if (rider.role === 'admin') { %>
-                      <span class="badge badge-admin">ðŸ‘‘ Admin</span>
-                    <% } else { %>
-                      <span class="badge badge-rider">ðŸšš Rider</span>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn">                  <td>
+
+              ➕ Crea Rider (password: 1234)                    <% if (rider.role === 'admin') { %>
+
+            </button>                      <span class="badge badge-admin">ðŸ‘‘ Admin</span>
+
+          </form>                    <% } else { %>
+
+        </div>                      <span class="badge badge-rider">ðŸšš Rider</span>
+
                     <% } %>
-                  </td>
-                  <td><%= rider.nome %></td>
-                  <td><%= rider.cognome %></td>
-                  <td><strong><%= rider.codice_fiscale || '-' %></strong></td>
-                  <td><%= rider.username %></td>
-                  <td><%= new Date(rider.created_at).toLocaleDateString('it-IT') %></td>
-                  <td class="actions">
-                    <button onclick="editRider(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>', '<%= rider.username %>', '<%= rider.codice_fiscale || '' %>', '<%= rider.role %>')" 
-                            class="btn-icon" title="Modifica">
-                      âœï¸
-                    </button>
-                    <button onclick="resetPassword(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>')" 
-                            class="btn-icon" title="Reset Password">
-                      ðŸ”‘
-                    </button>
-                    <button onclick="deleteRider(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>')" 
-                            class="btn-icon" title="Elimina">
-                      ðŸ—‘ï¸
-                    </button>
-                  </td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
+
+        <!-- Lista Utenti -->                  </td>
+
+        <div class="card">                  <td><%= rider.nome %></td>
+
+          <h3>📋 Lista Utenti (<%= riders.length %>)</h3>                  <td><%= rider.cognome %></td>
+
+                            <td><strong><%= rider.codice_fiscale || '-' %></strong></td>
+
+          <% if (riders.length === 0) { %>                  <td><%= rider.username %></td>
+
+            <p class="no-data">Nessun utente presente.</p>                  <td><%= new Date(rider.created_at).toLocaleDateString('it-IT') %></td>
+
+          <% } else { %>                  <td class="actions">
+
+            <div class="table-responsive">                    <button onclick="editRider(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>', '<%= rider.username %>', '<%= rider.codice_fiscale || '' %>', '<%= rider.role %>')" 
+
+              <table class="data-table">                            class="btn-icon" title="Modifica">
+
+                <thead>                      âœï¸
+
+                  <tr>                    </button>
+
+                    <th>Nome</th>                    <button onclick="resetPassword(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>')" 
+
+                    <th>Username</th>                            class="btn-icon" title="Reset Password">
+
+                    <th>Codice Fiscale</th>                      ðŸ”‘
+
+                    <th>Ruolo</th>                    </button>
+
+                    <th>🚗 Furgone Fisso</th>                    <button onclick="deleteRider(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>')" 
+
+                    <th>Creato il</th>                            class="btn-icon" title="Elimina">
+
+                    <th>Azioni</th>                      ðŸ—‘ï¸
+
+                  </tr>                    </button>
+
+                </thead>                  </td>
+
+                <tbody>                </tr>
+
+                  <% riders.forEach(rider => { %>              <% }) %>
+
+                    <tr>            </tbody>
+
+                      <td><strong><%= rider.nome %> <%= rider.cognome %></strong></td>          </table>
+
+                      <td><%= rider.username %></td>        </div>
+
+                      <td><%= rider.codice_fiscale %></td>      <% } %>
+
+                      <td>    </div>
+
+                        <% if (rider.role === 'admin') { %>  </div>
+
+                          <span class="badge" style="background: #6366f1; color: white;">👑 Admin</span>
+
+                        <% } else { %>  <!-- Modal Modifica Rider -->
+
+                          <span class="badge" style="background: #22c55e; color: white;">👤 Rider</span>  <div id="editModal" class="modal">
+
+                        <% } %>    <div class="modal-content">
+
+                      </td>      <span class="close" onclick="closeEditModal()">&times;</span>
+
+                      <td>      <h3>âœï¸ Modifica Utente</h3>
+
+                        <% if (rider.fixed_vehicle_id) { %>      <form id="editForm" method="POST">
+
+                          <% const fixedVehicle = vehicles.find(v => v.id == rider.fixed_vehicle_id); %>        <input type="hidden" id="edit_rider_id" name="rider_id">
+
+                          <% if (fixedVehicle) { %>        
+
+                            <span class="badge" style="background: #f59e0b; color: white;">        <div class="form-row">
+
+                              🚗 <%= fixedVehicle.targa %>          <div class="form-group">
+
+                            </span>            <label for="edit_nome">Nome *</label>
+
+                          <% } else { %>            <input type="text" id="edit_nome" name="nome" required onkeyup="capitalizeAndGenerateEdit(this)">
+
+                            <span style="color: #999;">-</span>          </div>
+
+                          <% } %>
+
+                        <% } else { %>          <div class="form-group">
+
+                          <span style="color: #999;">Casuale</span>            <label for="edit_cognome">Cognome *</label>
+
+                        <% } %>            <input type="text" id="edit_cognome" name="cognome" required onkeyup="capitalizeAndGenerateEdit(this)">
+
+                      </td>          </div>
+
+                      <td><%= new Date(rider.created_at).toLocaleDateString('it-IT') %></td>
+
+                      <td>          <div class="form-group">
+
+                        <button onclick="showEditModal(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>', '<%= rider.username %>', '<%= rider.role %>', '<%= rider.fixed_vehicle_id || '' %>')"             <label for="edit_codice_fiscale">Codice Fiscale *</label>
+
+                                class="btn btn-sm"             <input type="text" id="edit_codice_fiscale" name="codice_fiscale" 
+
+                                style="background: #3b82f6; color: white; margin-right: 0.5rem;">                   maxlength="16" 
+
+                          ✏️ Modifica                   pattern="[A-Za-z0-9]{16}"
+
+                        </button>                   required 
+
+                        <form action="/admin/dipendenti/reset-password/<%= rider.id %>" method="POST" style="display: inline;" onsubmit="return confirm('Resettare la password a 1234?')">                   style="text-transform: uppercase;"
+
+                          <button type="submit" class="btn btn-sm btn-secondary" style="margin-right: 0.5rem;">                   onkeyup="this.value = this.value.toUpperCase()">
+
+                            🔑 Reset Password          </div>
+
+                          </button>        </div>
+
+                        </form>
+
+                        <form action="/admin/dipendenti/delete/<%= rider.id %>" method="POST" style="display: inline;" onsubmit="return confirm('Sei sicuro di voler eliminare questo utente?')">        <div class="form-row">
+
+                          <button type="submit" class="btn btn-sm" style="background: #ef4444; color: white;">          <div class="form-group">
+
+                            🗑️ Elimina            <label for="edit_username">Username (generato automaticamente) *</label>
+
+                          </button>            <input type="text" id="edit_username" name="username" readonly style="background: #f0f0f0; cursor: not-allowed;">
+
+                        </form>          </div>
+
+                      </td>
+
+                    </tr>          <div class="form-group">
+
+                  <% }) %>            <label class="checkbox-label" style="margin-top: 1.5rem;">
+
+                </tbody>              <input type="checkbox" id="edit_is_admin" name="is_admin" onchange="updateEditButtonText()">
+
+              </table>              <span class="checkbox-text">ðŸ‘‘ Imposta come AMMINISTRATORE</span>
+
+            </div>            </label>
+
+          <% } %>            <small>Se selezionato, l'utente avrÃ  accesso completo al sistema</small>
+
+        </div>          </div>
+
         </div>
-      <% } %>
-    </div>
-  </div>
 
-  <!-- Modal Modifica Rider -->
-  <div id="editModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeEditModal()">&times;</span>
-      <h3>âœï¸ Modifica Utente</h3>
-      <form id="editForm" method="POST">
-        <input type="hidden" id="edit_rider_id" name="rider_id">
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label for="edit_nome">Nome *</label>
-            <input type="text" id="edit_nome" name="nome" required onkeyup="capitalizeAndGenerateEdit(this)">
-          </div>
+      </div>
 
-          <div class="form-group">
-            <label for="edit_cognome">Cognome *</label>
-            <input type="text" id="edit_cognome" name="cognome" required onkeyup="capitalizeAndGenerateEdit(this)">
-          </div>
+    </main>        <div class="modal-actions">
 
-          <div class="form-group">
-            <label for="edit_codice_fiscale">Codice Fiscale *</label>
-            <input type="text" id="edit_codice_fiscale" name="codice_fiscale" 
-                   maxlength="16" 
-                   pattern="[A-Za-z0-9]{16}"
-                   required 
-                   style="text-transform: uppercase;"
-                   onkeyup="this.value = this.value.toUpperCase()">
-          </div>
-        </div>
+  </div>          <button type="submit" class="btn btn-primary" id="editSubmitBtn">ðŸ’¾ Salva Modifiche</button>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="edit_username">Username (generato automaticamente) *</label>
-            <input type="text" id="edit_username" name="username" readonly style="background: #f0f0f0; cursor: not-allowed;">
-          </div>
-
-          <div class="form-group">
-            <label class="checkbox-label" style="margin-top: 1.5rem;">
-              <input type="checkbox" id="edit_is_admin" name="is_admin" onchange="updateEditButtonText()">
-              <span class="checkbox-text">ðŸ‘‘ Imposta come AMMINISTRATORE</span>
-            </label>
-            <small>Se selezionato, l'utente avrÃ  accesso completo al sistema</small>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button type="submit" class="btn btn-primary" id="editSubmitBtn">ðŸ’¾ Salva Modifiche</button>
           <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Annulla</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
-  <script>
-    // Capitalizza nome/cognome e genera username
-    function capitalizeAndGenerate(input) {
-      // Capitalizza il campo
-      const value = input.value.trim();
-      if (value.length > 0) {
+  <!-- Modal Modifica Utente -->        </div>
+
+  <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">      </form>
+
+    <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">    </div>
+
+      <h3 style="margin-top: 0;">✏️ Modifica Utente</h3>  </div>
+
+      <form id="editForm" method="POST">
+
+        <input type="hidden" id="edit_user_id" name="user_id">  <script>
+
+            // Capitalizza nome/cognome e genera username
+
+        <div class="form-group">    function capitalizeAndGenerate(input) {
+
+          <label>👤 Nome</label>      // Capitalizza il campo
+
+          <p id="edit_nome" style="font-weight: bold;"></p>      const value = input.value.trim();
+
+        </div>      if (value.length > 0) {
+
         input.value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-      }
-      // Genera username
-      generateUsername();
-    }
 
-    // Capitalizza nome/cognome nel form modifica
-    function capitalizeAndGenerateEdit(input) {
-      // Capitalizza il campo
-      const value = input.value.trim();
-      if (value.length > 0) {
-        input.value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-      }
-      // Genera username
-      generateUsernameEdit();
-    }
+        <div class="form-group">      }
 
-    // Genera username automaticamente da nome e cognome
-    function generateUsername() {
-      const nome = document.getElementById('nome').value.trim().toLowerCase();
-      const cognome = document.getElementById('cognome').value.trim().toLowerCase();
-      
-      if (nome && cognome) {
+          <label>👨‍💼 Username</label>      // Genera username
+
+          <p id="edit_username" style="font-weight: bold;"></p>      generateUsername();
+
+        </div>    }
+
+
+
+        <div class="form-group">    // Capitalizza nome/cognome nel form modifica
+
+          <label for="edit_fixed_vehicle_id">🚗 Furgone Fisso</label>    function capitalizeAndGenerateEdit(input) {
+
+          <select id="edit_fixed_vehicle_id" name="fixed_vehicle_id" class="form-control">      // Capitalizza il campo
+
+            <option value="">Nessun furgone fisso</option>      const value = input.value.trim();
+
+            <% vehicles.forEach(vehicle => { %>      if (value.length > 0) {
+
+              <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>        input.value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+
+            <% }) %>      }
+
+          </select>      // Genera username
+
+          <small>Cambia il furgone fisso assegnato a questo rider</small>      generateUsernameEdit();
+
+        </div>    }
+
+
+
+        <div class="form-group">    // Genera username automaticamente da nome e cognome
+
+          <label class="checkbox-label">    function generateUsername() {
+
+            <input type="checkbox" id="edit_is_admin" name="is_admin">      const nome = document.getElementById('nome').value.trim().toLowerCase();
+
+            <span class="checkbox-text">👑 Amministratore</span>      const cognome = document.getElementById('cognome').value.trim().toLowerCase();
+
+          </label>      
+
+        </div>      if (nome && cognome) {
+
         const username = nome + '_' + cognome;
-        // Rimuovi caratteri speciali e spazi
-        const cleanUsername = username.replace(/[^a-z0-9_]/g, '');
-        document.getElementById('username').value = cleanUsername;
-      } else {
-        document.getElementById('username').value = '';
-      }
-    }
 
-    // Aggiorna testo del pulsante in base al ruolo
-    function updateButtonText() {
-      const isAdmin = document.getElementById('is_admin').checked;
-      const btn = document.getElementById('submitBtn');
-      if (isAdmin) {
-        btn.innerHTML = 'âž• Crea Amministratore (password: 1234)';
-        btn.className = 'btn btn-success';
-      } else {
-        btn.innerHTML = 'âž• Crea Rider (password: 1234)';
-        btn.className = 'btn btn-primary';
-      }
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">        // Rimuovi caratteri speciali e spazi
+
+          <button type="submit" class="btn btn-primary">💾 Salva Modifiche</button>        const cleanUsername = username.replace(/[^a-z0-9_]/g, '');
+
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">❌ Annulla</button>        document.getElementById('username').value = cleanUsername;
+
+        </div>      } else {
+
+      </form>        document.getElementById('username').value = '';
+
+    </div>      }
+
+  </div>    }
+
+
+
+  <script>    // Aggiorna testo del pulsante in base al ruolo
+
+    // Genera username da nome e cognome    function updateButtonText() {
+
+    function capitalizeAndGenerate(input) {      const isAdmin = document.getElementById('is_admin').checked;
+
+      // Capitalizza prima lettera      const btn = document.getElementById('submitBtn');
+
+      input.value = input.value.charAt(0).toUpperCase() + input.value.slice(1).toLowerCase();      if (isAdmin) {
+
+              btn.innerHTML = 'âž• Crea Amministratore (password: 1234)';
+
+      const nome = document.getElementById('nome').value.toLowerCase().trim();        btn.className = 'btn btn-success';
+
+      const cognome = document.getElementById('cognome').value.toLowerCase().trim();      } else {
+
+              btn.innerHTML = 'âž• Crea Rider (password: 1234)';
+
+      if (nome && cognome) {        btn.className = 'btn btn-primary';
+
+        document.getElementById('username').value = nome + '_' + cognome;      }
+
+      }    }
+
     }
 
     // Genera username anche per il form di modifica
-    function generateUsernameEdit() {
-      const nome = document.getElementById('edit_nome').value.trim().toLowerCase();
-      const cognome = document.getElementById('edit_cognome').value.trim().toLowerCase();
-      
-      if (nome && cognome) {
-        const username = nome + '_' + cognome;
+
+    // Aggiorna testo bottone    function generateUsernameEdit() {
+
+    function updateButtonText() {      const nome = document.getElementById('edit_nome').value.trim().toLowerCase();
+
+      const isAdmin = document.getElementById('is_admin').checked;      const cognome = document.getElementById('edit_cognome').value.trim().toLowerCase();
+
+      const btn = document.getElementById('submitBtn');      
+
+      btn.textContent = isAdmin ? '➕ Crea Admin (password: 1234)' : '➕ Crea Rider (password: 1234)';      if (nome && cognome) {
+
+    }        const username = nome + '_' + cognome;
+
         const cleanUsername = username.replace(/[^a-z0-9_]/g, '');
-        document.getElementById('edit_username').value = cleanUsername;
-      }
-    }
 
-    function editRider(id, nome, cognome, username, codiceFiscale, role) {
-      document.getElementById('edit_rider_id').value = id;
-      document.getElementById('edit_nome').value = nome;
-      document.getElementById('edit_cognome').value = cognome;
-      document.getElementById('edit_username').value = username;
-      document.getElementById('edit_codice_fiscale').value = codiceFiscale || '';
+    // Mostra modal modifica        document.getElementById('edit_username').value = cleanUsername;
+
+    function showEditModal(id, nome, cognome, username, role, fixedVehicleId) {      }
+
+      document.getElementById('edit_user_id').value = id;    }
+
+      document.getElementById('edit_nome').textContent = nome + ' ' + cognome;
+
+      document.getElementById('edit_username').textContent = username;    function editRider(id, nome, cognome, username, codiceFiscale, role) {
+
+      document.getElementById('edit_is_admin').checked = (role === 'admin');      document.getElementById('edit_rider_id').value = id;
+
+      document.getElementById('edit_fixed_vehicle_id').value = fixedVehicleId || '';      document.getElementById('edit_nome').value = nome;
+
+      document.getElementById('editForm').action = '/admin/dipendenti/update/' + id;      document.getElementById('edit_cognome').value = cognome;
+
+      document.getElementById('editModal').style.display = 'flex';      document.getElementById('edit_username').value = username;
+
+    }      document.getElementById('edit_codice_fiscale').value = codiceFiscale || '';
+
       document.getElementById('edit_is_admin').checked = (role === 'admin');
-      updateEditButtonText();
 
-      document.getElementById('editForm').action = '/admin/dipendenti/update/' + id;
-      document.getElementById('editModal').style.display = 'block';
-    }
+    // Chiudi modal      updateEditButtonText();
 
     function closeEditModal() {
-      document.getElementById('editModal').style.display = 'none';
+
+      document.getElementById('editModal').style.display = 'none';      document.getElementById('editForm').action = '/admin/dipendenti/update/' + id;
+
+    }      document.getElementById('editModal').style.display = 'block';
+
     }
 
-    // Aggiorna testo del pulsante modifica in base al ruolo
-    function updateEditButtonText() {
-      const isAdmin = document.getElementById('edit_is_admin').checked;
-      const btn = document.getElementById('editSubmitBtn');
-      if (isAdmin) {
-        btn.innerHTML = 'ðŸ’¾ Salva come Amministratore';
+    // Toggle sidebar mobile
+
+    function toggleSidebar() {    function closeEditModal() {
+
+      const sidebar = document.getElementById('sidebar');      document.getElementById('editModal').style.display = 'none';
+
+      const overlay = document.getElementById('sidebarOverlay');    }
+
+      
+
+      sidebar.classList.toggle('active');    // Aggiorna testo del pulsante modifica in base al ruolo
+
+      overlay.classList.toggle('active');    function updateEditButtonText() {
+
+    }      const isAdmin = document.getElementById('edit_is_admin').checked;
+
+  </script>      const btn = document.getElementById('editSubmitBtn');
+
+</body>      if (isAdmin) {
+
+</html>        btn.innerHTML = 'ðŸ’¾ Salva come Amministratore';
+
         btn.className = 'btn btn-success';
       } else {
         btn.innerHTML = 'ðŸ’¾ Salva come Rider';

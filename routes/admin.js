@@ -470,7 +470,7 @@ router.post('/dipendenti/create', requireAdmin, async (req, res) => {
 // Aggiorna rider
 router.post('/dipendenti/update/:userId', requireAdmin, (req, res) => {
   const userId = req.params.userId;
-  const { nome, cognome, username, codice_fiscale, is_admin } = req.body;
+  const { nome, cognome, username, codice_fiscale, is_admin, fixed_vehicle_id } = req.body;
 
   if (!nome || !cognome || !username || !codice_fiscale) {
     req.flash('error', 'Compila tutti i campi obbligatori');
@@ -546,8 +546,8 @@ router.post('/dipendenti/update/:userId', requireAdmin, (req, res) => {
 
       const db = require('../config/database');
       db.run(
-        'UPDATE users SET nome = ?, cognome = ?, username = ?, codice_fiscale = ?, role = ? WHERE id = ?',
-        [nome, cognome, availableUsername, cfUpper, role, userId],
+        'UPDATE users SET nome = ?, cognome = ?, username = ?, codice_fiscale = ?, role = ?, fixed_vehicle_id = ? WHERE id = ?',
+        [nome, cognome, availableUsername, cfUpper, role, fixed_vehicle_id || null, userId],
         (err) => {
           if (err) {
             console.error(err);
