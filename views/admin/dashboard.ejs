@@ -45,20 +45,41 @@
 
     <% if (success && success.length > 0) { %>
       <div class="alert alert-success">
-        ✅ <%= success[0] %>
+        <%= success[0] %>
       </div>
     <% } %>
 
     <% if (error && error.length > 0) { %>
       <div class="alert alert-error">
-        ⚠️ <%= error[0] %>
+        <%= error[0] %>
       </div>
     <% } %>
 
-        <!-- Stato Furgoni -->
-        <div class="card">
-          <div class="card-header">
-            <h3>🚚 Stato Furgoni</h3>
+    <!-- Tabella report -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <h3 style="margin: 0;">Report Consegne</h3>
+        
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <button 
+            id="deleteSelectedBtn" 
+            class="btn" 
+            onclick="deleteSelected()" 
+            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: none;">
+            Elimina Selezionati (<span id="selectedCount">0</span>)
+          </button>
+          
+          <button class="btn btn-secondary" onclick="filterStatus('all')" id="btnAll">
+            Tutti (<span id="countAll">0</span>)
+          </button>
+          <button class="btn btn-warning" onclick="filterStatus('partito')" id="btnPartito">
+            In Viaggio (<span id="countPartito">0</span>)
+          </button>
+          <button class="btn btn-success" onclick="filterStatus('completato')" id="btnCompletato">
+            Rientrati (<span id="countCompletato">0</span>)
+          </button>
+        </div>
+      </div>
             <div style="display: flex; gap: 10px;">
               <button 
                 id="resetSelectedBtn" 
@@ -258,7 +279,7 @@
                   Km Percorsi <span class="sort-icon" id="sort-km_percorsi">⇅</span>
                 </th>
                 <th>Orario</th>
-                <th>📸 Foto</th>
+                <th>Foto</th>
                 <th>Firma</th>
                 <th>Azioni</th>
               </tr>
@@ -315,31 +336,13 @@
                     <% } %>
                   </td>
                   <td>
-                    <div class="photo-thumbnails">
-                      <% if (report.foto_posteriore) { %>
-                        <img src="<%= report.foto_posteriore %>" class="photo-thumb" alt="Posteriore" 
-                             onclick="openPhotoModal('<%= report.foto_posteriore %>', 'Foto Posteriore - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
-                      <% } %>
-                      <% if (report.foto_anteriore) { %>
-                        <img src="<%= report.foto_anteriore %>" class="photo-thumb" alt="Anteriore"
-                             onclick="openPhotoModal('<%= report.foto_anteriore %>', 'Foto Anteriore - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
-                      <% } %>
-                      <% if (report.foto_lato_destro) { %>
-                        <img src="<%= report.foto_lato_destro %>" class="photo-thumb" alt="Lato Destro"
-                             onclick="openPhotoModal('<%= report.foto_lato_destro %>', 'Lato Destro - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
-                      <% } %>
-                      <% if (report.foto_lato_sinistro) { %>
-                        <img src="<%= report.foto_lato_sinistro %>" class="photo-thumb" alt="Lato Sinistro"
-                             onclick="openPhotoModal('<%= report.foto_lato_sinistro %>', 'Lato Sinistro - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
-                      <% } %>
-                      <% if (report.foto_interno) { %>
-                        <img src="<%= report.foto_interno %>" class="photo-thumb" alt="Interno"
-                             onclick="openPhotoModal('<%= report.foto_interno %>', 'Interno - <%= report.nome %> <%= report.cognome %> - <%= formatDate(report.data_giorno) %>')">
-                      <% } %>
-                      <% if (!report.foto_posteriore && !report.foto_anteriore && !report.foto_lato_destro && !report.foto_lato_sinistro && !report.foto_interno) { %>
-                        <span style="color: #94a3b8; font-size: 0.85rem;">Nessuna foto</span>
-                      <% } %>
-                    </div>
+                    <% if (report.foto_posteriore || report.foto_anteriore || report.foto_lato_destro || report.foto_lato_sinistro || report.foto_interno) { %>
+                      <button class="btn btn-sm btn-secondary" onclick="showPhotosModal('<%= report.id %>', '<%= report.nome %> <%= report.cognome %>', '<%= formatDate(report.data_giorno) %>', '<%= report.foto_posteriore || "" %>', '<%= report.foto_anteriore || "" %>', '<%= report.foto_lato_destro || "" %>', '<%= report.foto_lato_sinistro || "" %>', '<%= report.foto_interno || "" %>')" title="Vedi foto">
+                        Foto (<%= [report.foto_posteriore, report.foto_anteriore, report.foto_lato_destro, report.foto_lato_sinistro, report.foto_interno].filter(Boolean).length %>)
+                      </button>
+                    <% } else { %>
+                      <span style="color: #94a3b8;">Nessuna</span>
+                    <% } %>
                   </td>
                   <td>
                     <% if (report.firma) { %>
@@ -886,6 +889,44 @@
       const overlay = document.getElementById('sidebarOverlay');
       sidebar.classList.toggle('active');
       overlay.classList.toggle('active');
+    }
+
+    function showPhotosModal(reportId, rider, date, posteriore, anteriore, destro, sinistro, interno) {
+      const photos = [
+        {url: posteriore, label: 'Posteriore'},
+        {url: anteriore, label: 'Anteriore'},
+        {url: destro, label: 'Lato Destro'},
+        {url: sinistro, label: 'Lato Sinistro'},
+        {url: interno, label: 'Interno'}
+      ].filter(p => p.url);
+
+      let html = `
+        <div class="modal" id="photosModal" style="display: flex; z-index: 9999;">
+          <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+              <h3>Foto Furgone - ${rider} - ${date}</h3>
+              <span class="modal-close" onclick="document.getElementById('photosModal').remove()">&times;</span>
+            </div>
+            <div class="modal-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+      `;
+
+      photos.forEach(photo => {
+        html += `
+          <div>
+            <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #64748b;">${photo.label}</h4>
+            <img src="${photo.url}" style="width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" 
+                 onclick="window.open('${photo.url}', '_blank')">
+          </div>
+        `;
+      });
+
+      html += `
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', html);
     }
   </script>
     </main>
