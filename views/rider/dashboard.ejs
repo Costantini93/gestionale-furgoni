@@ -643,9 +643,9 @@
 
   <!-- Modal Segnalazione Manutenzione -->
   <div id="maintenanceModal" class="modal" style="display: none;">
-    <div class="modal-content glass-card" style="max-width: 500px;">
-      <h3>🔧 Segnala Problema</h3>
-      <form action="/rider/maintenance/create" method="POST">
+    <div class="modal-content glass-card" style="max-width: 600px;">
+      <h3>🔧 Segnala Problema con AI</h3>
+      <form action="/rider/maintenance/create" method="POST" id="maintenanceForm">
         <input type="hidden" id="maintenance_vehicle_id" name="vehicle_id">
         
         <div class="form-group">
@@ -655,14 +655,40 @@
 
         <div class="form-group">
           <label>⚠️ Descrizione Problema *</label>
-          <textarea name="issue_description" rows="4" required placeholder="Descrivi il problema riscontrato..."></textarea>
+          <textarea 
+            id="issue_description" 
+            name="issue_description" 
+            rows="4" 
+            required 
+            placeholder="Descrivi il problema riscontrato... L'AI analizzerà la gravità!"
+            style="resize: vertical;"></textarea>
+          <small style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.5rem; display: block;">
+            💡 Scrivi dettagli come: rumore, vibrazione, perdite, luci, funzionamento...
+          </small>
+        </div>
+
+        <!-- AI Priority Preview -->
+        <div id="aiPriorityPreview" style="display: none; margin: 1rem 0; padding: 1rem; border-radius: 12px; background: rgba(99, 102, 241, 0.1); border: 2px solid rgba(99, 102, 241, 0.3);">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <span style="font-size: 1.5rem;">🤖</span>
+            <div>
+              <strong style="color: #a5b4fc; font-size: 0.875rem;">AI ANALISI:</strong>
+              <div id="aiSuggestion" style="font-size: 1.125rem; font-weight: 600; margin-top: 0.25rem;"></div>
+            </div>
+          </div>
+          <div id="aiExplanation" style="font-size: 0.875rem; color: #cbd5e1; margin-top: 0.5rem;"></div>
+          <div id="aiConfidence" style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;"></div>
         </div>
 
         <div class="form-group">
-          <label>🎯 Priorità:</label>
-          <select name="priority" required>
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            🎯 Priorità: 
+            <small style="color: #94a3b8; font-weight: normal;">(Lascia vuoto per usare AI)</small>
+          </label>
+          <select id="priority_select" name="priority">
+            <option value="">🤖 Automatica (AI)</option>
             <option value="bassa">🟢 Bassa - Non urgente</option>
-            <option value="media" selected>🟡 Media - Importante</option>
+            <option value="media">🟡 Media - Importante</option>
             <option value="alta">🔴 Alta - Urgente</option>
           </select>
         </div>
@@ -680,15 +706,73 @@
   </div>
 
   <script>
+    let aiDebounceTimer = null;
+
     function showMaintenanceModal(vehicleId, targa) {
       document.getElementById('maintenance_vehicle_id').value = vehicleId;
       document.getElementById('maintenance_vehicle_targa').value = targa;
+      document.getElementById('issue_description').value = '';
+      document.getElementById('priority_select').value = '';
+      document.getElementById('aiPriorityPreview').style.display = 'none';
       document.getElementById('maintenanceModal').style.display = 'flex';
     }
 
     function closeMaintenanceModal() {
       document.getElementById('maintenanceModal').style.display = 'none';
     }
+
+    // AI Live Preview
+    document.getElementById('issue_description').addEventListener('input', function() {
+      const description = this.value.trim();
+      
+      // Clear previous timer
+      if (aiDebounceTimer) clearTimeout(aiDebounceTimer);
+      
+      if (description.length < 10) {
+        document.getElementById('aiPriorityPreview').style.display = 'none';
+        return;
+      }
+
+      // Debounce 500ms
+      aiDebounceTimer = setTimeout(() => {
+        fetch('/rider/maintenance/preview-priority', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ issue_description: description })
+        })
+        .then(res => res.json())
+        .then(data => {
+          const preview = document.getElementById('aiPriorityPreview');
+          const suggestion = document.getElementById('aiSuggestion');
+          const explanation = document.getElementById('aiExplanation');
+          const confidence = document.getElementById('aiConfidence');
+
+          // Badge colore
+          let badgeColor, emoji;
+          if (data.priority === 'alta') {
+            badgeColor = '#ef4444';
+            emoji = '🔴';
+          } else if (data.priority === 'media') {
+            badgeColor = '#f59e0b';
+            emoji = '🟡';
+          } else {
+            badgeColor = '#10b981';
+            emoji = '🟢';
+          }
+
+          suggestion.innerHTML = `${emoji} Priorità: <span style="color: ${badgeColor}">${data.priority.toUpperCase()}</span>`;
+          explanation.textContent = data.explanation;
+          confidence.textContent = `Confidenza: ${data.confidence}%`;
+          
+          preview.style.display = 'block';
+        })
+        .catch(err => {
+          console.error('AI error:', err);
+        });
+      }, 500);
+    });
 
     // Chiudi modal cliccando fuori
     document.getElementById('maintenanceModal').addEventListener('click', function(e) {

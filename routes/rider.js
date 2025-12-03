@@ -6,6 +6,7 @@ const { requireRider } = require('../middleware/auth');
 const Report = require('../models/Report');
 const { Assignment, Maintenance } = require('../models/Vehicle');
 const logActivity = require('../middleware/logger');
+const { detectPriorityWithExplanation } = require('../utils/priorityDetector');
 
 // Configurazione multer per upload foto
 const storage = multer.diskStorage({
@@ -260,20 +261,26 @@ router.post('/report/complete/:id', requireRider, (req, res) => {
   });
 });
 
-// Richiesta manutenzione
+// Richiesta manutenzione con AI priority detection
 router.post('/maintenance/create', requireRider, (req, res) => {
-  const { vehicle_id, issue_description, priority } = req.body;
+  const { vehicle_id, issue_description, priority: manualPriority } = req.body;
 
   if (!vehicle_id || !issue_description) {
     req.flash('error', 'Compila tutti i campi obbligatori');
     return res.redirect('/rider/dashboard');
   }
 
+  // AI: Rileva automaticamente la priorità
+  const aiDetection = detectPriorityWithExplanation(issue_description);
+  
+  // Usa priorità AI se non specificata manualmente, altrimenti rispetta scelta utente
+  const finalPriority = manualPriority || aiDetection.priority;
+
   const maintenanceData = {
     vehicle_id: parseInt(vehicle_id),
     reporter_id: req.session.userId,
     issue_description,
-    priority: priority || 'media'
+    priority: finalPriority
   };
 
   Maintenance.create(maintenanceData, (err) => {
@@ -283,10 +290,39 @@ router.post('/maintenance/create', requireRider, (req, res) => {
       return res.redirect('/rider/dashboard');
     }
 
-    logActivity(req.session.userId, 'MAINTENANCE_CREATED', `Richiesta manutenzione per furgone ${vehicle_id}`, req);
-    req.flash('success', '🔧 Richiesta manutenzione inviata con successo!');
+    // Log con info AI
+    const aiInfo = manualPriority 
+      ? `Priorità manuale: ${manualPriority}` 
+      : `AI: ${aiDetection.priority} (${aiDetection.confidence}% - ${aiDetection.explanation})`;
+    
+    logActivity(
+      req.session.userId, 
+      'MAINTENANCE_CREATED', 
+      `Richiesta manutenzione per furgone ${vehicle_id} | ${aiInfo}`, 
+      req
+    );
+    
+    // Flash message con info AI
+    let successMsg = '🔧 Richiesta manutenzione inviata con successo!';
+    if (!manualPriority) {
+      successMsg += ` | 🤖 AI: Priorità ${aiDetection.priority.toUpperCase()} rilevata automaticamente`;
+    }
+    
+    req.flash('success', successMsg);
     res.redirect('/rider/dashboard');
   });
+});
+
+// API: Preview priorità in tempo reale (per AJAX)
+router.post('/maintenance/preview-priority', requireRider, (req, res) => {
+  const { issue_description } = req.body;
+  
+  if (!issue_description) {
+    return res.json({ priority: 'media', confidence: 0, explanation: 'Nessuna descrizione' });
+  }
+
+  const aiDetection = detectPriorityWithExplanation(issue_description);
+  res.json(aiDetection);
 });
 
 module.exports = router;
