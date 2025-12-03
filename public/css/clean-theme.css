@@ -87,8 +87,8 @@ body {
 
 .sidebar-menu a:hover,
 .sidebar-menu a.active {
-  background: var(--sidebar-hover);
-  border-left: 3px solid var(--primary-green);
+  background: var(--primary-green);
+  border-left: 3px solid #1e8449;
   padding-left: 17px;
 }
 
@@ -177,10 +177,6 @@ body {
   margin-bottom: 25px;
   overflow: hidden;
   transition: box-shadow 0.3s ease;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-hover);
 }
 
 .card-header {
@@ -432,11 +428,6 @@ tr:hover {
   box-shadow: var(--shadow);
   border-left: 4px solid var(--primary-green);
   transition: transform 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
 }
 
 .stat-card h4 {
