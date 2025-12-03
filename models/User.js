@@ -16,6 +16,11 @@ const UserModel = {
     db.all('SELECT id, username, nome, cognome, codice_fiscale, created_at FROM users WHERE role = ?', ['rider'], callback);
   },
 
+  // Ottieni utenti per role
+  getByRole: (role, callback) => {
+    db.all('SELECT id, username, nome, cognome, codice_fiscale, created_at FROM users WHERE role = ? ORDER BY cognome, nome', [role], callback);
+  },
+
   // Aggiorna password
   updatePassword: (userId, hashedPassword, callback) => {
     db.run('UPDATE users SET password = ?, first_login = 0 WHERE id = ?', 

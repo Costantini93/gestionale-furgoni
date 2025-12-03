@@ -2,11 +2,50 @@ const db = require('../config/database');
 
 class Vehicle {
   static getAll(callback) {
-    db.all('SELECT * FROM vehicles ORDER BY targa', [], callback);
+    db.all('SELECT * FROM vehicles ORDER BY license_plate', [], callback);
+  }
+
+  static getAllWithAssignments(callback) {
+    db.all(
+      `SELECT 
+        v.*,
+        va.id as assignment_id,
+        va.data_assegnazione,
+        va.note as assignment_note,
+        u.id as rider_id,
+        u.nome as rider_nome,
+        u.cognome as rider_cognome
+       FROM vehicles v
+       LEFT JOIN vehicle_assignments va ON v.id = va.vehicle_id AND va.status = 'attivo'
+       LEFT JOIN users u ON va.rider_id = u.id
+       ORDER BY v.license_plate`,
+      [],
+      (err, rows) => {
+        if (err) return callback(err);
+        
+        // Trasforma i dati per includere current_assignment
+        const vehicles = rows.map(row => ({
+          id: row.id,
+          license_plate: row.license_plate,
+          model: row.model,
+          anno: row.anno,
+          status: row.status,
+          current_assignment: row.assignment_id ? {
+            id: row.assignment_id,
+            data_assegnazione: row.data_assegnazione,
+            note: row.assignment_note,
+            rider_nome: row.rider_nome,
+            rider_cognome: row.rider_cognome
+          } : null
+        }));
+        
+        callback(null, vehicles);
+      }
+    );
   }
 
   static getAvailable(callback) {
-    db.all('SELECT * FROM vehicles WHERE status = ? ORDER BY targa', ['disponibile'], callback);
+    db.all('SELECT * FROM vehicles WHERE status = ? ORDER BY license_plate', ['disponibile'], callback);
   }
 
   static getById(id, callback) {
@@ -14,10 +53,10 @@ class Vehicle {
   }
 
   static create(data, callback) {
-    const { targa, modello, anno, note } = data;
+    const { license_plate, model, anno, note } = data;
     db.run(
-      'INSERT INTO vehicles (targa, modello, anno, note) VALUES (?, ?, ?, ?)',
-      [targa, modello, anno, note],
+      'INSERT INTO vehicles (license_plate, model, anno, note) VALUES (?, ?, ?, ?)',
+      [license_plate, model, anno, note],
       callback
     );
   }
@@ -93,6 +132,16 @@ class Assignment {
         if (err) return callback(err);
         callback(null, result.count > 0);
       }
+    );
+  }
+
+  static endActiveAssignments(vehicleId, callback) {
+    db.run(
+      `UPDATE vehicle_assignments 
+       SET status = 'completato', data_riconsegna = date('now')
+       WHERE vehicle_id = ? AND status = 'attivo'`,
+      [vehicleId],
+      callback
     );
   }
 }

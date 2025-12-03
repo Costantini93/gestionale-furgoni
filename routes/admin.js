@@ -60,17 +60,26 @@ router.get('/dashboard', requireAdmin, (req, res) => {
 
         console.log('Riders fetched:', riders ? riders.length : 0);
 
-        res.render('admin/dashboard', {
-          user: {
-            nome: req.session.nome,
-            cognome: req.session.cognome
-          },
-          reports: filteredReports,
-          riders: riders || [],
-          selectedRider: rider || null,
-          searchFilters: { rider, data: req.query.data, rotta, targa },
-          success: req.flash('success'),
-          error: req.flash('error')
+        // Ottieni stato furgoni con assegnamenti correnti
+        Vehicle.getAllWithAssignments((err, vehicles) => {
+          if (err) {
+            console.error('Error getting vehicles:', err);
+            vehicles = [];
+          }
+
+          res.render('admin/dashboard', {
+            user: {
+              nome: req.session.nome,
+              cognome: req.session.cognome
+            },
+            reports: filteredReports,
+            riders: riders || [],
+            vehicles: vehicles || [],
+            selectedRider: rider || null,
+            searchFilters: { rider, data: req.query.data, rotta, targa },
+            success: req.flash('success'),
+            error: req.flash('error')
+          });
         });
       });
     });
@@ -814,6 +823,54 @@ router.post('/assignments/create', requireAdmin, (req, res) => {
 
       req.flash('success', 'Furgone assegnato con successo!');
       res.redirect('/admin/assignments');
+    });
+  });
+});
+
+// Reset assegnamenti multipli
+router.post('/assignments/reset-multiple', requireAdmin, (req, res) => {
+  const vehicleIds = req.body.vehicleIds || req.body['vehicleIds[]'] || [];
+  
+  console.log('Reset request:', req.body);
+  console.log('Vehicle IDs:', vehicleIds);
+  
+  if (!vehicleIds || vehicleIds.length === 0) {
+    req.flash('error', 'Nessun furgone selezionato');
+    return res.redirect('/admin/dashboard');
+  }
+
+  const ids = Array.isArray(vehicleIds) ? vehicleIds : [vehicleIds];
+  console.log('IDs da resettare:', ids);
+  
+  let resetCount = 0;
+  let errors = 0;
+  let completed = 0;
+
+  ids.forEach((vehicleId) => {
+    // Termina assegnamenti attivi per questo veicolo
+    Assignment.endActiveAssignments(vehicleId, (err) => {
+      completed++;
+      
+      if (err) {
+        console.error(`Errore reset vehicle ${vehicleId}:`, err);
+        errors++;
+      } else {
+        // Aggiorna status veicolo a disponibile
+        Vehicle.updateStatus(vehicleId, 'disponibile', (err) => {
+          if (err) console.error(`Errore update status vehicle ${vehicleId}:`, err);
+        });
+        resetCount++;
+      }
+
+      // Quando abbiamo processato tutti
+      if (completed === ids.length) {
+        if (errors > 0) {
+          req.flash('error', `${resetCount} furgoni resettati, ${errors} errori`);
+        } else {
+          req.flash('success', `${resetCount} assegnamento/i resettato/i con successo! Furgoni disponibili.`);
+        }
+        res.redirect('/admin/dashboard');
+      }
     });
   });
 });
