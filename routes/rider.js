@@ -4,6 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const { requireRider } = require('../middleware/auth');
 const Report = require('../models/Report');
+const { Assignment, Maintenance } = require('../models/Vehicle');
 const logActivity = require('../middleware/logger');
 
 // Configurazione multer per upload foto
@@ -48,20 +49,26 @@ router.get('/dashboard', requireRider, (req, res) => {
         return res.status(500).send('Errore del server');
       }
 
-      const successMessages = req.flash('success');
-      const errorMessages = req.flash('error');
+      // Ottieni furgone assegnato
+      Assignment.getByRider(req.session.userId, (err3, assignment) => {
+        if (err3) console.error('Error getting assignment:', err3);
 
-      res.render('rider/dashboard', {
-        user: {
-          id: req.session.userId,
-          username: req.session.username,
-          nome: req.session.nome,
-          cognome: req.session.cognome
-        },
-        reports: reports || [],
-        openReports: openReports || [],
-        success: successMessages,
-        error: errorMessages
+        const successMessages = req.flash('success');
+        const errorMessages = req.flash('error');
+
+        res.render('rider/dashboard', {
+          user: {
+            id: req.session.userId,
+            username: req.session.username,
+            nome: req.session.nome,
+            cognome: req.session.cognome
+          },
+          reports: reports || [],
+          openReports: openReports || [],
+          assignment: assignment || null,
+          success: successMessages,
+          error: errorMessages
+        });
       });
     });
   });
@@ -253,4 +260,34 @@ router.post('/report/complete/:id', requireRider, (req, res) => {
   });
 });
 
+// Richiesta manutenzione
+router.post('/maintenance/create', requireRider, (req, res) => {
+  const { vehicle_id, issue_description, priority } = req.body;
+
+  if (!vehicle_id || !issue_description) {
+    req.flash('error', 'Compila tutti i campi obbligatori');
+    return res.redirect('/rider/dashboard');
+  }
+
+  const maintenanceData = {
+    vehicle_id: parseInt(vehicle_id),
+    reporter_id: req.session.userId,
+    issue_description,
+    priority: priority || 'media'
+  };
+
+  Maintenance.create(maintenanceData, (err) => {
+    if (err) {
+      console.error('Error creating maintenance request:', err);
+      req.flash('error', 'Errore durante la creazione della richiesta');
+      return res.redirect('/rider/dashboard');
+    }
+
+    logActivity(req.session.userId, 'MAINTENANCE_CREATED', `Richiesta manutenzione per furgone ${vehicle_id}`, req);
+    req.flash('success', '🔧 Richiesta manutenzione inviata con successo!');
+    res.redirect('/rider/dashboard');
+  });
+});
+
 module.exports = router;
+

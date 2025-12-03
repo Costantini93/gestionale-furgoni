@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Rider - Gestionale Furgoni</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/premium.css">
 </head>
 <body>
   <nav class="navbar">
@@ -75,6 +76,44 @@
             </button>
           </div>
         <% }) %>
+      </div>
+    <% } %>
+
+    <!-- Furgone Assegnato -->
+    <% if (assignment) { %>
+      <div class="vehicle-card" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.75rem; color: #6366f1;">
+              🚐 Il tuo furgone
+            </h3>
+            <p style="margin: 0.5rem 0 0 0; color: #94a3b8; font-size: 0.875rem;">
+              Assegnato dal <%= new Date(assignment.data_assegnazione).toLocaleDateString('it-IT') %>
+            </p>
+          </div>
+          <div class="vehicle-badge">
+            ASSEGNATO
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+          <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Targa</p>
+            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #f8fafc;">
+              <%= assignment.targa %>
+            </p>
+          </div>
+          <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Modello</p>
+            <p style="margin: 0.25rem 0 0 0; font-size: 1.125rem; font-weight: 600; color: #cbd5e1;">
+              <%= assignment.modello %>
+            </p>
+          </div>
+        </div>
+
+        <button onclick="showMaintenanceModal('<%= assignment.vehicle_id %>', '<%= assignment.targa %>')" class="btn-gradient" style="margin-top: 1.5rem; background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+          🔧 Segnala Problema
+        </button>
       </div>
     <% } %>
 
@@ -598,6 +637,63 @@
     document.getElementById('completeModal').addEventListener('click', function(e) {
       if (e.target === this) {
         closeCompleteModal();
+      }
+    });
+  </script>
+
+  <!-- Modal Segnalazione Manutenzione -->
+  <div id="maintenanceModal" class="modal" style="display: none;">
+    <div class="modal-content glass-card" style="max-width: 500px;">
+      <h3>🔧 Segnala Problema</h3>
+      <form action="/rider/maintenance/create" method="POST">
+        <input type="hidden" id="maintenance_vehicle_id" name="vehicle_id">
+        
+        <div class="form-group">
+          <label>🚐 Furgone:</label>
+          <input type="text" id="maintenance_vehicle_targa" readonly style="background: rgba(30, 41, 59, 0.5);">
+        </div>
+
+        <div class="form-group">
+          <label>⚠️ Descrizione Problema *</label>
+          <textarea name="issue_description" rows="4" required placeholder="Descrivi il problema riscontrato..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>🎯 Priorità:</label>
+          <select name="priority" required>
+            <option value="bassa">🟢 Bassa - Non urgente</option>
+            <option value="media" selected>🟡 Media - Importante</option>
+            <option value="alta">🔴 Alta - Urgente</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn-gradient" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+            📩 Invia Richiesta
+          </button>
+          <button type="button" onclick="closeMaintenanceModal()" class="btn btn-secondary">
+            ❌ Annulla
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function showMaintenanceModal(vehicleId, targa) {
+      document.getElementById('maintenance_vehicle_id').value = vehicleId;
+      document.getElementById('maintenance_vehicle_targa').value = targa;
+      document.getElementById('maintenanceModal').style.display = 'flex';
+    }
+
+    function closeMaintenanceModal() {
+      document.getElementById('maintenanceModal').style.display = 'none';
+    }
+
+    // Chiudi modal cliccando fuori
+    document.getElementById('maintenanceModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeMaintenanceModal();
       }
     });
   </script>

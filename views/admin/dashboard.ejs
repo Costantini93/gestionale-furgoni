@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Admin - Gestionale Furgoni</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/premium.css">
 </head>
 <body>
   <nav class="navbar">
@@ -77,8 +78,21 @@
           <a href="/admin/dashboard" class="btn btn-secondary">
             🔄 Resetta Filtri
           </a>
-          <a href="/admin/export" class="btn btn-success">
-            📥 Esporta in Excel
+        </div>
+      </form>
+      
+      <div class="form-row" style="gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid rgba(99, 102, 241, 0.2);">
+        <button onclick="exportToExcel()" class="btn-export">
+          📊 Esporta Excel
+        </button>
+        <a href="/admin/assignments" class="btn-gradient">
+          🚚 Assegna Furgone
+        </a>
+        <a href="/admin/maintenance" class="btn-gradient" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+          🔧 Richieste Manutenzione
+        </a>
+      </div>
+    </div>
           </a>
         </div>
       </form>
@@ -675,6 +689,12 @@
         currentIcon.textContent = currentSort.direction === 'asc' ? '↑' : '↓';
         currentIcon.style.opacity = '1';
       }
+    }
+
+    // Export Excel con filtri
+    function exportToExcel() {
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = `/admin/report/export?${params.toString()}`;
     }
   </script>
 </body>

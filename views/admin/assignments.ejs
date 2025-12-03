@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assegnazione Furgoni - Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/premium.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-content">
+      <div class="nav-left">
+        <h1>🚚 Assegnazione Furgoni</h1>
+      </div>
+      <div class="nav-right">
+        <a href="/admin/dashboard" class="btn btn-secondary">← Dashboard</a>
+        <a href="/admin/maintenance" class="btn btn-gradient" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">🔧 Manutenzioni</a>
+        <span class="user-info">👤 <%= user.nome %> <%= user.cognome %></span>
+        <a href="/auth/logout" class="btn btn-secondary">🚪 Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="section-header">
+      <h2>🚚 Sistema Assegnazione Furgoni</h2>
+    </div>
+
+    <% if (success && success.length > 0) { %>
+      <div class="alert alert-success">✅ <%= success[0] %></div>
+    <% } %>
+    <% if (error && error.length > 0) { %>
+      <div class="alert alert-error">⚠️ <%= error[0] %></div>
+    <% } %>
+
+    <!-- Form Nuova Assegnazione -->
+    <div class="glass-card" style="margin-bottom: 2rem;">
+      <h3>➕ Nuova Assegnazione</h3>
+      <form method="POST" action="/admin/assignments/create">
+        <div class="form-row">
+          <div class="form-group">
+            <label>👤 Rider:</label>
+            <select name="rider_id" required>
+              <option value="">Seleziona rider...</option>
+              <% riders.forEach(rider => { %>
+                <option value="<%= rider.id %>">
+                  <%= rider.nome %> <%= rider.cognome %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>🚐 Furgone:</label>
+            <select name="vehicle_id" required>
+              <option value="">Seleziona furgone...</option>
+              <% vehicles.forEach(vehicle => { %>
+                <option value="<%= vehicle.id %>">
+                  <%= vehicle.targa %> - <%= vehicle.modello %> 
+                  <% if (vehicle.status !== 'disponibile') { %>(ASSEGNATO)<% } %>
+                </option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>📅 Data Assegnazione:</label>
+            <input type="date" name="data_assegnazione" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>📝 Note:</label>
+          <textarea name="note" rows="2" placeholder="Note aggiuntive..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-gradient">
+          ✅ Assegna Furgone
+        </button>
+      </form>
+    </div>
+
+    <!-- Assegnazioni Attive -->
+    <div class="section-header">
+      <h2>📋 Assegnazioni Attive</h2>
+    </div>
+
+    <div class="features-grid">
+      <% if (assignments && assignments.length > 0) { %>
+        <% assignments.forEach(assignment => { %>
+          <div class="vehicle-card">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+              <div>
+                <h3 style="margin: 0; font-size: 1.5rem; color: #6366f1;">
+                  <%= assignment.targa %>
+                </h3>
+                <p style="margin: 0.25rem 0; color: #94a3b8; font-size: 0.875rem;">
+                  <%= assignment.modello %>
+                </p>
+              </div>
+              <div class="vehicle-badge">
+                🚚 Assegnato
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.25rem;">👤</span>
+                <span style="font-weight: 600;"><%= assignment.rider_name %></span>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.25rem;">📅</span>
+                <span>
+                  <% 
+                    const dataAssegnazione = new Date(assignment.data_assegnazione);
+                    const formattedDate = dataAssegnazione.toLocaleDateString('it-IT', { 
+                      day: '2-digit', 
+                      month: '2-digit', 
+                      year: 'numeric' 
+                    });
+                  %>
+                  <%= formattedDate %>
+                </span>
+              </div>
+
+              <% if (assignment.note) { %>
+                <div style="padding: 0.75rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; margin-top: 0.5rem;">
+                  <p style="margin: 0; font-size: 0.875rem; color: #cbd5e1;">
+                    💬 <%= assignment.note %>
+                  </p>
+                </div>
+              <% } %>
+            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <div class="glass-card">
+          <p style="text-align: center; color: #94a3b8; margin: 2rem 0;">
+            📭 Nessuna assegnazione attiva al momento
+          </p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Stats -->
+    <div class="section-header" style="margin-top: 3rem;">
+      <h2>📊 Statistiche Flotta</h2>
+    </div>
+
+    <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+      <div class="stat-card">
+        <div class="stat-icon">🚐</div>
+        <div class="stat-content">
+          <h3><%= vehicles.length %></h3>
+          <p>Furgoni Totali</p>
+        </div>
+      </div>
+
+      <div class="stat-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%); border-color: rgba(16, 185, 129, 0.3);">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+          ✅
+        </div>
+        <div class="stat-content">
+          <h3 style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <%= vehicles.filter(v => v.status === 'disponibile').length %>
+          </h3>
+          <p>Disponibili</p>
+        </div>
+      </div>
+
+      <div class="stat-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%); border-color: rgba(245, 158, 11, 0.3);">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+          🔑
+        </div>
+        <div class="stat-content">
+          <h3 style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            <%= assignments.length %>
+          </h3>
+          <p>Assegnati</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

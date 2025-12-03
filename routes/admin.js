@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const { requireAdmin } = require('../middleware/auth');
 const Report = require('../models/Report');
 const User = require('../models/User');
+const { Vehicle, Assignment, Maintenance } = require('../models/Vehicle');
 
 // Dashboard admin con ricerca avanzata
 router.get('/dashboard', requireAdmin, (req, res) => {
@@ -613,6 +614,240 @@ router.post('/dipendenti/delete/:userId', requireAdmin, (req, res) => {
       req.flash('success', 'Utente eliminato con successo!');
       res.redirect('/admin/dipendenti');
     });
+  });
+});
+
+// Export Excel
+router.get('/report/export', requireAdmin, (req, res) => {
+  let { rider, data, rotta, targa } = req.query;
+
+  if (data && data.includes('/')) {
+    const parts = data.split('/');
+    if (parts.length === 3) {
+      data = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+  }
+
+  Report.getAll(async (err, allReports) => {
+    if (err) {
+      console.error('Export error:', err);
+      return res.status(500).send('Errore export');
+    }
+
+    let reports = allReports || [];
+
+    // Applica gli stessi filtri della dashboard
+    if (rider) reports = reports.filter(r => r.user_id == rider);
+    if (data) reports = reports.filter(r => r.data_giorno === data);
+    if (rotta) reports = reports.filter(r => r.codice_rotta && r.codice_rotta.toLowerCase().includes(rotta.toLowerCase()));
+    if (targa) reports = reports.filter(r => r.targa_furgone && r.targa_furgone.toLowerCase().includes(targa.toLowerCase()));
+
+    // Crea workbook Excel
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Report Furgoni');
+
+    // HEADER con logo e info
+    worksheet.mergeCells('A1:J1');
+    worksheet.getCell('A1').value = '🚚 GESTIONALE FURGONI - REPORT VIAGGI';
+    worksheet.getCell('A1').font = { size: 18, bold: true, color: { argb: 'FF6366F1' } };
+    worksheet.getCell('A1').alignment = { vertical: 'middle', horizontal: 'center' };
+    worksheet.getRow(1).height = 30;
+
+    worksheet.mergeCells('A2:J2');
+    worksheet.getCell('A2').value = `Esportato il ${new Date().toLocaleDateString('it-IT')} alle ${new Date().toLocaleTimeString('it-IT')}`;
+    worksheet.getCell('A2').font = { size: 11, italic: true, color: { argb: 'FF94A3B8' } };
+    worksheet.getCell('A2').alignment = { horizontal: 'center' };
+
+    // Colonne
+    worksheet.columns = [
+      { header: 'Rider', key: 'rider', width: 20 },
+      { header: 'Data', key: 'data', width: 12 },
+      { header: 'Rotta', key: 'rotta', width: 15 },
+      { header: 'Targa', key: 'targa', width: 12 },
+      { header: 'KM Partenza', key: 'km_partenza', width: 14 },
+      { header: 'KM Rientro', key: 'km_rientro', width: 14 },
+      { header: 'KM Percorsi', key: 'km_percorsi', width: 14 },
+      { header: 'Orario Partenza', key: 'orario_partenza', width: 16 },
+      { header: 'Orario Rientro', key: 'orario_rientro', width: 16 },
+      { header: 'Stato', key: 'status', width: 12 }
+    ];
+
+    // Stile header
+    const headerRow = worksheet.getRow(4);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF6366F1' }
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Dati
+    reports.forEach(report => {
+      const kmPercorsi = (report.km_rientro && report.km_partenza) 
+        ? (report.km_rientro - report.km_partenza) 
+        : '-';
+
+      worksheet.addRow({
+        rider: report.username || '-',
+        data: report.data_giorno || '-',
+        rotta: report.codice_rotta || '-',
+        targa: report.targa_furgone || '-',
+        km_partenza: report.km_partenza || '-',
+        km_rientro: report.km_rientro || '-',
+        km_percorsi: kmPercorsi,
+        orario_partenza: report.orario_partenza || '-',
+        orario_rientro: report.orario_rientro || '-',
+        status: report.status === 'partito' ? '🚚 In Viaggio' : '✅ Rientrato'
+      });
+    });
+
+    // Bordi e stile celle dati
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 4) {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+            left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+            bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+            right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+          };
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        });
+
+        // Colora righe alternate
+        if (rowNumber % 2 === 0) {
+          row.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FAFC' }
+            };
+          });
+        }
+      }
+    });
+
+    // Riga totali
+    const totalRow = worksheet.addRow({});
+    totalRow.getCell(1).value = 'TOTALE REPORT';
+    totalRow.getCell(1).font = { bold: true, size: 12 };
+    worksheet.mergeCells(totalRow.number, 1, totalRow.number, 6);
+    totalRow.getCell(7).value = reports.length;
+    totalRow.getCell(7).font = { bold: true, size: 12, color: { argb: 'FF6366F1' } };
+    totalRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E7FF' }
+    };
+
+    // Invia file
+    const filename = `report-furgoni-${new Date().toISOString().split('T')[0]}.xlsx`;
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  });
+});
+
+// ===== VEHICLE ASSIGNMENTS =====
+router.get('/assignments', requireAdmin, (req, res) => {
+  Assignment.getActive((err, assignments) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Errore server');
+    }
+
+    Vehicle.getAll((err, vehicles) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Errore server');
+      }
+
+      User.getByRole('rider', (err, riders) => {
+        if (err) {
+          console.error(err);
+          return res.status(500).send('Errore server');
+        }
+
+        res.render('admin/assignments', {
+          user: req.session,
+          assignments,
+          vehicles,
+          riders,
+          success: req.flash('success'),
+          error: req.flash('error')
+        });
+      });
+    });
+  });
+});
+
+router.post('/assignments/create', requireAdmin, (req, res) => {
+  const { rider_id, vehicle_id, data_assegnazione, note } = req.body;
+
+  // Check conflicts
+  Assignment.checkConflict(vehicle_id, data_assegnazione, (err, hasConflict) => {
+    if (err) {
+      console.error(err);
+      req.flash('error', 'Errore durante il controllo');
+      return res.redirect('/admin/assignments');
+    }
+
+    if (hasConflict) {
+      req.flash('error', 'Furgone già assegnato per questa data!');
+      return res.redirect('/admin/assignments');
+    }
+
+    Assignment.create({ rider_id, vehicle_id, data_assegnazione, note }, (err) => {
+      if (err) {
+        console.error(err);
+        req.flash('error', 'Errore durante l\'assegnazione');
+        return res.redirect('/admin/assignments');
+      }
+
+      // Update vehicle status
+      Vehicle.updateStatus(vehicle_id, 'assegnato', (err) => {
+        if (err) console.error('Error updating vehicle status:', err);
+      });
+
+      req.flash('success', 'Furgone assegnato con successo!');
+      res.redirect('/admin/assignments');
+    });
+  });
+});
+
+// ===== MAINTENANCE SYSTEM =====
+router.get('/maintenance', requireAdmin, (req, res) => {
+  Maintenance.getAll((err, requests) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Errore server');
+    }
+
+    res.render('admin/maintenance', {
+      user: req.session,
+      requests,
+      success: req.flash('success'),
+      error: req.flash('error')
+    });
+  });
+});
+
+router.post('/maintenance/resolve/:id', requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { resolution_notes } = req.body;
+
+  Maintenance.updateStatus(id, 'resolved', req.session.userId, resolution_notes, (err) => {
+    if (err) {
+      console.error(err);
+      req.flash('error', 'Errore durante la risoluzione');
+      return res.redirect('/admin/maintenance');
+    }
+
+    req.flash('success', 'Richiesta manutenzione risolta!');
+    res.redirect('/admin/maintenance');
   });
 });
 
