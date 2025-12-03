@@ -1253,4 +1253,120 @@ router.post('/maintenance/change-status/:id', requireAdmin, (req, res) => {
   });
 });
 
+// ==================== ROSTER ====================
+
+// Pagina roster
+router.get('/roster', requireAdmin, (req, res) => {
+  const db = require('../config/database');
+  
+  // Data di domani
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
+  const tomorrowDisplay = tomorrow.toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Ottieni tutti i driver attivi
+  db.all(`
+    SELECT u.*, v.targa as vehicle_targa 
+    FROM users u
+    LEFT JOIN vehicles v ON u.fixed_vehicle_id = v.id
+    WHERE u.role = 'rider' AND u.is_active = 1
+    ORDER BY u.cognome, u.nome
+  `, [], (err, drivers) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Errore del server');
+    }
+
+    // Ottieni roster per domani
+    db.all(`
+      SELECT driver_id FROM roster_daily 
+      WHERE roster_date = ?
+    `, [tomorrowDateStr], (err, rosterEntries) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send('Errore del server');
+      }
+
+      const selectedDriverIds = rosterEntries.map(r => r.driver_id);
+      const fixedVehicleCount = drivers.filter(d => selectedDriverIds.includes(d.id) && d.fixed_vehicle_id !== null).length;
+
+      getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
+        res.render('admin/roster', {
+          user: {
+            nome: req.session.nome,
+            cognome: req.session.cognome
+          },
+          activeDrivers: drivers || [],
+          selectedDrivers: selectedDriverIds,
+          fixedVehicleCount,
+          tomorrowDate: tomorrowDisplay,
+          pendingMaintenanceCount: pendingMaintenanceCount || 0,
+          success: req.flash('success'),
+          error: req.flash('error')
+        });
+      });
+    });
+  });
+});
+
+// Salva roster
+router.post('/roster/save', requireAdmin, (req, res) => {
+  const { driverIds } = req.body;
+  const db = require('../config/database');
+
+  if (!driverIds || driverIds.length === 0) {
+    return res.json({ success: false, message: 'Nessun driver selezionato' });
+  }
+
+  // Data di domani
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
+
+  // Cancella roster esistente per domani
+  db.run('DELETE FROM roster_daily WHERE roster_date = ?', [tomorrowDateStr], (err) => {
+    if (err) {
+      console.error(err);
+      return res.json({ success: false, message: 'Errore durante l\'eliminazione del roster precedente' });
+    }
+
+    // Inserisci nuovi driver
+    const stmt = db.prepare('INSERT INTO roster_daily (driver_id, roster_date) VALUES (?, ?)');
+    
+    let completed = 0;
+    driverIds.forEach(driverId => {
+      stmt.run([driverId, tomorrowDateStr], (err) => {
+        if (err) console.error('Errore inserimento driver:', err);
+        completed++;
+        
+        if (completed === driverIds.length) {
+          stmt.finalize();
+          res.json({ success: true, message: 'Roster salvato con successo' });
+        }
+      });
+    });
+  });
+});
+
+// Reset roster (nuova giornata)
+router.post('/roster/reset', requireAdmin, (req, res) => {
+  const db = require('../config/database');
+  
+  // Data di domani
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
+
+  db.run('DELETE FROM roster_daily WHERE roster_date = ?', [tomorrowDateStr], (err) => {
+    if (err) {
+      console.error(err);
+      req.flash('error', 'Errore durante il reset del roster');
+    } else {
+      req.flash('success', 'Roster resettato! Inizia una nuova giornata');
+    }
+    res.redirect('/admin/roster');
+  });
+});
+
 module.exports = router;

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roster - Admin</title>
+  <link rel="stylesheet" href="/css/clean-theme.css">
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>
+      </div>
+      <ul class="sidebar-menu">
+        <li><a href="/admin/dashboard">Dashboard</a></li>
+        <li><a href="/admin/vehicles">Gestione Furgoni</a></li>
+        <li><a href="/admin/dipendenti">Gestione Dipendenti</a></li>
+        <li><a href="/admin/roster" class="active">Roster</a></li>
+        <li><a href="/admin/assignments">Assegnamenti</a></li>
+        <li>
+          <a href="/admin/maintenance">
+            Manutenzioni
+            <% if (pendingMaintenanceCount > 0) { %>
+              <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px; font-weight: 600;"><%= pendingMaintenanceCount %></span>
+            <% } %>
+          </a>
+        </li>
+        <li><a href="/auth/logout">Logout</a></li>
+      </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="breadcrumb">
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+          <span>Roster Driver</span>
+        </div>
+        <div class="topbar-right">
+          <div class="user-info">
+            <span><%= user.nome %> <%= user.cognome %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="section-header">
+          <h2>Roster Giornaliero</h2>
+          <p style="color: #64748b; margin-top: 0.5rem;">
+            Seleziona i driver in turno per domani (<strong><%= tomorrowDate %></strong>)
+          </p>
+        </div>
+
+        <% if (success && success.length > 0) { %>
+          <div class="alert alert-success"><%= success[0] %></div>
+        <% } %>
+        <% if (error && error.length > 0) { %>
+          <div class="alert alert-error"><%= error[0] %></div>
+        <% } %>
+
+        <!-- Info Box -->
+        <div style="padding: 1rem; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px; margin-bottom: 2rem;">
+          <strong>ℹ️ Come funziona:</strong>
+          <ul style="margin: 0.5rem 0 0 1.5rem; color: #64748b;">
+            <li>Seleziona i driver che lavoreranno domani</li>
+            <li>L'assegnazione automatica assegnerà i furgoni SOLO ai driver selezionati</li>
+            <li>Priorità: prima i driver con furgone fisso, poi assegnazione casuale</li>
+            <li>Usa "Nuova Giornata" per resettare le selezioni</li>
+          </ul>
+        </div>
+
+        <!-- Stats -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <div class="stat-card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%); border-color: rgba(59, 130, 246, 0.3);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+              <%= activeDrivers.length %>
+            </div>
+            <div class="stat-content">
+              <h3 style="color: #3b82f6;">Driver Attivi</h3>
+              <p>Disponibili per turno</p>
+            </div>
+          </div>
+
+          <div class="stat-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%); border-color: rgba(16, 185, 129, 0.3);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+              <%= selectedDrivers.length %>
+            </div>
+            <div class="stat-content">
+              <h3 style="color: #10b981;">In Turno Domani</h3>
+              <p>Driver selezionati</p>
+            </div>
+          </div>
+
+          <div class="stat-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%); border-color: rgba(245, 158, 11, 0.3);">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+              <%= fixedVehicleCount %>
+            </div>
+            <div class="stat-content">
+              <h3 style="color: #f59e0b;">Furgoni Fissi</h3>
+              <p>Tra i selezionati</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Azioni -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+          <button onclick="selectAll()" class="btn btn-primary">
+            Seleziona Tutti
+          </button>
+          <button onclick="deselectAll()" class="btn btn-secondary">
+            Deseleziona Tutti
+          </button>
+          <form action="/admin/roster/reset" method="POST" style="display: inline;" onsubmit="return confirm('Vuoi resettare il roster e iniziare una nuova giornata?')">
+            <button type="submit" class="btn btn-warning">
+              Nuova Giornata
+            </button>
+          </form>
+          <button onclick="saveRoster()" class="btn btn-success" style="margin-left: auto;">
+            Salva Roster
+          </button>
+        </div>
+
+        <!-- Tabella Driver -->
+        <div class="card">
+          <h3>Driver Disponibili (<%= activeDrivers.length %>)</h3>
+          <% if (activeDrivers.length === 0) { %>
+            <p class="no-data">Nessun driver attivo trovato</p>
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">
+                      <input type="checkbox" id="selectAllCheckbox" onchange="toggleAll(this)" style="width: 18px; height: 18px; cursor: pointer;">
+                    </th>
+                    <th>Nome Completo</th>
+                    <th>Email</th>
+                    <th>Furgone Fisso</th>
+                    <th>Stato</th>
+                  </tr>
+                </thead>
+                <tbody id="driversList">
+                  <% activeDrivers.forEach(driver => { 
+                    const isSelected = selectedDrivers.includes(driver.id);
+                    const hasFixedVehicle = driver.fixed_vehicle_id !== null;
+                  %>
+                    <tr>
+                      <td>
+                        <input 
+                          type="checkbox" 
+                          class="driver-checkbox" 
+                          data-driver-id="<%= driver.id %>"
+                          <%= isSelected ? 'checked' : '' %>
+                          style="width: 18px; height: 18px; cursor: pointer;">
+                      </td>
+                      <td><strong><%= driver.nome %> <%= driver.cognome %></strong></td>
+                      <td><%= driver.username %></td>
+                      <td>
+                        <% if (hasFixedVehicle && driver.vehicle_targa) { %>
+                          <span class="badge badge-success"><%= driver.vehicle_targa %></span>
+                        <% } else if (hasFixedVehicle) { %>
+                          <span class="badge badge-warning">Configurato</span>
+                        <% } else { %>
+                          <span class="badge badge-secondary">Casuale</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (isSelected) { %>
+                          <span class="badge badge-success">In Turno</span>
+                        <% } else { %>
+                          <span class="badge badge-secondary">Libero</span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
+    function toggleAll(checkbox) {
+      const checkboxes = document.querySelectorAll('.driver-checkbox');
+      checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    }
+
+    function selectAll() {
+      const checkboxes = document.querySelectorAll('.driver-checkbox');
+      checkboxes.forEach(cb => cb.checked = true);
+      document.getElementById('selectAllCheckbox').checked = true;
+    }
+
+    function deselectAll() {
+      const checkboxes = document.querySelectorAll('.driver-checkbox');
+      checkboxes.forEach(cb => cb.checked = false);
+      document.getElementById('selectAllCheckbox').checked = false;
+    }
+
+    function saveRoster() {
+      const checkboxes = document.querySelectorAll('.driver-checkbox:checked');
+      const selectedIds = Array.from(checkboxes).map(cb => cb.getAttribute('data-driver-id'));
+
+      if (selectedIds.length === 0) {
+        alert('Seleziona almeno un driver per il turno di domani');
+        return;
+      }
+
+      fetch('/admin/roster/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ driverIds: selectedIds })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert(`✅ Roster salvato! ${selectedIds.length} driver in turno per domani`);
+          location.reload();
+        } else {
+          alert('❌ Errore: ' + data.message);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('❌ Errore durante il salvataggio');
+      });
+    }
+  </script>
+</body>
+</html>
