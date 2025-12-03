@@ -1,328 +1,654 @@
-﻿<!DOCTYPE html><!DOCTYPE html><!DOCTYPE html>
+﻿<!DOCTYPE html><!DOCTYPE html><!DOCTYPE html><!DOCTYPE html>
 
 <html lang="it">
 
-<head><html lang="it"><html lang="it">
+<head><html lang="it">
 
   <meta charset="UTF-8">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><head><head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><head><html lang="it"><html lang="it">
 
   <title>Gestione Dipendenti - Admin</title>
 
-  <link rel="stylesheet" href="/css/clean-theme.css">  <meta charset="UTF-8">  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/css/clean-theme.css">  <meta charset="UTF-8">
 
 </head>
 
-<body>  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<body>  <meta name="viewport" content="width=device-width, initial-scale=1.0"><head><head>
 
   <!-- Overlay per chiudere sidebar su mobile -->
 
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>  <title>Gestione Dipendenti - Admin</title>  <title>Gestione Dipendenti - Gestionale Furgoni</title>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>  <title>Gestione Dipendenti - Admin</title>
 
 
 
-  <div class="app-container">  <link rel="stylesheet" href="/css/clean-theme.css">  <link rel="stylesheet" href="/css/style.css">
+  <div class="app-container">  <link rel="stylesheet" href="/css/clean-theme.css">  <meta charset="UTF-8">  <meta charset="UTF-8">
 
     <!-- SIDEBAR -->
 
-    <aside class="sidebar" id="sidebar"></head>  <link rel="stylesheet" href="/css/premium.css">
+    <aside class="sidebar" id="sidebar"></head>
 
       <div class="sidebar-header">
 
-        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a><body>  <link rel="stylesheet" href="/css/clean-theme.css">
+        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a><body>  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
       </div>
 
-      <ul class="sidebar-menu">  <!-- Overlay per chiudere sidebar su mobile --></head>
+      <ul class="sidebar-menu">  <!-- Overlay per chiudere sidebar su mobile -->
 
         <li><a href="/admin/dashboard">📊 Dashboard</a></li>
 
-        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div><body>
+        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>  <title>Gestione Dipendenti - Admin</title>  <title>Gestione Dipendenti - Gestionale Furgoni</title>
 
         <li><a href="/admin/dipendenti" class="active">👥 Gestione Dipendenti</a></li>
 
-        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>  <nav class="navbar">
+        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>
 
         <li>
 
-          <a href="/admin/maintenance">  <div class="app-container">    <div class="nav-content">
+          <a href="/admin/maintenance">  <div class="app-container">  <link rel="stylesheet" href="/css/clean-theme.css">  <link rel="stylesheet" href="/css/style.css">
 
             🔧 Manutenzioni
 
-            <% if (pendingMaintenanceCount > 0) { %>    <!-- SIDEBAR -->      <div class="nav-left">
+            <% if (pendingMaintenanceCount > 0) { %>    <!-- SIDEBAR -->
 
               <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px; font-weight: 600;"><%= pendingMaintenanceCount %></span>
 
-            <% } %>    <aside class="sidebar" id="sidebar">        <h1>ï¿½ Gestionale Consegne - ADMIN</h1>
+            <% } %>    <aside class="sidebar" id="sidebar"></head>  <link rel="stylesheet" href="/css/premium.css">
 
           </a>
 
-        </li>      <div class="sidebar-header">      </div>
+        </li>      <div class="sidebar-header">
 
         <li><a href="/auth/logout">🚪 Logout</a></li>
 
-      </ul>        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>      <div class="nav-right">
+      </ul>        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a><body>  <link rel="stylesheet" href="/css/clean-theme.css">
 
     </aside>
 
-      </div>        <a href="/admin/dashboard" class="btn btn-secondary">ðŸ“Š Dashboard</a>
+      </div>
 
     <!-- MAIN CONTENT -->
 
-    <main class="main-content">      <ul class="sidebar-menu">        <span class="user-info">
+    <main class="main-content">      <ul class="sidebar-menu">  <!-- Overlay per chiudere sidebar su mobile --></head>
 
       <!-- TOPBAR -->
 
-      <header class="topbar">        <li><a href="/admin/dashboard">📊 Dashboard</a></li>          ðŸ‘¤ <%= user.nome %> <%= user.cognome %> (Admin)
+      <div class="topbar">        <li><a href="/admin/dashboard">📊 Dashboard</a></li>
 
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="breadcrumb">
 
-        <h1 class="page-title">👥 Gestione Dipendenti</h1>        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>        </span>
+          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div><body>
 
-        <div class="user-info">
+          <span>Gestione Dipendenti</span>
 
-          <%= user.nome %> <%= user.cognome %>        <li><a href="/admin/dipendenti" class="active">👥 Gestione Dipendenti</a></li>        <a href="/auth/logout" class="btn btn-secondary">ðŸšª Logout</a>
+        </div>        <li><a href="/admin/dipendenti" class="active">👥 Gestione Dipendenti</a></li>
 
-        </div>
+        <div class="topbar-right">
 
-      </header>        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>      </div>
+          <div class="user-info">        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>  <nav class="navbar">
 
+            <span><%= user.nome %> <%= user.cognome %></span>
 
+          </div>        <li>
 
-      <!-- CONTENT -->        <li><a href="/admin/maintenance">🔧 Manutenzioni</a></li>    </div>
+          <a href="/auth/logout" class="btn btn-secondary btn-sm">Logout</a>
 
-      <div class="content">
+        </div>          <a href="/admin/maintenance">  <div class="app-container">    <div class="nav-content">
 
-        <!-- MESSAGGI -->        <li><a href="/auth/logout">🚪 Logout</a></li>  </nav>
+      </div>
+
+            🔧 Manutenzioni
+
+      <!-- CONTENT -->
+
+      <div class="content-wrapper" style="padding: 2rem;">            <% if (pendingMaintenanceCount > 0) { %>    <!-- SIDEBAR -->      <div class="nav-left">
+
+        
+
+        <!-- MESSAGGI -->              <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px; font-weight: 600;"><%= pendingMaintenanceCount %></span>
 
         <% if (success && success.length > 0) { %>
 
-          <div class="alert alert-success">      </ul>
+          <div class="alert alert-success" style="margin-bottom: 1.5rem;">            <% } %>    <aside class="sidebar" id="sidebar">        <h1>ï¿½ Gestionale Consegne - ADMIN</h1>
 
             <%= success %>
 
-          </div>    </aside>  <div class="container">
+          </div>          </a>
 
         <% } %>
 
-            <h2>ðŸ‘¥ Gestione Dipendenti</h2>
+                </li>      <div class="sidebar-header">      </div>
 
         <% if (error && error.length > 0) { %>
 
-          <div class="alert alert-error">    <!-- MAIN CONTENT -->
+          <div class="alert alert-error" style="margin-bottom: 1.5rem;">        <li><a href="/auth/logout">🚪 Logout</a></li>
 
             <%= error %>
 
-          </div>    <main class="main-content">    <% if (success && success.length > 0) { %>
+          </div>      </ul>        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>      <div class="nav-right">
 
         <% } %>
 
-      <!-- TOPBAR -->      <div class="alert alert-success">
+    </aside>
 
         <!-- FORM CREAZIONE DIPENDENTE -->
 
-        <div class="card">      <div class="topbar">        âœ… <%= success[0] %>
+        <div class="card" style="margin-bottom: 2rem;">      </div>        <a href="/admin/dashboard" class="btn btn-secondary">ðŸ“Š Dashboard</a>
 
           <div class="card-header">
+
+            <h2 style="margin: 0;">➕ Aggiungi Nuovo Dipendente</h2>    <!-- MAIN CONTENT -->
+
+          </div>
+
+          <div class="card-body">    <main class="main-content">      <ul class="sidebar-menu">        <span class="user-info">
+
+            <form action="/admin/dipendenti/create" method="POST">
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">      <!-- TOPBAR -->
+
+                
+
+                <div class="form-group">      <header class="topbar">        <li><a href="/admin/dashboard">📊 Dashboard</a></li>          ðŸ‘¤ <%= user.nome %> <%= user.cognome %> (Admin)
+
+                  <label for="nome">Nome *</label>
+
+                  <input         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+                    type="text" 
+
+                    id="nome"         <h1 class="page-title">👥 Gestione Dipendenti</h1>        <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>        </span>
+
+                    name="nome" 
+
+                    required         <div class="user-info">
+
+                    placeholder="Mario">
+
+                </div>          <%= user.nome %> <%= user.cognome %>        <li><a href="/admin/dipendenti" class="active">👥 Gestione Dipendenti</a></li>        <a href="/auth/logout" class="btn btn-secondary">ðŸšª Logout</a>
+
+
+
+                <div class="form-group">        </div>
+
+                  <label for="cognome">Cognome *</label>
+
+                  <input       </header>        <li><a href="/admin/assignments">📋 Assegnamenti</a></li>      </div>
+
+                    type="text" 
+
+                    id="cognome" 
+
+                    name="cognome" 
+
+                    required       <!-- CONTENT -->        <li><a href="/admin/maintenance">🔧 Manutenzioni</a></li>    </div>
+
+                    placeholder="Rossi">
+
+                </div>      <div class="content">
+
+
+
+                <div class="form-group">        <!-- MESSAGGI -->        <li><a href="/auth/logout">🚪 Logout</a></li>  </nav>
+
+                  <label for="username">Username *</label>
+
+                  <input         <% if (success && success.length > 0) { %>
+
+                    type="text" 
+
+                    id="username"           <div class="alert alert-success">      </ul>
+
+                    name="username" 
+
+                    required             <%= success %>
+
+                    placeholder="mario.rossi">
+
+                </div>          </div>    </aside>  <div class="container">
+
+
+
+                <div class="form-group">        <% } %>
+
+                  <label for="codice_fiscale">Codice Fiscale * (16 caratteri)</label>
+
+                  <input             <h2>ðŸ‘¥ Gestione Dipendenti</h2>
+
+                    type="text" 
+
+                    id="codice_fiscale"         <% if (error && error.length > 0) { %>
+
+                    name="codice_fiscale" 
+
+                    required           <div class="alert alert-error">    <!-- MAIN CONTENT -->
+
+                    maxlength="16" 
+
+                    pattern="[A-Za-z0-9]{16}"            <%= error %>
+
+                    placeholder="RSSMRA80A01H501U"
+
+                    style="text-transform: uppercase;">          </div>    <main class="main-content">    <% if (success && success.length > 0) { %>
+
+                </div>
+
+        <% } %>
+
+                <div class="form-group">
+
+                  <label for="fixed_vehicle_id">Furgone Fisso</label>      <!-- TOPBAR -->      <div class="alert alert-success">
+
+                  <select id="fixed_vehicle_id" name="fixed_vehicle_id">
+
+                    <option value="">Nessun furgone fisso (casuale)</option>        <!-- FORM CREAZIONE DIPENDENTE -->
+
+                    <% vehicles.forEach(vehicle => { %>
+
+                      <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>        <div class="card">      <div class="topbar">        âœ… <%= success[0] %>
+
+                    <% }) %>
+
+                  </select>          <div class="card-header">
+
+                </div>
 
             <h2>➕ Aggiungi Nuovo Dipendente</h2>        <div class="breadcrumb">      </div>
 
-          </div>
+                <div class="form-group" style="display: flex; align-items: center;">
 
-          <div class="card-body">          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>    <% } %>
+                  <label style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">          </div>
 
-            <form action="/admin/dipendenti/create" method="POST" class="form-grid">
+                    <input type="checkbox" id="is_admin" name="is_admin">
+
+                    <span>Admin (accesso completo)</span>          <div class="card-body">          <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>    <% } %>
+
+                  </label>
+
+                </div>            <form action="/admin/dipendenti/create" method="POST" class="form-grid">
+
+              </div>
 
               <div class="form-group">          <span>Gestione Dipendenti</span>
 
-                <label for="nome">Nome *</label>
+              <button type="submit" class="btn btn-primary">
 
-                <input         </div>    <% if (error && error.length > 0) { %>
+                ➕ Aggiungi Dipendente                <label for="nome">Nome *</label>
 
-                  type="text" 
+              </button>
 
-                  id="nome"         <div class="topbar-right">      <div class="alert alert-error">
-
-                  name="nome" 
-
-                  required           <div class="user-info">        âš ï¸ <%= error[0] %>
-
-                  placeholder="Mario"
-
-                  oninput="capitalizeAndGenerate()">            <span><%= user.nome %> <%= user.cognome %></span>      </div>
-
-              </div>
-
-          </div>    <% } %>
-
-              <div class="form-group">
-
-                <label for="cognome">Cognome *</label>          <a href="/auth/logout" class="btn btn-secondary btn-sm">Logout</a>
-
-                <input 
-
-                  type="text"         </div>    <!-- Form Crea Nuovo Utente -->
-
-                  id="cognome" 
-
-                  name="cognome"       </div>    <div class="card">
-
-                  required 
-
-                  placeholder="Rossi"      <h3>âž• Aggiungi Nuovo Utente</h3>
-
-                  oninput="capitalizeAndGenerate()">
-
-              </div>      <div class="container">      <div class="info-box">
-
-
-
-              <div class="form-group">        <h2>👥 Gestione Dipendenti</h2>        <p><strong>â„¹ï¸ Nota:</strong> Se esiste giÃ  un rider con lo stesso nome e cognome, 
-
-                <label for="username">Username *</label>
-
-                <input         lo username sarÃ  automaticamente modificato aggiungendo un numero progressivo 
-
-                  type="text" 
-
-                  id="username"         <% if (success && success.length > 0) { %>        (es: mario_rossi, mario_rossi2, mario_rossi3, ecc.)</p>
-
-                  name="username" 
-
-                  required           <div class="alert alert-success">      </div>
-
-                  placeholder="mario.rossi">
-
-              </div>            ✅ <%= success[0] %>      <form action="/admin/dipendenti/create" method="POST" id="createRiderForm">
-
-
-
-              <div class="form-group">          </div>        <div class="form-row">
-
-                <label for="codice_fiscale">Codice Fiscale * (16 caratteri)</label>
-
-                <input         <% } %>          <div class="form-group">
-
-                  type="text" 
-
-                  id="codice_fiscale"             <label for="nome">Nome *</label>
-
-                  name="codice_fiscale" 
-
-                  required         <% if (error && error.length > 0) { %>            <input type="text" id="nome" name="nome" required onkeyup="capitalizeAndGenerate(this)">
-
-                  maxlength="16" 
-
-                  pattern="[A-Za-z0-9]{16}"          <div class="alert alert-error">          </div>
-
-                  placeholder="RSSMRA80A01H501U"
-
-                  style="text-transform: uppercase;">            ⚠️ <%= error[0] %>
-
-              </div>
-
-          </div>          <div class="form-group">
-
-              <div class="form-group">
-
-                <label for="fixed_vehicle_id">Furgone Fisso</label>        <% } %>            <label for="cognome">Cognome *</label>
-
-                <select id="fixed_vehicle_id" name="fixed_vehicle_id">
-
-                  <option value="">Nessun furgone fisso (assegnazione casuale)</option>            <input type="text" id="cognome" name="cognome" required onkeyup="capitalizeAndGenerate(this)">
-
-                  <% vehicles.forEach(vehicle => { %>
-
-                    <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>        <!-- Form Aggiungi Nuovo Utente -->          </div>
-
-                  <% }) %>
-
-                </select>        <div class="card">
-
-              </div>
-
-          <h3>➕ Aggiungi Nuovo Utente</h3>          <div class="form-group">
-
-              <div class="form-group">
-
-                <label>          <div class="info-box" style="background: #e7f3ff; padding: 1rem; border-left: 4px solid #2196F3; margin-bottom: 1.5rem;">            <label for="codice_fiscale">Codice Fiscale *</label>
-
-                  <input type="checkbox" id="is_admin" name="is_admin">
-
-                  Admin (accesso completo)            <p style="margin: 0;"><strong>ℹ️ Nota:</strong> Se esiste già un rider con lo stesso nome e cognome,             <input type="text" id="codice_fiscale" name="codice_fiscale" 
-
-                </label>
-
-              </div>            lo username sarà automaticamente modificato aggiungendo un numero progressivo                    maxlength="16" 
-
-
-
-              <div class="form-actions">            (es: mario_rossi, mario_rossi2, mario_rossi3, ecc.)</p>                   pattern="[A-Za-z0-9]{16}"
-
-                <button type="submit" class="btn btn-primary" id="createBtn">
-
-                  ➕ Aggiungi Dipendente          </div>                   placeholder="ES: RSSMRA80A01H501U"
-
-                </button>
-
-              </div>          <form action="/admin/dipendenti/create" method="POST" id="createRiderForm">                   required 
-
-            </form>
-
-          </div>            <div class="form-row">                   style="text-transform: uppercase;"
-
-        </div>
-
-              <div class="form-group">                   onkeyup="this.value = this.value.toUpperCase()">
-
-        <!-- LISTA DIPENDENTI -->
-
-        <div class="card">                <label for="nome">👤 Nome *</label>            <small>16 caratteri alfanumerici</small>
-
-          <div class="card-header">
-
-            <h2>📋 Lista Dipendenti (<%= riders.length %>)</h2>                <input type="text" id="nome" name="nome" required onkeyup="capitalizeAndGenerate(this)">          </div>
+            </form>                <input         </div>    <% if (error && error.length > 0) { %>
 
           </div>
 
-          <div class="card-body">              </div>        </div>
+        </div>                  type="text" 
 
-            <% if (riders.length === 0) { %>
+
+
+        <!-- LISTA DIPENDENTI -->                  id="nome"         <div class="topbar-right">      <div class="alert alert-error">
+
+        <div class="card">
+
+          <div class="card-header">                  name="nome" 
+
+            <h2 style="margin: 0;">📋 Lista Dipendenti (<%= riders.length %>)</h2>
+
+          </div>                  required           <div class="user-info">        âš ï¸ <%= error[0] %>
+
+          <div class="card-body">
+
+            <% if (riders.length === 0) { %>                  placeholder="Mario"
 
               <p style="text-align: center; color: #999; padding: 2rem;">
 
-                Nessun dipendente presente. Aggiungine uno usando il form sopra.
+                Nessun dipendente presente. Aggiungine uno usando il form sopra.                  oninput="capitalizeAndGenerate()">            <span><%= user.nome %> <%= user.cognome %></span>      </div>
 
-              </p>              <div class="form-group">        <div class="form-row">
+              </p>
 
-            <% } else { %>
+            <% } else { %>              </div>
 
-              <div class="table-responsive">                <label for="cognome">👤 Cognome *</label>          <div class="form-group">
+              <div style="overflow-x: auto;">
 
-                <table class="table">
+                <table class="table">          </div>    <% } %>
 
-                  <thead>                <input type="text" id="cognome" name="cognome" required onkeyup="capitalizeAndGenerate(this)">            <label for="username">Username (generato automaticamente) *</label>
+                  <thead>
+
+                    <tr>              <div class="form-group">
+
+                      <th>ID</th>
+
+                      <th>Nome Completo</th>                <label for="cognome">Cognome *</label>          <a href="/auth/logout" class="btn btn-secondary btn-sm">Logout</a>
+
+                      <th>Username</th>
+
+                      <th>Codice Fiscale</th>                <input 
+
+                      <th>Ruolo</th>
+
+                      <th>Furgone Fisso</th>                  type="text"         </div>    <!-- Form Crea Nuovo Utente -->
+
+                      <th>Azioni</th>
+
+                    </tr>                  id="cognome" 
+
+                  </thead>
+
+                  <tbody>                  name="cognome"       </div>    <div class="card">
+
+                    <% riders.forEach(rider => { %>
+
+                      <tr>                  required 
+
+                        <td><%= rider.id %></td>
+
+                        <td><strong><%= rider.nome %> <%= rider.cognome %></strong></td>                  placeholder="Rossi"      <h3>âž• Aggiungi Nuovo Utente</h3>
+
+                        <td><%= rider.username %></td>
+
+                        <td><code style="font-size: 0.85rem;"><%= rider.codice_fiscale %></code></td>                  oninput="capitalizeAndGenerate()">
+
+                        <td>
+
+                          <% if (rider.role === 'admin') { %>              </div>      <div class="container">      <div class="info-box">
+
+                            <span class="badge" style="background: #8b5cf6; color: white;">👑 Admin</span>
+
+                          <% } else { %>
+
+                            <span class="badge" style="background: #3b82f6; color: white;">🚚 Rider</span>
+
+                          <% } %>              <div class="form-group">        <h2>👥 Gestione Dipendenti</h2>        <p><strong>â„¹ï¸ Nota:</strong> Se esiste giÃ  un rider con lo stesso nome e cognome, 
+
+                        </td>
+
+                        <td>                <label for="username">Username *</label>
+
+                          <% if (rider.fixed_vehicle_id) { %>
+
+                            <% const fixedVehicle = vehicles.find(v => v.id == rider.fixed_vehicle_id); %>                <input         lo username sarÃ  automaticamente modificato aggiungendo un numero progressivo 
+
+                            <% if (fixedVehicle) { %>
+
+                              <span class="badge" style="background: #f59e0b; color: white;">                  type="text" 
+
+                                🚗 <%= fixedVehicle.targa %>
+
+                              </span>                  id="username"         <% if (success && success.length > 0) { %>        (es: mario_rossi, mario_rossi2, mario_rossi3, ecc.)</p>
+
+                            <% } else { %>
+
+                              <span style="color: #ef4444;">⚠️ Errore</span>                  name="username" 
+
+                            <% } %>
+
+                          <% } else { %>                  required           <div class="alert alert-success">      </div>
+
+                            <span style="color: #999;">Casuale</span>
+
+                          <% } %>                  placeholder="mario.rossi">
+
+                        </td>
+
+                        <td>              </div>            ✅ <%= success[0] %>      <form action="/admin/dipendenti/create" method="POST" id="createRiderForm">
+
+                          <div style="display: flex; gap: 0.5rem;">
+
+                            <button 
+
+                              class="btn btn-sm btn-secondary" 
+
+                              onclick="showEditModal(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>', '<%= rider.username %>', '<%= rider.codice_fiscale %>', '<%= rider.role %>', <%= rider.fixed_vehicle_id || 'null' %>)"              <div class="form-group">          </div>        <div class="form-row">
+
+                              title="Modifica">
+
+                              ✏️                <label for="codice_fiscale">Codice Fiscale * (16 caratteri)</label>
+
+                            </button>
+
+                            <form action="/admin/dipendenti/delete/<%= rider.id %>" method="POST" style="display: inline;" onsubmit="return confirm('Sei sicuro di voler eliminare <%= rider.nome %> <%= rider.cognome %>?')">                <input         <% } %>          <div class="form-group">
+
+                              <button type="submit" class="btn btn-sm btn-danger" title="Elimina">
+
+                                🗑️                  type="text" 
+
+                              </button>
+
+                            </form>                  id="codice_fiscale"             <label for="nome">Nome *</label>
+
+                          </div>
+
+                        </td>                  name="codice_fiscale" 
+
+                      </tr>
+
+                    <% }) %>                  required         <% if (error && error.length > 0) { %>            <input type="text" id="nome" name="nome" required onkeyup="capitalizeAndGenerate(this)">
+
+                  </tbody>
+
+                </table>                  maxlength="16" 
+
+              </div>
+
+            <% } %>                  pattern="[A-Za-z0-9]{16}"          <div class="alert alert-error">          </div>
+
+          </div>
+
+        </div>                  placeholder="RSSMRA80A01H501U"
+
+      </div>
+
+    </main>                  style="text-transform: uppercase;">            ⚠️ <%= error[0] %>
+
+  </div>
+
+              </div>
+
+  <!-- MODAL MODIFICA DIPENDENTE -->
+
+  <div id="editModal" class="modal">          </div>          <div class="form-group">
+
+    <div class="modal-content">
+
+      <div class="modal-header">              <div class="form-group">
+
+        <h2>✏️ Modifica Dipendente</h2>
+
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>                <label for="fixed_vehicle_id">Furgone Fisso</label>        <% } %>            <label for="cognome">Cognome *</label>
+
+      </div>
+
+      <form id="editForm" method="POST">                <select id="fixed_vehicle_id" name="fixed_vehicle_id">
+
+        <input type="hidden" id="edit_user_id" name="user_id">
+
+                          <option value="">Nessun furgone fisso (assegnazione casuale)</option>            <input type="text" id="cognome" name="cognome" required onkeyup="capitalizeAndGenerate(this)">
+
+        <div class="modal-body">
+
+          <p style="margin-bottom: 1.5rem;">                  <% vehicles.forEach(vehicle => { %>
+
+            Stai modificando: <strong id="edit_nome"></strong><br>
+
+            Username: <code id="edit_username"></code>                    <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>        <!-- Form Aggiungi Nuovo Utente -->          </div>
+
+          </p>
+
+                  <% }) %>
+
+          <div class="form-group">
+
+            <label for="edit_nome_input">Nome *</label>                </select>        <div class="card">
+
+            <input type="text" id="edit_nome_input" name="nome" required>
+
+          </div>              </div>
+
+
+
+          <div class="form-group">          <h3>➕ Aggiungi Nuovo Utente</h3>          <div class="form-group">
+
+            <label for="edit_cognome_input">Cognome *</label>
+
+            <input type="text" id="edit_cognome_input" name="cognome" required>              <div class="form-group">
+
+          </div>
+
+                <label>          <div class="info-box" style="background: #e7f3ff; padding: 1rem; border-left: 4px solid #2196F3; margin-bottom: 1.5rem;">            <label for="codice_fiscale">Codice Fiscale *</label>
+
+          <div class="form-group">
+
+            <label for="edit_username_input">Username *</label>                  <input type="checkbox" id="is_admin" name="is_admin">
+
+            <input type="text" id="edit_username_input" name="username" required>
+
+          </div>                  Admin (accesso completo)            <p style="margin: 0;"><strong>ℹ️ Nota:</strong> Se esiste già un rider con lo stesso nome e cognome,             <input type="text" id="codice_fiscale" name="codice_fiscale" 
+
+
+
+          <div class="form-group">                </label>
+
+            <label for="edit_codice_fiscale">Codice Fiscale * (16 caratteri)</label>
+
+            <input               </div>            lo username sarà automaticamente modificato aggiungendo un numero progressivo                    maxlength="16" 
+
+              type="text" 
+
+              id="edit_codice_fiscale" 
+
+              name="codice_fiscale" 
+
+              required               <div class="form-actions">            (es: mario_rossi, mario_rossi2, mario_rossi3, ecc.)</p>                   pattern="[A-Za-z0-9]{16}"
+
+              maxlength="16" 
+
+              pattern="[A-Za-z0-9]{16}"                <button type="submit" class="btn btn-primary" id="createBtn">
+
+              style="text-transform: uppercase;">
+
+          </div>                  ➕ Aggiungi Dipendente          </div>                   placeholder="ES: RSSMRA80A01H501U"
+
+
+
+          <div class="form-group">                </button>
+
+            <label for="edit_fixed_vehicle_id">Furgone Fisso</label>
+
+            <select id="edit_fixed_vehicle_id" name="fixed_vehicle_id">              </div>          <form action="/admin/dipendenti/create" method="POST" id="createRiderForm">                   required 
+
+              <option value="">Nessun furgone fisso (casuale)</option>
+
+              <% vehicles.forEach(vehicle => { %>            </form>
+
+                <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>
+
+              <% }) %>          </div>            <div class="form-row">                   style="text-transform: uppercase;"
+
+            </select>
+
+          </div>        </div>
+
+
+
+          <div class="form-group">              <div class="form-group">                   onkeyup="this.value = this.value.toUpperCase()">
+
+            <label style="display: flex; align-items: center; gap: 0.5rem;">
+
+              <input type="checkbox" id="edit_is_admin" name="is_admin">        <!-- LISTA DIPENDENTI -->
+
+              <span>Admin (accesso completo)</span>
+
+            </label>        <div class="card">                <label for="nome">👤 Nome *</label>            <small>16 caratteri alfanumerici</small>
+
+          </div>
+
+        </div>          <div class="card-header">
+
+
+
+        <div class="modal-footer">            <h2>📋 Lista Dipendenti (<%= riders.length %>)</h2>                <input type="text" id="nome" name="nome" required onkeyup="capitalizeAndGenerate(this)">          </div>
+
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annulla</button>
+
+          <button type="submit" class="btn btn-primary">💾 Salva Modifiche</button>          </div>
+
+        </div>
+
+      </form>          <div class="card-body">              </div>        </div>
+
+    </div>
+
+  </div>            <% if (riders.length === 0) { %>
+
+
+
+  <script>              <p style="text-align: center; color: #999; padding: 2rem;">
+
+    function showEditModal(id, nome, cognome, username, codiceFiscale, role, fixedVehicleId) {
+
+      document.getElementById('edit_user_id').value = id;                Nessun dipendente presente. Aggiungine uno usando il form sopra.
+
+      document.getElementById('edit_nome').textContent = nome + ' ' + cognome;
+
+      document.getElementById('edit_username').textContent = username;              </p>              <div class="form-group">        <div class="form-row">
+
+      document.getElementById('edit_nome_input').value = nome;
+
+      document.getElementById('edit_cognome_input').value = cognome;            <% } else { %>
+
+      document.getElementById('edit_username_input').value = username;
+
+      document.getElementById('edit_codice_fiscale').value = codiceFiscale;              <div class="table-responsive">                <label for="cognome">👤 Cognome *</label>          <div class="form-group">
+
+      document.getElementById('edit_is_admin').checked = (role === 'admin');
+
+      document.getElementById('edit_fixed_vehicle_id').value = fixedVehicleId || '';                <table class="table">
+
+      document.getElementById('editForm').action = '/admin/dipendenti/update/' + id;
+
+      document.getElementById('editModal').style.display = 'flex';                  <thead>                <input type="text" id="cognome" name="cognome" required onkeyup="capitalizeAndGenerate(this)">            <label for="username">Username (generato automaticamente) *</label>
+
+    }
 
                     <tr>
 
-                      <th>🆔 ID</th>              </div>            <input type="text" id="username" name="username" readonly style="background: #f0f0f0; cursor: not-allowed;">
+    function closeEditModal() {
+
+      document.getElementById('editModal').style.display = 'none';                      <th>🆔 ID</th>              </div>            <input type="text" id="username" name="username" readonly style="background: #f0f0f0; cursor: not-allowed;">
+
+    }
 
                       <th>👤 Nome Completo</th>
 
-                      <th>📧 Username</th>            <small>Formato: nome_cognome (puÃ² essere modificato dal sistema se duplicato)</small>
+    // Chiudi modal cliccando fuori
 
-                      <th>🔢 Codice Fiscale</th>
+    window.onclick = function(event) {                      <th>📧 Username</th>            <small>Formato: nome_cognome (puÃ² essere modificato dal sistema se duplicato)</small>
 
-                      <th>👑 Ruolo</th>              <div class="form-group">          </div>
+      const modal = document.getElementById('editModal');
+
+      if (event.target === modal) {                      <th>🔢 Codice Fiscale</th>
+
+        closeEditModal();
+
+      }                      <th>👑 Ruolo</th>              <div class="form-group">          </div>
+
+    }
 
                       <th>🚗 Furgone Fisso</th>
 
-                      <th>📅 Creato</th>                <label for="codice_fiscale">🆔 Codice Fiscale *</label>
+    function toggleSidebar() {
 
-                      <th>⚙️ Azioni</th>
+      document.getElementById('sidebar').classList.toggle('active');                      <th>📅 Creato</th>                <label for="codice_fiscale">🆔 Codice Fiscale *</label>
 
-                    </tr>                <input type="text" id="codice_fiscale" name="codice_fiscale"           <div class="form-group">
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+
+    }                      <th>⚙️ Azioni</th>
+
+  </script>
+
+</body>                    </tr>                <input type="text" id="codice_fiscale" name="codice_fiscale"           <div class="form-group">
+
+</html>
 
                   </thead>
 
