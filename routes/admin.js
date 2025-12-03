@@ -1358,20 +1358,30 @@ router.post('/roster/save', requireAdmin, (req, res) => {
       return res.json({ success: false, message: 'Errore durante l\'eliminazione del roster precedente' });
     }
 
-    // Inserisci nuovi driver
-    const stmt = db.prepare('INSERT INTO roster_daily (driver_id, roster_date) VALUES (?, ?)');
-    
+    // Inserisci nuovi driver uno alla volta
     let completed = 0;
+    let hasError = false;
+    
     driverIds.forEach(driverId => {
-      stmt.run([driverId, tomorrowDateStr], (err) => {
-        if (err) console.error('Errore inserimento driver:', err);
-        completed++;
-        
-        if (completed === driverIds.length) {
-          stmt.finalize();
-          res.json({ success: true, message: 'Roster salvato con successo' });
+      db.run('INSERT INTO roster_daily (driver_id, roster_date) VALUES (?, ?)', 
+        [driverId, tomorrowDateStr], 
+        (err) => {
+          if (err) {
+            console.error('Errore inserimento driver:', err);
+            hasError = true;
+          }
+          completed++;
+          
+          // Quando tutti sono stati processati
+          if (completed === driverIds.length) {
+            if (hasError) {
+              res.json({ success: false, message: 'Alcuni driver non sono stati aggiunti al roster' });
+            } else {
+              res.json({ success: true, message: 'Roster salvato con successo' });
+            }
+          }
         }
-      });
+      );
     });
   });
 });
