@@ -7,6 +7,18 @@ const Report = require('../models/Report');
 const User = require('../models/User');
 const { Vehicle, Assignment, Maintenance } = require('../models/Vehicle');
 
+// Helper per contare manutenzioni pending
+function getPendingMaintenanceCount(callback) {
+  const db = require('../config/database');
+  db.get('SELECT COUNT(*) as count FROM maintenance_requests WHERE status = ?', ['pending'], (err, row) => {
+    if (err) {
+      console.error('Error counting pending maintenance:', err);
+      return callback(null, 0);
+    }
+    callback(null, row ? row.count : 0);
+  });
+}
+
 // Dashboard admin con ricerca avanzata
 router.get('/dashboard', requireAdmin, (req, res) => {
   console.log('Admin dashboard accessed by:', req.session.username);
@@ -67,18 +79,22 @@ router.get('/dashboard', requireAdmin, (req, res) => {
             vehicles = [];
           }
 
-          res.render('admin/dashboard', {
-            user: {
-              nome: req.session.nome,
-              cognome: req.session.cognome
-            },
-            reports: filteredReports,
-            riders: riders || [],
-            vehicles: vehicles || [],
-            selectedRider: rider || null,
-            searchFilters: { rider, data: req.query.data, rotta, targa },
-            success: req.flash('success'),
-            error: req.flash('error')
+          // Conta manutenzioni pending
+          getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
+            res.render('admin/dashboard', {
+              user: {
+                nome: req.session.nome,
+                cognome: req.session.cognome
+              },
+              reports: filteredReports,
+              riders: riders || [],
+              vehicles: vehicles || [],
+              selectedRider: rider || null,
+              searchFilters: { rider, data: req.query.data, rotta, targa },
+              pendingMaintenanceCount: pendingMaintenanceCount || 0,
+              success: req.flash('success'),
+              error: req.flash('error')
+            });
           });
         });
       });
@@ -341,15 +357,19 @@ router.get('/dipendenti', requireAdmin, (req, res) => {
         return res.status(500).send('Errore del server');
       }
 
-      res.render('admin/dipendenti', {
-        user: {
-          nome: req.session.nome,
-          cognome: req.session.cognome
-        },
-        riders: users || [],
-        vehicles: vehicles || [],
-        success: req.flash('success'),
-        error: req.flash('error')
+      // Conta manutenzioni pending
+      getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
+        res.render('admin/dipendenti', {
+          user: {
+            nome: req.session.nome,
+            cognome: req.session.cognome
+          },
+          riders: users || [],
+          vehicles: vehicles || [],
+          pendingMaintenanceCount: pendingMaintenanceCount || 0,
+          success: req.flash('success'),
+          error: req.flash('error')
+        });
       });
     });
   });
@@ -779,11 +799,15 @@ router.get('/vehicles', requireAdmin, (req, res) => {
       return res.redirect('/admin/dashboard');
     }
 
-    res.render('admin/vehicles', {
-      user: req.session,
-      vehicles: vehicles || [],
-      success: req.flash('success'),
-      error: req.flash('error')
+    // Conta manutenzioni pending
+    getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
+      res.render('admin/vehicles', {
+        user: req.session,
+        vehicles: vehicles || [],
+        pendingMaintenanceCount: pendingMaintenanceCount || 0,
+        success: req.flash('success'),
+        error: req.flash('error')
+      });
     });
   });
 });
@@ -859,13 +883,17 @@ router.get('/assignments', requireAdmin, (req, res) => {
           return res.status(500).send('Errore server');
         }
 
-        res.render('admin/assignments', {
-          user: req.session,
-          assignments,
-          vehicles,
-          riders,
-          success: req.flash('success'),
-          error: req.flash('error')
+        // Conta manutenzioni pending
+        getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
+          res.render('admin/assignments', {
+            user: req.session,
+            assignments,
+            vehicles,
+            riders,
+            pendingMaintenanceCount: pendingMaintenanceCount || 0,
+            success: req.flash('success'),
+            error: req.flash('error')
+          });
         });
       });
     });
@@ -1033,11 +1061,15 @@ router.get('/maintenance', requireAdmin, (req, res) => {
       return res.status(500).send('Errore server');
     }
 
-    res.render('admin/maintenance', {
-      user: req.session,
-      requests,
-      success: req.flash('success'),
-      error: req.flash('error')
+    // Conta manutenzioni pending
+    getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
+      res.render('admin/maintenance', {
+        user: req.session,
+        requests,
+        pendingMaintenanceCount: pendingMaintenanceCount || 0,
+        success: req.flash('success'),
+        error: req.flash('error')
+      });
     });
   });
 });

@@ -21,7 +21,14 @@
         <li><a href="/admin/vehicles">🚗 Gestione Furgoni</a></li>
         <li><a href="/admin/dipendenti">👥 Gestione Dipendenti</a></li>
         <li><a href="/admin/assignments">📋 Assegnamenti</a></li>
-        <li><a href="/admin/maintenance" class="active">🔧 Manutenzioni</a></li>
+        <li>
+          <a href="/admin/maintenance" class="active">
+            🔧 Manutenzioni
+            <% if (pendingMaintenanceCount > 0) { %>
+              <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px; margin-left: 8px; font-weight: 600;"><%= pendingMaintenanceCount %></span>
+            <% } %>
+          </a>
+        </li>
         <li><a href="/auth/logout">🚪 Logout</a></li>
       </ul>
     </aside>
