@@ -32,7 +32,7 @@ const KEYWORDS = {
     'luce', 'lampada', 'fanale', 'faro', 'abbagliante',
     'tergicristalli', 'tergicristallo', 'spazzola',
     'specchietto', 'retrovisore',
-    'ammaccatura', 'graffio', 'graffi',
+    'ammaccatura',
     
     // Manutenzione ordinaria
     'rumoroso', 'rumore leggero', 'vibra', 'vibrazione',
@@ -42,7 +42,8 @@ const KEYWORDS = {
   
   bassa: [
     // Estetica
-    'graffietto', 'piccolo graffio', 'macchia', 'sporco',
+    'graffio', 'graffi', 'graffietto', 'piccolo graffio', 'graffiatura',
+    'macchia', 'sporco', 'carrozzeria',
     'vernice', 'pittura', 'cromatura',
     
     // Accessori
