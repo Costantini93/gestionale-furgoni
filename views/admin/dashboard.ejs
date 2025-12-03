@@ -14,14 +14,14 @@
     <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <a href="/admin/dashboard" class="sidebar-logo">🚚 Gestionale Consegne</a>
+        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>
       </div>
       <ul class="sidebar-menu">
-        <li><a href="/admin/dashboard" class="active"><span class="icon">📊</span> Dashboard</a></li>
-        <li><a href="/admin/dipendenti"><span class="icon">👥</span> Gestione Dipendenti</a></li>
-        <li><a href="/admin/assignments"><span class="icon">🚗</span> Assegnamenti</a></li>
-        <li><a href="/admin/maintenance"><span class="icon">🔧</span> Manutenzioni</a></li>
-        <li><a href="/auth/logout"><span class="icon">🚪</span> Logout</a></li>
+        <li><a href="/admin/dashboard" class="active">Dashboard</a></li>
+        <li><a href="/admin/dipendenti">Gestione Dipendenti</a></li>
+        <li><a href="/admin/assignments">Assegnamenti</a></li>
+        <li><a href="/admin/maintenance">Manutenzioni</a></li>
+        <li><a href="/auth/logout">Logout</a></li>
       </ul>
     </aside>
 
@@ -31,13 +31,13 @@
       <div class="topbar">
         <div class="breadcrumb">
           <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-          <span>🏠 Gestionale Consegne - ADMIN</span>
+          <span>Gestionale Consegne - ADMIN</span>
         </div>
         <div class="topbar-right">
           <div class="user-info">
-            <span>👤 <%= user.nome %> <%= user.cognome %></span>
+            <span><%= user.nome %> <%= user.cognome %></span>
           </div>
-          <a href="/auth/logout" class="btn btn-secondary btn-sm">🚪 Logout</a>
+          <a href="/auth/logout" class="btn btn-secondary btn-sm">Logout</a>
         </div>
       </div>
 

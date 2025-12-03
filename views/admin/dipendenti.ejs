@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -12,39 +12,39 @@
   <nav class="navbar">
     <div class="nav-content">
       <div class="nav-left">
-        <h1>� Gestionale Consegne - ADMIN</h1>
+        <h1>ï¿½ Gestionale Consegne - ADMIN</h1>
       </div>
       <div class="nav-right">
-        <a href="/admin/dashboard" class="btn btn-secondary">📊 Dashboard</a>
+        <a href="/admin/dashboard" class="btn btn-secondary">ðŸ“Š Dashboard</a>
         <span class="user-info">
-          👤 <%= user.nome %> <%= user.cognome %> (Admin)
+          ðŸ‘¤ <%= user.nome %> <%= user.cognome %> (Admin)
         </span>
-        <a href="/auth/logout" class="btn btn-secondary">🚪 Logout</a>
+        <a href="/auth/logout" class="btn btn-secondary">ðŸšª Logout</a>
       </div>
     </div>
   </nav>
 
   <div class="container">
-    <h2>👥 Gestione Dipendenti</h2>
+    <h2>ðŸ‘¥ Gestione Dipendenti</h2>
 
     <% if (success && success.length > 0) { %>
       <div class="alert alert-success">
-        ✅ <%= success[0] %>
+        âœ… <%= success[0] %>
       </div>
     <% } %>
 
     <% if (error && error.length > 0) { %>
       <div class="alert alert-error">
-        ⚠️ <%= error[0] %>
+        âš ï¸ <%= error[0] %>
       </div>
     <% } %>
 
     <!-- Form Crea Nuovo Utente -->
     <div class="card">
-      <h3>➕ Aggiungi Nuovo Utente</h3>
+      <h3>âž• Aggiungi Nuovo Utente</h3>
       <div class="info-box">
-        <p><strong>ℹ️ Nota:</strong> Se esiste già un rider con lo stesso nome e cognome, 
-        lo username sarà automaticamente modificato aggiungendo un numero progressivo 
+        <p><strong>â„¹ï¸ Nota:</strong> Se esiste giÃ  un rider con lo stesso nome e cognome, 
+        lo username sarÃ  automaticamente modificato aggiungendo un numero progressivo 
         (es: mario_rossi, mario_rossi2, mario_rossi3, ecc.)</p>
       </div>
       <form action="/admin/dipendenti/create" method="POST" id="createRiderForm">
@@ -76,27 +76,27 @@
           <div class="form-group">
             <label for="username">Username (generato automaticamente) *</label>
             <input type="text" id="username" name="username" readonly style="background: #f0f0f0; cursor: not-allowed;">
-            <small>Formato: nome_cognome (può essere modificato dal sistema se duplicato)</small>
+            <small>Formato: nome_cognome (puÃ² essere modificato dal sistema se duplicato)</small>
           </div>
 
           <div class="form-group">
             <label class="checkbox-label" style="margin-top: 1.5rem;">
               <input type="checkbox" id="is_admin" name="is_admin" onchange="updateButtonText()">
-              <span class="checkbox-text">👑 Crea come AMMINISTRATORE</span>
+              <span class="checkbox-text">ðŸ‘‘ Crea come AMMINISTRATORE</span>
             </label>
-            <small>Se selezionato, l'utente avrà accesso completo al sistema</small>
+            <small>Se selezionato, l'utente avrÃ  accesso completo al sistema</small>
           </div>
         </div>
 
         <button type="submit" class="btn btn-primary" id="submitBtn">
-          ➕ Crea Rider (password: 1234)
+          âž• Crea Rider (password: 1234)
         </button>
       </form>
     </div>
 
     <!-- Tabella Utenti Esistenti -->
     <div class="card">
-      <h3>📋 Lista Utenti</h3>
+      <h3>ðŸ“‹ Lista Utenti</h3>
       
       <% if (riders.length === 0) { %>
         <p class="no-data">Nessun utente presente.</p>
@@ -121,9 +121,9 @@
                   <td><%= rider.id %></td>
                   <td>
                     <% if (rider.role === 'admin') { %>
-                      <span class="badge badge-admin">👑 Admin</span>
+                      <span class="badge badge-admin">ðŸ‘‘ Admin</span>
                     <% } else { %>
-                      <span class="badge badge-rider">🚚 Rider</span>
+                      <span class="badge badge-rider">ðŸšš Rider</span>
                     <% } %>
                   </td>
                   <td><%= rider.nome %></td>
@@ -134,15 +134,15 @@
                   <td class="actions">
                     <button onclick="editRider(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>', '<%= rider.username %>', '<%= rider.codice_fiscale || '' %>', '<%= rider.role %>')" 
                             class="btn-icon" title="Modifica">
-                      ✏️
+                      âœï¸
                     </button>
                     <button onclick="resetPassword(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>')" 
                             class="btn-icon" title="Reset Password">
-                      🔑
+                      ðŸ”‘
                     </button>
                     <button onclick="deleteRider(<%= rider.id %>, '<%= rider.nome %>', '<%= rider.cognome %>')" 
                             class="btn-icon" title="Elimina">
-                      🗑️
+                      ðŸ—‘ï¸
                     </button>
                   </td>
                 </tr>
@@ -158,7 +158,7 @@
   <div id="editModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeEditModal()">&times;</span>
-      <h3>✏️ Modifica Utente</h3>
+      <h3>âœï¸ Modifica Utente</h3>
       <form id="editForm" method="POST">
         <input type="hidden" id="edit_rider_id" name="rider_id">
         
@@ -193,14 +193,14 @@
           <div class="form-group">
             <label class="checkbox-label" style="margin-top: 1.5rem;">
               <input type="checkbox" id="edit_is_admin" name="is_admin" onchange="updateEditButtonText()">
-              <span class="checkbox-text">👑 Imposta come AMMINISTRATORE</span>
+              <span class="checkbox-text">ðŸ‘‘ Imposta come AMMINISTRATORE</span>
             </label>
-            <small>Se selezionato, l'utente avrà accesso completo al sistema</small>
+            <small>Se selezionato, l'utente avrÃ  accesso completo al sistema</small>
           </div>
         </div>
 
         <div class="modal-actions">
-          <button type="submit" class="btn btn-primary" id="editSubmitBtn">💾 Salva Modifiche</button>
+          <button type="submit" class="btn btn-primary" id="editSubmitBtn">ðŸ’¾ Salva Modifiche</button>
           <button type="button" onclick="closeEditModal()" class="btn btn-secondary">Annulla</button>
         </div>
       </form>
@@ -250,10 +250,10 @@
       const isAdmin = document.getElementById('is_admin').checked;
       const btn = document.getElementById('submitBtn');
       if (isAdmin) {
-        btn.innerHTML = '➕ Crea Amministratore (password: 1234)';
+        btn.innerHTML = 'âž• Crea Amministratore (password: 1234)';
         btn.className = 'btn btn-success';
       } else {
-        btn.innerHTML = '➕ Crea Rider (password: 1234)';
+        btn.innerHTML = 'âž• Crea Rider (password: 1234)';
         btn.className = 'btn btn-primary';
       }
     }
@@ -292,16 +292,16 @@
       const isAdmin = document.getElementById('edit_is_admin').checked;
       const btn = document.getElementById('editSubmitBtn');
       if (isAdmin) {
-        btn.innerHTML = '💾 Salva come Amministratore';
+        btn.innerHTML = 'ðŸ’¾ Salva come Amministratore';
         btn.className = 'btn btn-success';
       } else {
-        btn.innerHTML = '💾 Salva come Rider';
+        btn.innerHTML = 'ðŸ’¾ Salva come Rider';
         btn.className = 'btn btn-primary';
       }
     }
 
     function resetPassword(id, nome, cognome) {
-      if (confirm(`Vuoi resettare la password di ${nome} ${cognome}?\n\nLa password sarà reimpostata a: 1234\nIl rider dovrà cambiarla al prossimo accesso.`)) {
+      if (confirm(`Vuoi resettare la password di ${nome} ${cognome}?\n\nLa password sarÃ  reimpostata a: 1234\nIl rider dovrÃ  cambiarla al prossimo accesso.`)) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/admin/dipendenti/reset-password/' + id;
@@ -311,7 +311,7 @@
     }
 
     function deleteRider(id, nome, cognome) {
-      if (confirm(`⚠️ ATTENZIONE ⚠️\n\nSei sicuro di voler eliminare il rider ${nome} ${cognome}?\n\nQuesta azione:\n- Eliminerà il rider\n- Eliminerà TUTTI i suoi report\n- NON può essere annullata\n\nConfermi?`)) {
+      if (confirm(`âš ï¸ ATTENZIONE âš ï¸\n\nSei sicuro di voler eliminare il rider ${nome} ${cognome}?\n\nQuesta azione:\n- EliminerÃ  il rider\n- EliminerÃ  TUTTI i suoi report\n- NON puÃ² essere annullata\n\nConfermi?`)) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/admin/dipendenti/delete/' + id;
@@ -327,6 +327,16 @@
         closeEditModal();
       }
     }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
+    }
   </script>
+    </main>
+  </div>
 </body>
 </html>
+
