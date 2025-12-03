@@ -47,6 +47,7 @@ async function migrate() {
         nome TEXT,
         cognome TEXT,
         codice_fiscale TEXT,
+        first_login INTEGER DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
