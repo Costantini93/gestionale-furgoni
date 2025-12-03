@@ -998,6 +998,146 @@ router.post('/assignments/reset-all', requireAdmin, (req, res) => {
           } else {
             req.flash('success', `✅ Tutti gli assegnamenti (${successCount}) sono stati terminati! Furgoni disponibili.`);
           }
+
+// Assegnazione automatica furgoni (fissi + casuali)
+router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
+  const dataAssegnazione = req.body.data_assegnazione || new Date().toISOString().split('T')[0];
+  const db = require('../config/database');
+
+  // 1. Ottieni tutti i rider attivi (senza assegnamenti attivi)
+  db.all(`
+    SELECT u.id, u.nome, u.cognome, u.fixed_vehicle_id
+    FROM users u
+    WHERE u.role = 'rider'
+    AND u.id NOT IN (
+      SELECT rider_id FROM vehicle_assignments WHERE status = 'attivo'
+    )
+    ORDER BY u.fixed_vehicle_id DESC, u.cognome, u.nome
+  `, [], (err, riders) => {
+    if (err) {
+      console.error('Errore recupero rider:', err);
+      req.flash('error', 'Errore durante il recupero dei rider');
+      return res.redirect('/admin/assignments');
+    }
+
+    if (!riders || riders.length === 0) {
+      req.flash('error', 'Nessun rider disponibile per l\'assegnazione');
+      return res.redirect('/admin/assignments');
+    }
+
+    // 2. Ottieni tutti i veicoli disponibili (non assegnati, non in manutenzione)
+    db.all(`
+      SELECT v.id, v.targa, v.modello
+      FROM vehicles v
+      WHERE v.status = 'disponibile'
+      AND (v.in_manutenzione = 0 OR v.in_manutenzione IS NULL)
+      AND v.id NOT IN (
+        SELECT vehicle_id FROM vehicle_assignments WHERE status = 'attivo'
+      )
+      ORDER BY v.targa
+    `, [], (err, availableVehicles) => {
+      if (err) {
+        console.error('Errore recupero veicoli:', err);
+        req.flash('error', 'Errore durante il recupero dei veicoli');
+        return res.redirect('/admin/assignments');
+      }
+
+      if (!availableVehicles || availableVehicles.length === 0) {
+        req.flash('error', 'Nessun veicolo disponibile per l\'assegnazione');
+        return res.redirect('/admin/assignments');
+      }
+
+      // 3. Separa rider con e senza furgone fisso
+      const ridersWithFixedVehicle = riders.filter(r => r.fixed_vehicle_id);
+      const ridersWithoutFixedVehicle = riders.filter(r => !r.fixed_vehicle_id);
+
+      let assigned = 0;
+      let errors = [];
+      const assignments = [];
+
+      // 4. Assegna furgoni fissi
+      ridersWithFixedVehicle.forEach(rider => {
+        const vehicle = availableVehicles.find(v => v.id === rider.fixed_vehicle_id);
+        if (vehicle) {
+          assignments.push({
+            rider_id: rider.id,
+            vehicle_id: vehicle.id,
+            rider_name: `${rider.nome} ${rider.cognome}`,
+            vehicle_targa: vehicle.targa,
+            type: 'fisso'
+          });
+          // Rimuovi il veicolo dalla lista disponibili
+          const index = availableVehicles.indexOf(vehicle);
+          if (index > -1) availableVehicles.splice(index, 1);
+        } else {
+          errors.push(`${rider.nome} ${rider.cognome}: furgone fisso ${rider.fixed_vehicle_id} non disponibile`);
+        }
+      });
+
+      // 5. Assegna furgoni casuali ai rider senza fixed_vehicle
+      ridersWithoutFixedVehicle.forEach(rider => {
+        if (availableVehicles.length > 0) {
+          // Prendi il primo veicolo disponibile (casuale)
+          const vehicle = availableVehicles[0];
+          assignments.push({
+            rider_id: rider.id,
+            vehicle_id: vehicle.id,
+            rider_name: `${rider.nome} ${rider.cognome}`,
+            vehicle_targa: vehicle.targa,
+            type: 'casuale'
+          });
+          // Rimuovi dalla lista
+          availableVehicles.shift();
+        } else {
+          errors.push(`${rider.nome} ${rider.cognome}: nessun furgone disponibile`);
+        }
+      });
+
+      // 6. Crea gli assegnamenti nel database
+      if (assignments.length === 0) {
+        req.flash('error', 'Nessun assegnamento possibile. Errori: ' + errors.join(', '));
+        return res.redirect('/admin/assignments');
+      }
+
+      let completed = 0;
+      assignments.forEach(assignment => {
+        Assignment.create({
+          rider_id: assignment.rider_id,
+          vehicle_id: assignment.vehicle_id,
+          data_assegnazione: dataAssegnazione,
+          note: `Assegnazione automatica (${assignment.type})`
+        }, (err) => {
+          if (err) {
+            console.error('Errore creazione assegnamento:', err);
+            errors.push(`${assignment.rider_name}: errore database`);
+          } else {
+            // Aggiorna status veicolo
+            Vehicle.updateStatus(assignment.vehicle_id, 'assegnato', (err) => {
+              if (err) console.error('Errore update status:', err);
+            });
+            assigned++;
+          }
+
+          completed++;
+
+          // Quando tutti sono stati processati
+          if (completed === assignments.length) {
+            if (assigned > 0) {
+              let message = `✅ ${assigned} furgoni assegnati automaticamente!`;
+              if (errors.length > 0) {
+                message += ` (${errors.length} errori: ${errors.join(', ')})`;
+              }
+              req.flash('success', message);
+            } else {
+              req.flash('error', 'Nessun assegnamento creato. Errori: ' + errors.join(', '));
+            }
+            res.redirect('/admin/assignments');
+          }
+        });
+      });
+    });
+  });
+});
           res.redirect('/admin/assignments');
         }
       });

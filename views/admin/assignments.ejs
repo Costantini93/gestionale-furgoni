@@ -80,8 +80,15 @@
 
         <!-- Form Nuova Assegnazione -->
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h3>➕ Nuova Assegnazione</h3>
+            <form method="POST" action="/admin/assignments/auto-assign" 
+                  onsubmit="return confirm('⚡ Assegnazione Automatica:\n\n• Rider con furgone fisso → riceveranno il loro furgone\n• Rider senza furgone fisso → riceveranno un furgone casuale disponibile\n\nContinuare?');">
+              <input type="hidden" name="data_assegnazione" value="<%= new Date().toISOString().split('T')[0] %>">
+              <button type="submit" class="btn" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 0.75rem 1.5rem; font-weight: 600;">
+                ⚡ Assegnazione Automatica
+              </button>
+            </form>
           </div>
           <div class="card-body">
             <form method="POST" action="/admin/assignments/create">
