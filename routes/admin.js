@@ -827,6 +827,77 @@ router.post('/assignments/create', requireAdmin, (req, res) => {
   });
 });
 
+// Termina singolo assegnamento
+router.post('/assignments/end/:vehicleId', requireAdmin, (req, res) => {
+  const vehicleId = req.params.vehicleId;
+  
+  Assignment.endActiveAssignments(vehicleId, (err) => {
+    if (err) {
+      console.error('Errore terminazione assegnamento:', err);
+      req.flash('error', 'Errore durante la terminazione dell\'assegnamento');
+      return res.redirect('/admin/assignments');
+    }
+    
+    // Aggiorna status veicolo a disponibile
+    Vehicle.updateStatus(vehicleId, 'disponibile', (err) => {
+      if (err) {
+        console.error('Errore update status:', err);
+      }
+      
+      req.flash('success', 'Assegnamento terminato con successo! Furgone disponibile.');
+      res.redirect('/admin/assignments');
+    });
+  });
+});
+
+// Termina TUTTI gli assegnamenti
+router.post('/assignments/reset-all', requireAdmin, (req, res) => {
+  // Prendi tutti gli assegnamenti attivi
+  Assignment.getActive((err, assignments) => {
+    if (err) {
+      console.error('Errore recupero assegnamenti:', err);
+      req.flash('error', 'Errore durante il recupero degli assegnamenti');
+      return res.redirect('/admin/assignments');
+    }
+
+    if (!assignments || assignments.length === 0) {
+      req.flash('error', 'Nessun assegnamento attivo da terminare');
+      return res.redirect('/admin/assignments');
+    }
+
+    let completed = 0;
+    let errors = 0;
+    const totalAssignments = assignments.length;
+
+    assignments.forEach(assignment => {
+      Assignment.endActiveAssignments(assignment.vehicle_id, (err) => {
+        completed++;
+        
+        if (err) {
+          console.error(`Errore terminazione vehicle ${assignment.vehicle_id}:`, err);
+          errors++;
+        } else {
+          // Aggiorna status veicolo a disponibile
+          Vehicle.updateStatus(assignment.vehicle_id, 'disponibile', (err) => {
+            if (err) console.error(`Errore update status vehicle ${assignment.vehicle_id}:`, err);
+          });
+        }
+
+        // Quando tutti sono stati processati
+        if (completed === totalAssignments) {
+          const successCount = totalAssignments - errors;
+          if (errors > 0) {
+            req.flash('error', `${successCount}/${totalAssignments} assegnamenti terminati, ${errors} errori`);
+          } else {
+            req.flash('success', `✅ Tutti gli assegnamenti (${successCount}) sono stati terminati! Furgoni disponibili.`);
+          }
+          res.redirect('/admin/assignments');
+        }
+      });
+    });
+  });
+});
+
 // Reset assegnamenti multipli
 router.post('/assignments/reset-multiple', requireAdmin, (req, res) => {
   const vehicleIds = req.body.vehicleIds || req.body['vehicleIds[]'] || [];

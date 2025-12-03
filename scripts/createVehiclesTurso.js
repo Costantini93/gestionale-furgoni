@@ -80,7 +80,7 @@ async function migrate() {
     for (const vehicle of SAMPLE_VEHICLES) {
       try {
         await db.execute({
-          sql: 'INSERT INTO vehicles (license_plate, model, anno) VALUES (?, ?, ?)',
+          sql: 'INSERT INTO vehicles (targa, modello, anno) VALUES (?, ?, ?)',
           args: [vehicle.license_plate, vehicle.model, vehicle.anno]
         });
         console.log(`  ✓ ${vehicle.license_plate} - ${vehicle.model} (${vehicle.anno})`);
