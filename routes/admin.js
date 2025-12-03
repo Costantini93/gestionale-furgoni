@@ -955,24 +955,38 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
   const dataAssegnazione = req.body.data_assegnazione || new Date().toISOString().split('T')[0];
   const db = require('../config/database');
 
-  // 1. Ottieni tutti i rider attivi (senza assegnamenti attivi)
+  // Data di domani per il roster
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
+
+  console.log('📋 Assegnazione automatica avviata...');
+  console.log('📅 Data assegnazione:', dataAssegnazione);
+  console.log('📅 Data roster (domani):', tomorrowDateStr);
+
+  // 1. Ottieni i driver in turno dal roster di domani
   db.all(`
-    SELECT u.id, u.nome, u.cognome, u.fixed_vehicle_id
-    FROM users u
-    WHERE u.role = 'rider'
+    SELECT DISTINCT u.id, u.nome, u.cognome, u.fixed_vehicle_id
+    FROM roster_daily rd
+    JOIN users u ON rd.driver_id = u.id
+    WHERE rd.roster_date = ?
+    AND u.role = 'rider'
+    AND u.is_active = 1
     AND u.id NOT IN (
       SELECT rider_id FROM vehicle_assignments WHERE status = 'attivo'
     )
-    ORDER BY u.fixed_vehicle_id DESC, u.cognome, u.nome
-  `, [], (err, riders) => {
+    ORDER BY u.fixed_vehicle_id DESC NULLS LAST, u.cognome, u.nome
+  `, [tomorrowDateStr], (err, riders) => {
     if (err) {
-      console.error('Errore recupero rider:', err);
-      req.flash('error', 'Errore durante il recupero dei rider');
+      console.error('❌ Errore recupero rider dal roster:', err);
+      req.flash('error', 'Errore durante il recupero dei rider dal roster');
       return res.redirect('/admin/assignments');
     }
 
+    console.log(`👥 Driver nel roster di domani: ${riders ? riders.length : 0}`);
+
     if (!riders || riders.length === 0) {
-      req.flash('error', 'Nessun rider disponibile per l\'assegnazione');
+      req.flash('error', 'Nessun driver nel roster per domani. Vai su ROSTER per selezionare i driver in turno.');
       return res.redirect('/admin/assignments');
     }
 
@@ -988,10 +1002,12 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
       ORDER BY v.targa
     `, [], (err, availableVehicles) => {
       if (err) {
-        console.error('Errore recupero veicoli:', err);
+        console.error('❌ Errore recupero veicoli:', err);
         req.flash('error', 'Errore durante il recupero dei veicoli');
         return res.redirect('/admin/assignments');
       }
+
+      console.log(`🚐 Veicoli disponibili: ${availableVehicles ? availableVehicles.length : 0}`);
 
       if (!availableVehicles || availableVehicles.length === 0) {
         req.flash('error', 'Nessun veicolo disponibile per l\'assegnazione');
@@ -1002,11 +1018,14 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
       const ridersWithFixedVehicle = riders.filter(r => r.fixed_vehicle_id);
       const ridersWithoutFixedVehicle = riders.filter(r => !r.fixed_vehicle_id);
 
+      console.log(`✅ Driver con furgone fisso: ${ridersWithFixedVehicle.length}`);
+      console.log(`🎲 Driver con furgone casuale: ${ridersWithoutFixedVehicle.length}`);
+
       let assigned = 0;
       let errors = [];
       const assignments = [];
 
-      // 4. Assegna furgoni fissi
+      // 4. Assegna furgoni fissi (PRIORITÀ)
       ridersWithFixedVehicle.forEach(rider => {
         const vehicle = availableVehicles.find(v => v.id === rider.fixed_vehicle_id);
         if (vehicle) {
@@ -1017,11 +1036,14 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
             vehicle_targa: vehicle.targa,
             type: 'fisso'
           });
+          console.log(`  ✅ ${rider.nome} ${rider.cognome} → ${vehicle.targa} (FISSO)`);
           // Rimuovi il veicolo dalla lista disponibili
           const index = availableVehicles.indexOf(vehicle);
           if (index > -1) availableVehicles.splice(index, 1);
         } else {
-          errors.push(`${rider.nome} ${rider.cognome}: furgone fisso ${rider.fixed_vehicle_id} non disponibile`);
+          const errorMsg = `${rider.nome} ${rider.cognome}: furgone fisso non disponibile`;
+          errors.push(errorMsg);
+          console.log(`  ❌ ${errorMsg}`);
         }
       });
 
@@ -1037,10 +1059,13 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
             vehicle_targa: vehicle.targa,
             type: 'casuale'
           });
+          console.log(`  ✅ ${rider.nome} ${rider.cognome} → ${vehicle.targa} (CASUALE)`);
           // Rimuovi dalla lista
           availableVehicles.shift();
         } else {
-          errors.push(`${rider.nome} ${rider.cognome}: nessun furgone disponibile`);
+          const errorMsg = `${rider.nome} ${rider.cognome}: nessun furgone disponibile`;
+          errors.push(errorMsg);
+          console.log(`  ⚠️  ${errorMsg}`);
         }
       });
 
@@ -1049,6 +1074,8 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
         req.flash('error', 'Nessun assegnamento possibile. Errori: ' + errors.join(', '));
         return res.redirect('/admin/assignments');
       }
+
+      console.log(`\n📊 Totale assegnamenti da creare: ${assignments.length}`);
 
       let completed = 0;
       assignments.forEach(assignment => {
