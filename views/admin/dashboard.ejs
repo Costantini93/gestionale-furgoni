@@ -18,6 +18,7 @@
       </div>
       <ul class="sidebar-menu">
         <li><a href="/admin/dashboard" class="active">Dashboard</a></li>
+        <li><a href="/admin/vehicles">Gestione Furgoni</a></li>
         <li><a href="/admin/dipendenti">Gestione Dipendenti</a></li>
         <li><a href="/admin/assignments">Assegnamenti</a></li>
         <li><a href="/admin/maintenance">Manutenzioni</a></li>
@@ -80,171 +81,6 @@
           </button>
         </div>
       </div>
-            <div style="display: flex; gap: 10px;">
-              <button 
-                id="resetSelectedBtn" 
-                class="btn btn-warning btn-sm" 
-                onclick="resetSelectedAssignments()" 
-                style="display: none;">
-                🔄 Reset Selezionati (<span id="selectedVehicleCount">0</span>)
-              </button>
-              <a href="/admin/assignments" class="btn btn-primary btn-sm">
-                ➕ Nuova Assegnazione
-              </a>
-            </div>
-          </div>
-          <div class="card-body">
-
-      <% if (vehicles && vehicles.length > 0) { %>
-        <div class="vehicle-grid">
-          <% vehicles.forEach(vehicle => { %>
-            <div class="vehicle-card <%= vehicle.status === 'assegnato' ? 'vehicle-assigned' : 'vehicle-available' %>">
-              <div style="display: flex; justify-content: space-between; align-items: start;">
-                <div>
-                  <h4 style="margin: 0 0 0.5rem 0; color: #1e293b;">
-                    <%= vehicle.status === 'assegnato' ? '🚚' : '🅿️' %> <%= vehicle.license_plate %>
-                  </h4>
-                  <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.9rem;">
-                    <%= vehicle.model %> (<%= vehicle.anno %>)
-                  </p>
-                </div>
-                <% if (vehicle.status === 'assegnato') { %>
-                  <input type="checkbox" class="vehicle-checkbox" value="<%= vehicle.id %>" onchange="updateResetButton()" style="width: 20px; height: 20px; cursor: pointer;">
-                <% } %>
-              </div>
-              
-              <% if (vehicle.status === 'assegnato' && vehicle.current_assignment) { %>
-                <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px; border-left: 4px solid #6366f1;">
-                  <p style="margin: 0; font-size: 0.85rem; color: #6366f1; font-weight: 600;">
-                    👤 Assegnato a: <%= vehicle.current_assignment.rider_nome %> <%= vehicle.current_assignment.rider_cognome %>
-                  </p>
-                  <p style="margin: 0.25rem 0 0 0; font-size: 0.8rem; color: #64748b;">
-                    📅 Dal <%= formatDate(vehicle.current_assignment.data_assegnazione) %>
-                  </p>
-                  <% if (vehicle.current_assignment.note) { %>
-                    <p style="margin: 0.5rem 0 0 0; font-size: 0.8rem; color: #475569;">
-                      💬 <%= vehicle.current_assignment.note %>
-                    </p>
-                  <% } %>
-                </div>
-              <% } else { %>
-                <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border-left: 4px solid #22c55e;">
-                  <p style="margin: 0; font-size: 0.85rem; color: #22c55e; font-weight: 600;">
-                    ✅ Disponibile
-                  </p>
-                </div>
-              <% } %>
-            </div>
-          <% }) %>
-        </div>
-
-        <!-- Stats rapide -->
-        <div style="margin-top: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 12px; color: white;">
-          <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 1rem;">
-            <div style="text-align: center;">
-              <div style="font-size: 2rem; font-weight: bold;"><%= vehicles.length %></div>
-              <div style="font-size: 0.9rem; opacity: 0.9;">🚛 Totale Furgoni</div>
-            </div>
-            <div style="text-align: center;">
-              <div style="font-size: 2rem; font-weight: bold;"><%= vehicles.filter(v => v.status === 'assegnato').length %></div>
-              <div style="font-size: 0.9rem; opacity: 0.9;">🚚 In Uso</div>
-            </div>
-            <div style="text-align: center;">
-              <div style="font-size: 2rem; font-weight: bold;"><%= vehicles.filter(v => v.status === 'disponibile').length %></div>
-              <div style="font-size: 0.9rem; opacity: 0.9;">🅿️ Disponibili</div>
-            </div>
-          </div>
-        </div>
-      <% } else { %>
-        <p class="no-data">Nessun furgone nel sistema. <a href="/admin/assignments">Aggiungi il primo furgone</a></p>
-      <% } %>
-    </div>
-
-    <!-- Filtri avanzati -->
-    <div class="card">
-      <h3>🔍 Ricerca Avanzata</h3>
-      <form method="GET" action="/admin/dashboard">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="searchRider">� Dipendente:</label>
-            <select id="searchRider" name="rider">
-              <option value="">Tutti i Rider</option>
-              <% riders.forEach(rider => { %>
-                <option value="<%= rider.id %>">
-                  <%= rider.nome %> <%= rider.cognome %>
-                </option>
-              <% }) %>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="searchData">📅 Data:</label>
-            <input type="text" id="searchData" name="data" placeholder="GG/MM/AAAA" pattern="\d{2}/\d{2}/\d{4}">
-          </div>
-
-          <div class="form-group">
-            <label for="searchRotta">🗺️ Codice Rotta:</label>
-            <input type="text" id="searchRotta" name="rotta" placeholder="ES: R001">
-          </div>
-
-          <div class="form-group">
-            <label for="searchTarga">🚐 Targa:</label>
-            <input type="text" id="searchTarga" name="targa" placeholder="ES: AB123CD">
-          </div>
-        </div>
-
-        <div class="form-row" style="gap: 1rem; margin-top: 1rem;">
-          <button type="submit" class="btn btn-primary">
-            🔍 Cerca
-          </button>
-          <a href="/admin/dashboard" class="btn btn-secondary">
-            🔄 Resetta Filtri
-          </a>
-        </div>
-      </form>
-      
-      <div class="form-row" style="gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid rgba(99, 102, 241, 0.2);">
-        <button onclick="exportToExcel()" class="btn-export">
-          📊 Esporta Excel
-        </button>
-        <a href="/admin/assignments" class="btn-gradient">
-          🚚 Assegna Furgone
-        </a>
-        <a href="/admin/maintenance" class="btn-gradient" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
-          🔧 Richieste Manutenzione
-        </a>
-      </div>
-    </div>
-          </a>
-        </div>
-      </form>
-    </div>
-
-    <!-- Tabella report -->
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin: 0;">📦 Report Consegne</h3>
-        
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-          <button 
-            id="deleteSelectedBtn" 
-            class="btn" 
-            onclick="deleteSelected()" 
-            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: none;">
-            🗑️ Elimina Selezionati (<span id="selectedCount">0</span>)
-          </button>
-          
-          <button class="btn btn-secondary" onclick="filterStatus('all')" id="btnAll">
-            📋 Tutti (<span id="countAll">0</span>)
-          </button>
-          <button class="btn btn-warning" onclick="filterStatus('partito')" id="btnPartito">
-            🚚 In Viaggio (<span id="countPartito">0</span>)
-          </button>
-          <button class="btn btn-success" onclick="filterStatus('completato')" id="btnCompletato">
-            ✅ Rientrati (<span id="countCompletato">0</span>)
-          </button>
-        </div>
-      </div>
       
       <% if (reports.length === 0) { %>
         <p class="no-data">Nessun report disponibile.</p>
@@ -263,7 +99,7 @@
                   Rider <span class="sort-icon" id="sort-rider">⇅</span>
                 </th>
                 <th class="sortable" onclick="sortTable('status')" style="cursor: pointer;">
-                  📍 Stato <span class="sort-icon" id="sort-status">⇅</span>
+                  Stato <span class="sort-icon" id="sort-status">⇅</span>
                 </th>
                 <th class="sortable" onclick="sortTable('targa_furgone')" style="cursor: pointer;">
                   Targa <span class="sort-icon" id="sort-targa_furgone">⇅</span>
