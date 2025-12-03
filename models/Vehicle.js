@@ -2,7 +2,7 @@ const db = require('../config/database');
 
 class Vehicle {
   static getAll(callback) {
-    db.all('SELECT * FROM vehicles ORDER BY license_plate', [], callback);
+    db.all('SELECT * FROM vehicles ORDER BY targa', [], callback);
   }
 
   static getAllWithAssignments(callback) {
@@ -18,7 +18,7 @@ class Vehicle {
        FROM vehicles v
        LEFT JOIN vehicle_assignments va ON v.id = va.vehicle_id AND va.status = 'attivo'
        LEFT JOIN users u ON va.rider_id = u.id
-       ORDER BY v.license_plate`,
+       ORDER BY v.targa`,
       [],
       (err, rows) => {
         if (err) return callback(err);
@@ -26,8 +26,8 @@ class Vehicle {
         // Trasforma i dati per includere current_assignment
         const vehicles = rows.map(row => ({
           id: row.id,
-          license_plate: row.license_plate,
-          model: row.model,
+          license_plate: row.targa,
+          model: row.modello,
           anno: row.anno,
           status: row.status,
           current_assignment: row.assignment_id ? {
@@ -45,7 +45,7 @@ class Vehicle {
   }
 
   static getAvailable(callback) {
-    db.all('SELECT * FROM vehicles WHERE status = ? ORDER BY license_plate', ['disponibile'], callback);
+    db.all('SELECT * FROM vehicles WHERE status = ? ORDER BY targa', ['disponibile'], callback);
   }
 
   static getById(id, callback) {
