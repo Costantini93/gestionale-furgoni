@@ -3,36 +3,33 @@
 
 const KEYWORDS = {
   alta: [
-    // Sicurezza critica
+    // Sicurezza critica - Freni e sterzo
     'freni', 'freno', 'frenata', 'sterzo', 'sterzata', 'ruota', 'pneumatico', 'gomma',
     'motore', 'acceleratore', 'pedale', 'trasmissione', 'cambio',
     'cinture', 'cintura', 'airbag',
     
-    // Emergenze
+    // Emergenze - Non parte/bloccato
     'non parte', 'non si avvia', 'fermo', 'ferma', 'bloccato', 'bloccata',
     'perde olio', 'perdita olio', 'fumo', 'fumi', 'surriscaldamento',
     'rumore forte', 'rumore metallico', 'cigola', 'stridore',
     
-    // Rischi
+    // Rischi reali
     'pericoloso', 'pericolo', 'rischio', 'urgente', 'grave', 'serio',
-    'incidente', 'rottura', 'rotto', 'danneggiato gravemente',
+    'incidente', 'rottura grave', 'danneggiato gravemente',
     
-    // Funzionamento critico
-    'non funziona', 'guasto', 'avaria', 'anomalia grave',
+    // Funzionamento critico solo per sicurezza
+    'freni non funzionano', 'sterzo non funziona', 'motore guasto',
+    'guasto grave', 'avaria', 'anomalia grave',
     'allarme', 'spia rossa', 'errore critico'
   ],
   
   media: [
-    // Comfort e funzionalità
-    'climatizzatore', 'aria condizionata', 'riscaldamento',
-    'finestrino', 'portiera', 'sportello',
-    'radio', 'navigatore', 'bluetooth',
-    
-    // Problemi gestibili
+    // Problemi gestibili ma non urgenti
     'luce', 'lampada', 'fanale', 'faro', 'abbagliante',
     'tergicristalli', 'tergicristallo', 'spazzola',
     'specchietto', 'retrovisore',
-    'ammaccatura',
+    'finestrino', 'portiera', 'sportello',
+    'radio', 'navigatore', 'bluetooth',
     
     // Manutenzione ordinaria
     'rumoroso', 'rumore leggero', 'vibra', 'vibrazione',
@@ -41,10 +38,15 @@ const KEYWORDS = {
   ],
   
   bassa: [
-    // Estetica
+    // Estetica e comfort non critico
     'graffio', 'graffi', 'graffietto', 'piccolo graffio', 'graffiatura',
+    'ammaccatura', 'ammaccato', 'botta', 'bozzo',
     'macchia', 'sporco', 'carrozzeria',
     'vernice', 'pittura', 'cromatura',
+    'rotto estetico', 'rottura estetica',
+    
+    // Comfort non essenziale
+    'climatizzatore', 'aria condizionata', 'riscaldamento', 'clima',
     
     // Accessori
     'posacenere', 'tappetino', 'tappetini', 'coprisedile',
