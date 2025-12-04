@@ -81,19 +81,51 @@ router.get('/dashboard', requireAdmin, (req, res) => {
 
           // Conta manutenzioni pending
           getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
-            res.render('admin/dashboard', {
-              user: {
-                nome: req.session.nome,
-                cognome: req.session.cognome
-              },
-              reports: filteredReports,
-              riders: riders || [],
-              vehicles: vehicles || [],
-              selectedRider: rider || null,
-              searchFilters: { rider, data: req.query.data, rotta, targa },
-              pendingMaintenanceCount: pendingMaintenanceCount || 0,
-              success: req.flash('success'),
-              error: req.flash('error')
+            
+            // Ottieni driver in turno oggi senza report
+            const db = require('../config/database');
+            const today = new Date().toISOString().split('T')[0];
+            
+            db.all(`
+              SELECT DISTINCT 
+                u.id, 
+                u.nome, 
+                u.cognome, 
+                u.fixed_vehicle_id,
+                v.targa as vehicle_targa
+              FROM roster_daily rd
+              JOIN users u ON rd.driver_id = u.id
+              LEFT JOIN vehicles v ON u.fixed_vehicle_id = v.id
+              WHERE rd.roster_date = ?
+              AND u.role = 'rider'
+              AND u.is_active = 1
+              AND u.id NOT IN (
+                SELECT DISTINCT user_id 
+                FROM reports 
+                WHERE data_giorno = ?
+              )
+              ORDER BY u.cognome, u.nome
+            `, [today, today], (err, driversWithoutReport) => {
+              if (err) {
+                console.error('Error getting drivers without report:', err);
+                driversWithoutReport = [];
+              }
+              
+              res.render('admin/dashboard', {
+                user: {
+                  nome: req.session.nome,
+                  cognome: req.session.cognome
+                },
+                reports: filteredReports,
+                riders: riders || [],
+                vehicles: vehicles || [],
+                driversWithoutReport: driversWithoutReport || [],
+                selectedRider: rider || null,
+                searchFilters: { rider, data: req.query.data, rotta, targa },
+                pendingMaintenanceCount: pendingMaintenanceCount || 0,
+                success: req.flash('success'),
+                error: req.flash('error')
+              });
             });
           });
         });

@@ -126,15 +126,17 @@ const ReportModel = {
 
   // Completa rientro (aggiorna km_rientro, orario_rientro, status)
   completeReturn: (reportId, returnData, callback) => {
-    const { km_rientro, orario_rientro, note_rientro } = returnData;
+    const { km_rientro, orario_rientro, pacchi_ritornati, rifornimento_euro } = returnData;
     
     db.run(
       `UPDATE daily_reports SET 
         km_rientro = ?, 
-        orario_rientro = ?, 
+        orario_rientro = ?,
+        pacchi_resi = ?,
+        importo_rifornimento = ?,
         status = 'completato'
        WHERE id = ?`,
-      [km_rientro, orario_rientro, reportId],
+      [km_rientro, orario_rientro, pacchi_ritornati || 0, rifornimento_euro || 0, reportId],
       callback
     );
   },

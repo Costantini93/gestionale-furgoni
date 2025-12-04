@@ -171,10 +171,18 @@
           </div>
 
           <div class="form-group">
-            <label class="checkbox-label">
-              <input type="checkbox" id="firma" name="firma" required>
-              <span class="checkbox-text">âœï¸ FIRMA - Confermo i dati *</span>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #e2e8f0;">
+              ✍️ FIRMA - Firma qui sotto per confermare *
             </label>
+            <div style="border: 2px solid #6366f1; border-radius: 8px; background: white; margin-bottom: 0.5rem;">
+              <canvas id="signatureCanvas" width="300" height="150" style="display: block; width: 100%; touch-action: none;"></canvas>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" onclick="clearSignature()" class="btn btn-secondary" style="flex: 1; padding: 0.5rem;">
+                🗑️ Cancella
+              </button>
+            </div>
+            <input type="hidden" id="firma" name="firma" required>
           </div>
         </div>
 
@@ -277,12 +285,36 @@
           </div>
 
           <div class="form-group" style="margin-top: 1rem;">
-            <label for="orario_rientro_modal">ðŸ• Orario Rientro *</label>
+            <label for="orario_rientro_modal">🕐 Orario Rientro *</label>
             <input 
               type="time" 
               id="orario_rientro_modal" 
               name="orario_rientro" 
               required
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="pacchi_ritornati_modal">📦 Pacchi Ritornati</label>
+            <input 
+              type="number" 
+              id="pacchi_ritornati_modal" 
+              name="pacchi_ritornati" 
+              min="0"
+              value="0"
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="rifornimento_modal">⛽ Rifornimento €</label>
+            <input 
+              type="number" 
+              id="rifornimento_modal" 
+              name="rifornimento_euro" 
+              min="0"
+              step="0.01"
+              value="0"
+              placeholder="0.00"
               style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
           </div>
 
@@ -788,6 +820,95 @@
       sidebar.classList.toggle('active');
       overlay.classList.toggle('active');
     }
+
+    // === CANVAS FIRMA DIGITALE ===
+    const canvas = document.getElementById('signatureCanvas');
+    const ctx = canvas.getContext('2d');
+    const firmaInput = document.getElementById('firma');
+    let isDrawing = false;
+    let hasSignature = false;
+
+    // Imposta dimensioni canvas
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      ctx.scale(2, 2);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+    resizeCanvas();
+
+    // Mouse events
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    // Touch events
+    canvas.addEventListener('touchstart', handleTouch);
+    canvas.addEventListener('touchmove', handleTouch);
+    canvas.addEventListener('touchend', stopDrawing);
+
+    function startDrawing(e) {
+      isDrawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      hasSignature = true;
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+      if (hasSignature) {
+        firmaInput.value = canvas.toDataURL('image/png');
+      }
+    }
+
+    function handleTouch(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      canvas.dispatchEvent(mouseEvent);
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) / 2,
+        y: (e.clientY - rect.top) / 2
+      };
+    }
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasSignature = false;
+      firmaInput.value = '';
+    }
+
+    // Validazione form - controlla firma
+    document.querySelector('form[action="/rider/report"]').addEventListener('submit', function(e) {
+      if (!hasSignature) {
+        e.preventDefault();
+        alert('⚠️ Per favore, firma prima di inviare il report!');
+        canvas.style.border = '2px solid #ef4444';
+        setTimeout(() => {
+          canvas.style.border = '2px solid #6366f1';
+        }, 2000);
+      }
+    });
   </script>
       </div>
     </main>

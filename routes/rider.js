@@ -181,7 +181,7 @@ router.post('/report/create', requireRider, upload.fields([
 // Completa rientro
 router.post('/report/complete/:id', requireRider, (req, res) => {
   const reportId = req.params.id;
-  const { km_rientro, orario_rientro } = req.body;
+  const { km_rientro, orario_rientro, pacchi_ritornati, rifornimento_euro } = req.body;
 
   // Validazione
   if (!km_rientro || !orario_rientro) {
@@ -235,7 +235,9 @@ router.post('/report/complete/:id', requireRider, (req, res) => {
     // Completa il rientro
     const returnData = {
       km_rientro,
-      orario_rientro
+      orario_rientro,
+      pacchi_ritornati: parseInt(pacchi_ritornati) || 0,
+      rifornimento_euro: parseFloat(rifornimento_euro) || 0
     };
 
     Report.completeReturn(reportId, returnData, (err) => {
