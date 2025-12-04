@@ -97,7 +97,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width: 40px;">
+                <th>
                   <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" title="Seleziona tutti">
                 </th>
                 <th class="sortable" onclick="sortTable('data_giorno')" style="cursor: pointer;">
@@ -116,11 +116,11 @@
                   Rotta <span class="sort-icon" id="sort-codice_rotta">⇅</span>
                 </th>
                 <th class="sortable" onclick="sortTable('km_partenza')" style="cursor: pointer;">
-                  Km Partenza <span class="sort-icon" id="sort-km_partenza">⇅</span>
+                  Km P. <span class="sort-icon" id="sort-km_partenza">⇅</span>
                 </th>
-                <th>Km Rientro</th>
+                <th>Km R.</th>
                 <th class="sortable" onclick="sortTable('km_percorsi')" style="cursor: pointer;">
-                  Km Percorsi <span class="sort-icon" id="sort-km_percorsi">⇅</span>
+                  Km Tot. <span class="sort-icon" id="sort-km_percorsi">⇅</span>
                 </th>
                 <th>Orario</th>
                 <th>Foto</th>
@@ -147,11 +147,11 @@
                   <td>
                     <% if (report.status === 'partito') { %>
                       <span class="badge badge-warning" style="background: linear-gradient(135deg, #f59e0b 0%, #fb923c 100%); animation: pulse-warning 2s infinite;">
-                        🚚 In Viaggio
+                        In Viaggio
                       </span>
                     <% } else { %>
                       <span class="badge badge-success">
-                        ✅ Rientrato
+                        Rientrato
                       </span>
                     <% } %>
                   </td>
@@ -196,11 +196,11 @@
                     <% } %>
                   </td>
                   <td class="actions">
-                    <button onclick="editReport(<%= report.id %>)" class="btn-icon" title="Modifica">
-                      ✏️
+                    <button onclick="editReport(<%= report.id %>)" class="btn-icon btn-sm btn-primary" title="Modifica">
+                      ✏
                     </button>
-                    <button onclick="deleteReport(<%= report.id %>)" class="btn-icon" title="Elimina">
-                      🗑️
+                    <button onclick="deleteReport(<%= report.id %>)" class="btn-icon btn-sm btn-danger" title="Elimina">
+                      ×
                     </button>
                   </td>
                 </tr>

@@ -949,6 +949,12 @@ router.post('/assignments/reset-all', requireAdmin, (req, res) => {
           } else {
             req.flash('success', `✅ Tutti gli assegnamenti (${successCount}) sono stati terminati! Furgoni disponibili.`);
           }
+          res.redirect('/admin/assignments');
+        }
+      });
+    });
+  });
+});
 
 // Assegnazione automatica furgoni (fissi + casuali)
 router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
@@ -1112,12 +1118,6 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
             res.redirect('/admin/assignments');
           }
         });
-      });
-    });
-  });
-});
-          res.redirect('/admin/assignments');
-        }
       });
     });
   });

@@ -279,6 +279,18 @@ body {
 }
 
 .btn-sm {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.btn-icon {
+  padding: 6px 8px;
+  font-size: 13px;
+  min-width: 32px;
+}
+
+.btn-sm {
   padding: 6px 12px;
   font-size: 12px;
 }
@@ -348,14 +360,15 @@ textarea {
 
 /* === TABLES === */
 .table-responsive {
-  overflow-x: auto;
-  margin: 0 -25px;
+  margin: 0;
+  overflow: visible;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 12px;
+  table-layout: auto;
 }
 
 thead {
@@ -363,20 +376,36 @@ thead {
 }
 
 th {
-  padding: 12px 15px;
+  padding: 8px 6px;
   text-align: left;
   font-weight: 600;
   color: var(--text-dark);
   border-bottom: 2px solid var(--border-color);
-  font-size: 13px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 td {
-  padding: 15px;
+  padding: 10px 6px;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-dark);
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+/* Checkbox colonna */
+th:first-child, td:first-child { 
+  width: 40px;
+  text-align: center;
+}
+
+/* Azioni colonna */
+th:last-child, td:last-child { 
+  white-space: normal;
+  text-align: center;
+  width: 120px;
 }
 
 tr:hover {

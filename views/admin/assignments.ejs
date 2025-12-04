@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Assegnazione Furgoni - Admin</title>
   <link rel="stylesheet" href="/css/clean-theme.css">
+  <script>
+    function autoAssign() {
+      if(confirm('Assegnazione Automatica:\\n\\n• Rider con furgone fisso → riceveranno il loro furgone\\n• Rider senza furgone fisso → riceveranno un furgone casuale disponibile\\n\\nContinuare?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/assignments/auto-assign';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'data_assegnazione';
+        input.value = new Date().toISOString().split('T')[0];
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+  </script>
 </head>
 <body>
   <!-- Overlay per chiudere sidebar su mobile -->
@@ -83,13 +99,11 @@
         <div class="card">
           <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
             <h3>Nuova Assegnazione</h3>
-            <form method="POST" action="/admin/assignments/auto-assign" 
-                  onsubmit="return confirm('Assegnazione Automatica:\n\n• Rider con furgone fisso → riceveranno il loro furgone\n• Rider senza furgone fisso → riceveranno un furgone casuale disponibile\n\nContinuare?');">
-              <input type="hidden" name="data_assegnazione" value="<%= new Date().toISOString().split('T')[0] %>">
-              <button type="submit" class="btn" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 0.75rem 1.5rem; font-weight: 600;">
-                Assegnazione Automatica
-              </button>
-            </form>
+            <button type="button" class="btn" 
+                    style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; padding: 0.75rem 1.5rem; font-weight: 600;"
+                    onclick="autoAssign()">
+              Assegnazione Automatica
+            </button>
           </div>
           <div class="card-body">
             <form method="POST" action="/admin/assignments/create">
