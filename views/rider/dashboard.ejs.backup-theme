@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8">
@@ -15,7 +15,7 @@
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
       toast.innerHTML = `
-        <span class="toast-icon">${type === 'success' ? '?' : '?'}</span>
+        <span class="toast-icon">${type === 'success' ? '✓' : '✗'}</span>
         <span>${message}</span>
       `;
       container.appendChild(toast);
@@ -25,14 +25,23 @@
     }
   </script>
 </head>
-<body style="background: #F5F7FA;">
-  <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; align-items: center; gap: 15px;">
-    <span style="color: #2C3E50; font-weight: 500;"><%= user.nome %> <%= user.cognome %></span>
-    <a href="/auth/logout" class="btn btn-secondary">Logout</a>
-  </div>
+<body>
+  <nav class="navbar">
+    <div class="nav-content">
+      <div class="nav-left">
+        <h1> Gestionale Consegne</h1>
+      </div>
+      <div class="nav-right">
+        <span class="user-info">
+          ‘¤ <%= user.nome %> <%= user.cognome %>
+        </span>
+        <a href="/auth/logout" class="btn btn-secondary">ª Logout</a>
+      </div>
+    </div>
+  </nav>
 
-  <div class="container" style="padding-top: 80px;">
-    <h2 style="color: #2C3E50; margin-bottom: 2rem;">Dashboard Rider</h2>
+  <div class="container">
+    <h2>š Dashboard Rider</h2>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
@@ -53,7 +62,7 @@
     <% if (error && error.length > 0) { %>
       <script>
         document.addEventListener('DOMContentLoaded', function() {
-          showToast('�� <%= error[0] %>', 'error');
+          showToast('¸ <%= error[0] %>', 'error');
         });
       </script>
     <% } %>
@@ -62,7 +71,7 @@
     <% if (openReports && openReports.length > 0) { %>
       <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, #fef3c7 0%, #fef9e6 100%);">
         <h3 style="color: #f59e0b;">Report da Completare</h3>
-        <p style="color: #7F8C8D; margin-bottom: 1rem;">
+        <p style="color: #92400e; margin-bottom: 1rem;">
           Hai <strong><%= openReports.length %></strong> rientro/i da registrare:
         </p>
         
@@ -88,15 +97,15 @@
       </div>
     <% } %>
 
-    <!-- Furgone Assegnato (solo se ci sono report attivi) -->
-    <% if (assignment && (preparationReport || (openReports && openReports.length > 0))) { %>
-      <div class="card" style="margin-bottom: 2rem;">
+    <!-- Furgone Assegnato -->
+    <% if (assignment) { %>
+      <div class="vehicle-card" style="margin-bottom: 2rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
           <div>
             <h3 style="margin: 0; font-size: 1.75rem; color: #6366f1;">
               Il tuo furgone
             </h3>
-            <p style="margin: 0.5rem 0 0 0; color: #7F8C8D; font-size: 0.875rem;">
+            <p style="margin: 0.5rem 0 0 0; color: #94a3b8; font-size: 0.875rem;">
               Assegnato dal <%= new Date(assignment.data_assegnazione).toLocaleDateString('it-IT') %>
             </p>
           </div>
@@ -107,21 +116,21 @@
 
         <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
           <div>
-            <p style="margin: 0; color: #7F8C8D; font-size: 0.875rem;">Targa</p>
-            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #2C3E50;">
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Targa</p>
+            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #f8fafc;">
               <%= assignment.targa %>
             </p>
           </div>
           <div>
-            <p style="margin: 0; color: #7F8C8D; font-size: 0.875rem;">Modello</p>
-            <p style="margin: 0.25rem 0 0 0; font-size: 1.125rem; font-weight: 600; color: #2C3E50;">
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Modello</p>
+            <p style="margin: 0.25rem 0 0 0; font-size: 1.125rem; font-weight: 600; color: #cbd5e1;">
               <%= assignment.modello %>
             </p>
           </div>
         </div>
 
-        <button onclick="showMaintenanceModal('<%= assignment.vehicle_id %>', '<%= assignment.targa %>')" class="btn btn-warning">
-          �� Segnala Problema
+        <button onclick="showMaintenanceModal('<%= assignment.vehicle_id %>', '<%= assignment.targa %>')" class="btn-gradient" style="margin-top: 1.5rem; background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+          ”§ Segnala Problema
         </button>
       </div>
     <% } %>
@@ -130,7 +139,7 @@
     <div class="card">
       <% if (preparationReport) { %>
         <h3>Completa la Tua Partenza</h3>
-        <p style="color: #7F8C8D; font-size: 0.9rem; margin-bottom: 1.5rem;">
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
           Assegnamento del <%= new Date(preparationReport.data_giorno).toLocaleDateString('it-IT') %> - Completa i dati e scatta le 5 foto prima di partire
         </p>
         <form action="/rider/report/create" method="POST" id="reportForm" enctype="multipart/form-data">
@@ -139,12 +148,12 @@
           <div class="form-row">
             <div class="form-group">
               <label for="data_giorno">Data</label>
-              <input type="date" id="data_giorno" name="data_giorno" value="<%= preparationReport.data_giorno %>" readonly style="background: #FFFFFF; cursor: not-allowed; color: #7F8C8D;">
+              <input type="date" id="data_giorno" name="data_giorno" value="<%= preparationReport.data_giorno %>" readonly style="background: #1e293b; cursor: not-allowed; color: #94a3b8;">
             </div>
 
             <div class="form-group">
               <label for="targa_furgone">Targa Furgone</label>
-              <input type="text" id="targa_furgone" name="targa_furgone" value="<%= preparationReport.targa_furgone %>" readonly style="background: #FFFFFF; cursor: not-allowed; color: #7F8C8D;">
+              <input type="text" id="targa_furgone" name="targa_furgone" value="<%= preparationReport.targa_furgone %>" readonly style="background: #1e293b; cursor: not-allowed; color: #94a3b8;">
             </div>
 
             <div class="form-group">
@@ -160,12 +169,29 @@
             </div>
 
             <div class="form-group">
+              <label for="numero_scheda_dkv">Numero Scheda DKV</label>
+              <input type="text" id="numero_scheda_dkv" name="numero_scheda_dkv" placeholder="Opzionale">
+            </div>
+
+            <div class="form-group">
+              <label for="importo_rifornimento">Importo Rifornimento (€)</label>
+              <input type="number" id="importo_rifornimento" name="importo_rifornimento" step="0.01" min="0" placeholder="0.00">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
               <label for="numero_aziendale">Numero Aziendale</label>
               <input type="text" id="numero_aziendale" name="numero_aziendale" placeholder="Opzionale">
             </div>
 
             <div class="form-group">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #2C3E50;">
+              <label for="pacchi_resi">Numero Pacchi Resi</label>
+              <input type="number" id="pacchi_resi" name="pacchi_resi" min="0" placeholder="0">
+            </div>
+
+            <div class="form-group">
+              <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #e2e8f0;">
                 FIRMA - Firma qui sotto per confermare *
               </label>
               <div style="border: 2px solid #6366f1; border-radius: 8px; background: white; margin-bottom: 0.5rem; position: relative;">
@@ -183,7 +209,7 @@
           <!-- Foto Furgone -->
           <div class="form-section">
             <h4 style="color: #6366f1; margin-bottom: 1rem;">Foto del Furgone (Obbligatorie)</h4>
-            <p style="color: #7F8C8D; font-size: 0.9rem; margin-bottom: 1.5rem;">
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
               Scatta o carica 5 foto del furgone prima di partire
             </p>
 
@@ -251,111 +277,75 @@
         </div>
 
         <button type="submit" class="btn btn-primary">
-          ?? Registra Partenza
+          🚀 Registra Partenza
         </button>
       </form>
       <% } else { %>
-        <div class="card" style="text-align: center; padding: 3rem;">
-          <h3 style="color: #7F8C8D; margin-bottom: 1rem;">Nessun Assegnamento</h3>
-          <p style="color: #95A5A6;">Non hai assegnamenti per oggi. Contatta l'amministratore per ottenere un assegnamento.</p>
-        </div>
+        <h3 style="color: #f59e0b;">Nessun Assegnamento</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+          Non hai assegnamenti per oggi. Contatta l'amministratore per ottenere un assegnamento.
+        </p>
       <% } %>
     </div>
 
     <!-- Modal Completa Rientro -->
-    <div id="completeModal" class="photo-modal" style="background: rgba(0,0,0,0.5);">
-      <div class="photo-modal-content" style="max-width: 500px; background: #FFFFFF;">
-        <button class="photo-modal-close" onclick="closeCompleteModal()" style="color: #2C3E50;">×</button>
-        <h3 style="color: #27AE60; margin-bottom: 1rem;">Completa Rientro</h3>
+    <div id="completeModal" class="photo-modal">
+      <div class="photo-modal-content" style="max-width: 500px;">
+        <button class="photo-modal-close" onclick="closeCompleteModal()">×</button>
+        <h3 style="color: #6366f1; margin-bottom: 1rem;"> Completa Rientro</h3>
         
-        <div id="modalReportInfo" style="background: #F8F9FA; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #E0E0E0;">
+        <div id="modalReportInfo" style="background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
           <!-- Info report compilata da JS -->
         </div>
 
         <form id="completeForm" method="POST" action="">
           <div class="form-group">
-            <label for="km_rientro_modal" style="color: #2C3E50; font-weight: 500;">Km Rientro *</label>
+            <label for="km_rientro_modal">“ Km Rientro *</label>
             <input 
               type="number" 
               id="km_rientro_modal" 
               name="km_rientro" 
               min="0" 
               required
-              class="form-control">
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
           </div>
 
           <div class="form-group" style="margin-top: 1rem;">
-            <label for="orario_rientro_modal" style="color: #2C3E50; font-weight: 500;">Orario Rientro *</label>
+            <label for="orario_rientro_modal">Orario Rientro *</label>
             <input 
               type="time" 
               id="orario_rientro_modal" 
               name="orario_rientro" 
               required
-              class="form-control">
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
           </div>
 
           <div class="form-group" style="margin-top: 1rem;">
-            <label for="pacchi_ritornati_modal" style="color: #2C3E50; font-weight: 500;">Pacchi Ritornati</label>
+            <label for="pacchi_ritornati_modal">Pacchi Ritornati</label>
             <input 
               type="number" 
               id="pacchi_ritornati_modal" 
               name="pacchi_ritornati" 
               min="0"
               value="0"
-              class="form-control">
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
           </div>
 
           <div class="form-group" style="margin-top: 1rem;">
-            <label for="tipo_rifornimento_modal" style="color: #2C3E50; font-weight: 500;">Tipo Rifornimento</label>
-            <select 
-              id="tipo_rifornimento_modal" 
-              class="form-control"
-              onchange="toggleRifornimentoFields()">
-              <option value="nessuno">Nessun Rifornimento</option>
-              <option value="ip">IP</option>
-              <option value="dkv">DKV</option>
-            </select>
-          </div>
-
-          <div id="rifornimento_ip_fields" style="display: none; margin-top: 1rem;">
-            <div class="form-group">
-              <label for="importo_rifornimento_modal" style="color: #2C3E50; font-weight: 500;">Importo Rifornimento (€) *</label>
-              <input 
-                type="number" 
-                id="importo_rifornimento_modal" 
-                name="importo_rifornimento" 
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                class="form-control">
-            </div>
-          </div>
-
-          <div id="rifornimento_dkv_fields" style="display: none; margin-top: 1rem;">
-            <div class="form-group">
-              <label for="numero_dkv_modal" style="color: #2C3E50; font-weight: 500;">Numero Scheda DKV *</label>
-              <input 
-                type="text" 
-                id="numero_dkv_modal" 
-                name="numero_scheda_dkv" 
-                placeholder="Inserisci numero DKV"
-                class="form-control">
-            </div>
-            <div class="form-group" style="margin-top: 1rem;">
-              <label for="importo_dkv_modal" style="color: #2C3E50; font-weight: 500;">Importo Rifornimento (€) *</label>
-              <input 
-                type="number" 
-                id="importo_dkv_modal" 
-                name="importo_rifornimento_dkv" 
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                class="form-control">
-            </div>
+            <label for="rifornimento_modal">Rifornimento €</label>
+            <input 
+              type="number" 
+              id="rifornimento_modal" 
+              name="rifornimento_euro" 
+              min="0"
+              step="0.01"
+              value="0"
+              placeholder="0.00"
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
           </div>
 
           <div id="kmCalculation" style="margin-top: 1rem; padding: 1rem; background: #10b981; border-radius: 8px; display: none;">
-            <strong style="color: white; font-size: 1.1rem;">�� KM Percorsi: <span id="kmPercorsi">0</span></strong>
+            <strong style="color: white; font-size: 1.1rem;">“Š KM Percorsi: <span id="kmPercorsi">0</span></strong>
           </div>
 
           <div class="form-row" style="margin-top: 1.5rem; gap: 0.75rem;">
@@ -370,42 +360,79 @@
       </div>
     </div>
 
-    <!-- Messaggio quando non ci sono turni attivi -->
-    <% if (!preparationReport && (!openReports || openReports.length === 0)) { %>
-      <div class="card" style="text-align: center; padding: 3rem;">
-        <h3 style="color: #7F8C8D; margin-bottom: 1rem;">Nessun Turno Attivo</h3>
-        <p style="color: #95A5A6;">Non hai turni da completare al momento. Controlla pi� tardi o contatta l'amministratore.</p>
-      </div>
-    <% } %>
+    <!-- Storico report COMPLETATI -->
+    <div class="card">
+      <h3>“Š Storico Report Completati</h3>
+      
+      <% if (reports.filter(r => r.status === 'completato').length === 0) { %>
+        <p class="no-data">Nessun report completato ancora.</p>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Targa</th>
+                <th>Rotta</th>
+                <th>Km Partenza</th>
+                <th>Km Rientro</th>
+                <th>Km Percorsi</th>
+                <th>Orario Rientro</th>
+                <th>Foto</th>
+                <th>Firma</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% reports.filter(r => r.status === 'completato').forEach(report => { %>
+                <tr>
+                  <td><%= formatDate(report.data_giorno) %></td>
+                  <td><%= report.targa_furgone %></td>
+                  <td><%= report.codice_rotta %></td>
+                  <td><%= report.km_partenza %></td>
+                  <td><%= report.km_rientro %></td>
+                  <td><strong><%= report.km_rientro - report.km_partenza %></strong></td>
+                  <td><%= report.orario_rientro %></td>
+                  <td>
+                    <div class="photo-thumbnails">
+                      <% if (report.foto_posteriore) { %>
+                        <img src="<%= report.foto_posteriore %>" class="photo-thumb" alt="Posteriore" 
+                             onclick="openPhotoModal('<%= report.foto_posteriore %>', 'Foto Posteriore - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_anteriore) { %>
+                        <img src="<%= report.foto_anteriore %>" class="photo-thumb" alt="Anteriore"
+                             onclick="openPhotoModal('<%= report.foto_anteriore %>', 'Foto Anteriore - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_lato_destro) { %>
+                        <img src="<%= report.foto_lato_destro %>" class="photo-thumb" alt="Lato Destro"
+                             onclick="openPhotoModal('<%= report.foto_lato_destro %>', 'Lato Destro - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_lato_sinistro) { %>
+                        <img src="<%= report.foto_lato_sinistro %>" class="photo-thumb" alt="Lato Sinistro"
+                             onclick="openPhotoModal('<%= report.foto_lato_sinistro %>', 'Lato Sinistro - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_interno) { %>
+                        <img src="<%= report.foto_interno %>" class="photo-thumb" alt="Interno"
+                             onclick="openPhotoModal('<%= report.foto_interno %>', 'Interno - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (report.firma) { %>
+                      <span class="badge badge-success">✓</span>
+                    <% } else { %>
+                      <span class="badge badge-error">✗</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
   </div>
 
   <script>
-    // ===== FUNZIONE TOGGLE CAMPI RIFORNIMENTO =====
-    function toggleRifornimentoFields() {
-      const tipoRifornimento = document.getElementById('tipo_rifornimento_modal').value;
-      const ipFields = document.getElementById('rifornimento_ip_fields');
-      const dkvFields = document.getElementById('rifornimento_dkv_fields');
-      
-      // Nascondi entrambi
-      ipFields.style.display = 'none';
-      dkvFields.style.display = 'none';
-      
-      // Rimuovi required da tutti i campi
-      document.getElementById('importo_rifornimento_modal').removeAttribute('required');
-      document.getElementById('numero_dkv_modal').removeAttribute('required');
-      document.getElementById('importo_dkv_modal').removeAttribute('required');
-      
-      // Mostra i campi appropriati
-      if (tipoRifornimento === 'ip') {
-        ipFields.style.display = 'block';
-        document.getElementById('importo_rifornimento_modal').setAttribute('required', 'required');
-      } else if (tipoRifornimento === 'dkv') {
-        dkvFields.style.display = 'block';
-        document.getElementById('numero_dkv_modal').setAttribute('required', 'required');
-        document.getElementById('importo_dkv_modal').setAttribute('required', 'required');
-      }
-    }
-
     // ===== MODAL COMPLETA RIENTRO =====
     let currentReportId = null;
     let currentKmPartenza = 0;
@@ -419,7 +446,7 @@
       
       // Imposta info report nel modal
       document.getElementById('modalReportInfo').innerHTML = `
-        <p style="margin: 0; color: #2C3E50;">
+        <p style="margin: 0; color: #e2e8f0;">
           <strong>Data:</strong> ${formattedDate}<br>
           <strong>Targa:</strong> ${targa}<br>
           <strong>KM Partenza:</strong> ${kmPartenza}
@@ -621,7 +648,7 @@
       modal.className = 'photo-modal active';
       modal.innerHTML = `
         <div class="photo-modal-content">
-          <button class="photo-modal-close" onclick="this.closest('.photo-modal').remove()">�</button>
+          <button class="photo-modal-close" onclick="this.closest('.photo-modal').remove()">×</button>
           <img src="${photoUrl}" alt="${caption}">
           <div class="photo-modal-caption">${caption}</div>
         </div>
@@ -639,58 +666,58 @@
   <!-- Modal Segnalazione Manutenzione -->
   <div id="maintenanceModal" class="modal" style="display: none;">
     <div class="modal-content glass-card" style="max-width: 600px;">
-      <h3>�� Segnala Problema con AI</h3>
+      <h3>”§ Segnala Problema con AI</h3>
       <form action="/rider/maintenance/create" method="POST" id="maintenanceForm">
         <input type="hidden" id="maintenance_vehicle_id" name="vehicle_id">
         
         <div class="form-group">
-          <label>� Furgone:</label>
+          <label> Furgone:</label>
           <input type="text" id="maintenance_vehicle_targa" readonly style="background: rgba(30, 41, 59, 0.5);">
         </div>
 
         <div class="form-group">
-          <label>�� Descrizione Problema *</label>
+          <label>¸ Descrizione Problema *</label>
           <textarea 
             id="issue_description" 
             name="issue_description" 
             rows="4" 
             required 
-            placeholder="Descrivi il problema riscontrato... L'AI analizzerà la gravità!"
+            placeholder="Descrivi il problema riscontrato... L'AI analizzerÃ  la gravitÃ !"
             style="resize: vertical;"></textarea>
-          <small style="color: #7F8C8D; font-size: 0.875rem; margin-top: 0.5rem; display: block;">
-            �� Scrivi dettagli come: rumore, vibrazione, perdite, luci, funzionamento...
+          <small style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.5rem; display: block;">
+            ’¡ Scrivi dettagli come: rumore, vibrazione, perdite, luci, funzionamento...
           </small>
         </div>
 
         <!-- AI Priority Preview -->
         <div id="aiPriorityPreview" style="display: none; margin: 1rem 0; padding: 1rem; border-radius: 12px; background: rgba(99, 102, 241, 0.1); border: 2px solid rgba(99, 102, 241, 0.3);">
           <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <span style="font-size: 1.5rem;">��</span>
+            <span style="font-size: 1.5rem;">¤–</span>
             <div>
               <strong style="color: #a5b4fc; font-size: 0.875rem;">AI ANALISI:</strong>
               <div id="aiSuggestion" style="font-size: 1.125rem; font-weight: 600; margin-top: 0.25rem;"></div>
             </div>
           </div>
-          <div id="aiExplanation" style="font-size: 0.875rem; color: #2C3E50; margin-top: 0.5rem;"></div>
-          <div id="aiConfidence" style="font-size: 0.75rem; color: #7F8C8D; margin-top: 0.5rem;"></div>
+          <div id="aiExplanation" style="font-size: 0.875rem; color: #cbd5e1; margin-top: 0.5rem;"></div>
+          <div id="aiConfidence" style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;"></div>
         </div>
 
         <div class="form-group">
           <label style="display: flex; align-items: center; gap: 0.5rem;">
-            �� Priorità: 
-            <small style="color: #7F8C8D; font-weight: normal;">(Lascia vuoto per usare AI)</small>
+            Ž¯ PrioritÃ : 
+            <small style="color: #94a3b8; font-weight: normal;">(Lascia vuoto per usare AI)</small>
           </label>
           <select id="priority_select" name="priority">
-            <option value="">�� Automatica (AI)</option>
-            <option value="bassa">�� Bassa - Non urgente</option>
-            <option value="media">�� Media - Importante</option>
-            <option value="alta">�� Alta - Urgente</option>
+            <option value="">¤– Automatica (AI)</option>
+            <option value="bassa">Ÿ¢ Bassa - Non urgente</option>
+            <option value="media">Ÿ¡ Media - Importante</option>
+            <option value="alta">”´ Alta - Urgente</option>
           </select>
         </div>
 
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <button type="submit" class="btn btn-warning">
-            �� Invia Richiesta
+          <button type="submit" class="btn-gradient" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+            “© Invia Richiesta
           </button>
           <button type="button" onclick="closeMaintenanceModal()" class="btn btn-secondary">
             Annulla
@@ -748,16 +775,16 @@
           let badgeColor, emoji;
           if (data.priority === 'alta') {
             badgeColor = '#ef4444';
-            emoji = '��';
+            emoji = '”´';
           } else if (data.priority === 'media') {
             badgeColor = '#f59e0b';
-            emoji = '��';
+            emoji = 'Ÿ¡';
           } else {
             badgeColor = '#10b981';
-            emoji = '��';
+            emoji = 'Ÿ¢';
           }
 
-          suggestion.innerHTML = `${emoji} Priorità: <span style="color: ${badgeColor}">${data.priority.toUpperCase()}</span>`;
+          suggestion.innerHTML = `${emoji} PrioritÃ : <span style="color: ${badgeColor}">${data.priority.toUpperCase()}</span>`;
           explanation.textContent = data.explanation;
           confidence.textContent = `Confidenza: ${data.confidence}%`;
           
@@ -896,7 +923,6 @@
   </div>
 </body>
 </html>
-
 
 
 

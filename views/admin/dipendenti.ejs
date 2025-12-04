@@ -38,6 +38,7 @@
         </div>
         <div class="topbar-right">
           <div class="user-info"><span>Admin</span></div>
+          <a href="/auth/logout" class="btn btn-secondary">Logout</a>
         </div>
       </div>
       <div class="content-wrapper" style="padding:2rem">
@@ -47,7 +48,7 @@
             <button class="btn btn-primary" onclick="openCreateModal()">Aggiungi Driver</button>
           </div>
           <div class="card-body">
-            <% if (riders && riders.length > 0) { %>
+            <% if (drivers && drivers.length > 0) { %>
               <div class="table-responsive">
                 <table class="table">
                   <thead>
@@ -62,24 +63,24 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <% riders.forEach(rider => { %>
+                    <% drivers.forEach(driver => { %>
                       <tr>
-                        <td><strong><%= rider.nome %> <%= rider.cognome %></strong></td>
-                        <td><%= rider.username %></td>
-                        <td><%= rider.codice_fiscale %></td>
+                        <td><strong><%= driver.nome %> <%= driver.cognome %></strong></td>
+                        <td><%= driver.username %></td>
+                        <td><%= driver.codice_fiscale %></td>
                         <td>
-                          <span class="badge badge-<%= rider.role === 'admin' ? 'danger' : 'primary' %>">
-                            <%= rider.role === 'admin' ? 'Admin' : 'Driver' %>
+                          <span class="badge badge-<%= driver.role === 'admin' ? 'danger' : 'primary' %>">
+                            <%= driver.role === 'admin' ? 'Admin' : 'Driver' %>
                           </span>
                         </td>
                         <td>
-                          <span class="badge badge-<%= rider.is_active === 1 ? 'success' : 'secondary' %>">
-                            <%= rider.is_active === 1 ? 'Attivo' : 'Non Attivo' %>
+                          <span class="badge badge-<%= driver.is_active === 1 ? 'success' : 'secondary' %>">
+                            <%= driver.is_active === 1 ? 'Attivo' : 'Non Attivo' %>
                           </span>
                         </td>
                         <td>
-                          <% if (rider.fixed_vehicle_id) { 
-                            const fixedVehicle = vehicles.find(v => v.id === rider.fixed_vehicle_id);
+                          <% if (driver.fixed_vehicle_id) { 
+                            const fixedVehicle = vehicles.find(v => v.id === driver.fixed_vehicle_id);
                           %>
                             <span class="badge badge-success">
                               <%= fixedVehicle ? fixedVehicle.targa : 'N/A' %>
@@ -89,9 +90,9 @@
                           <% } %>
                         </td>
                         <td>
-                          <button class="btn btn-sm btn-secondary" onclick="openEditModal(<%= rider.id %>)">Modifica</button>
-                          <% if (rider.role !== 'admin') { %>
-                            <button class="btn btn-sm btn-danger" onclick="deleteRider(<%= rider.id %>)">Elimina</button>
+                          <button class="btn btn-sm btn-secondary" onclick="openEditModal(<%= driver.id %>)">Modifica</button>
+                          <% if (driver.role !== 'admin') { %>
+                            <button class="btn btn-sm btn-danger" onclick="deleteDriver(<%= driver.id %>)">Elimina</button>
                           <% } %>
                         </td>
                       </tr>
@@ -148,7 +149,9 @@
             <select name="fixed_vehicle_id" class="form-control">
               <option value="">Nessuno (assegnazione casuale)</option>
               <% vehicles.forEach(vehicle => { %>
-                <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>
+                <% if (!vehicle.isFixedToOther) { %>
+                  <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>
+                <% } %>
               <% }); %>
             </select>
             <small class="form-text">Se selezionato, il driver ricevera sempre questo furgone</small>
@@ -211,7 +214,9 @@
             <select name="fixed_vehicle_id" id="edit_fixed_vehicle_id" class="form-control">
               <option value="">Nessuno (assegnazione casuale)</option>
               <% vehicles.forEach(vehicle => { %>
-                <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>
+                <% if (!vehicle.isFixedToOther) { %>
+                  <option value="<%= vehicle.id %>"><%= vehicle.targa %> - <%= vehicle.modello %></option>
+                <% } %>
               <% }); %>
             </select>
             <small class="form-text">Se selezionato, il driver ricevera sempre questo furgone</small>
@@ -233,7 +238,8 @@
   </div>
 
   <script>
-    const riders = <%- JSON.stringify(riders) %>;
+    const drivers = <%- JSON.stringify(drivers) %>;
+    const vehicles = <%- JSON.stringify(vehicles) %>;
 
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('active');
@@ -248,18 +254,33 @@
       document.getElementById('createModal').style.display = 'none';
     }
 
-    function openEditModal(riderId) {
-      const rider = riders.find(r => r.id === riderId);
-      if (!rider) return;
+    function openEditModal(driverId) {
+      const driver = drivers.find(r => r.id === driverId);
+      if (!driver) return;
 
-      document.getElementById('edit_nome').value = rider.nome;
-      document.getElementById('edit_cognome').value = rider.cognome;
-      document.getElementById('edit_username').value = rider.username;
-      document.getElementById('edit_codice_fiscale').value = rider.codice_fiscale;
-      document.getElementById('edit_role').value = rider.role;
-      document.getElementById('edit_fixed_vehicle_id').value = rider.fixed_vehicle_id || '';
-      document.getElementById('edit_is_active').checked = rider.is_active === 1;
-      document.getElementById('editForm').action = `/admin/dipendenti/update/${riderId}`;
+      document.getElementById('edit_nome').value = driver.nome;
+      document.getElementById('edit_cognome').value = driver.cognome;
+      document.getElementById('edit_username').value = driver.username;
+      document.getElementById('edit_codice_fiscale').value = driver.codice_fiscale;
+      document.getElementById('edit_role').value = driver.role;
+      document.getElementById('edit_is_active').checked = driver.is_active === 1;
+      
+      // Rebuild fixed_vehicle_id dropdown: show available vehicles + current rider's vehicle
+      const dropdown = document.getElementById('edit_fixed_vehicle_id');
+      dropdown.innerHTML = '<option value="">Nessuno (assegnazione casuale)</option>';
+      
+      vehicles.forEach(vehicle => {
+        // Show vehicle if: NOT fixed to other OR is current driver's vehicle
+        if (!vehicle.isFixedToOther || vehicle.id === driver.fixed_vehicle_id) {
+          const option = document.createElement('option');
+          option.value = vehicle.id;
+          option.textContent = `${vehicle.targa} - ${vehicle.modello}`;
+          dropdown.appendChild(option);
+        }
+      });
+      
+      dropdown.value = driver.fixed_vehicle_id || '';
+      document.getElementById('editForm').action = `/admin/dipendenti/update/${driverId}`;
       
       document.getElementById('editModal').style.display = 'flex';
     }
@@ -268,27 +289,17 @@
       document.getElementById('editModal').style.display = 'none';
     }
 
-    function deleteRider(riderId) {
-      const rider = riders.find(r => r.id === riderId);
-      if (!rider) return;
+    function deleteDriver(driverId) {
+      const driver = drivers.find(r => r.id === driverId);
+      if (!driver) return;
 
-      if (confirm(`Sei sicuro di voler eliminare ${rider.name}?`)) {
-        fetch(`/admin/dipendenti/delete/${riderId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            location.reload();
-          } else {
-            alert('Errore durante l\'eliminazione');
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          alert('Errore durante l\'eliminazione');
-        });
+      if (confirm(`Sei sicuro di voler eliminare ${driver.nome} ${driver.cognome}?`)) {
+        // Crea un form e invialo
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/dipendenti/delete/${driverId}`;
+        document.body.appendChild(form);
+        form.submit();
       }
     }
 

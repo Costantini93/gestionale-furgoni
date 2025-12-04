@@ -22,7 +22,7 @@ function getPendingMaintenanceCount(callback) {
 // Dashboard admin con ricerca avanzata
 router.get('/dashboard', requireAdmin, (req, res) => {
   console.log('Admin dashboard accessed by:', req.session.username);
-  let { rider, data, rotta, targa } = req.query;
+  let { driver, data, rotta, targa } = req.query;
 
   // Converti data italiana (GG/MM/AAAA) in formato SQL (YYYY-MM-DD) se necessario
   if (data && data.includes('/')) {
@@ -44,8 +44,8 @@ router.get('/dashboard', requireAdmin, (req, res) => {
       // Applica i filtri
       let filteredReports = allReports || [];
 
-      if (rider) {
-        filteredReports = filteredReports.filter(r => r.user_id == rider);
+      if (driver) {
+        filteredReports = filteredReports.filter(r => r.user_id == driver);
       }
 
       if (data) {
@@ -64,13 +64,13 @@ router.get('/dashboard', requireAdmin, (req, res) => {
         );
       }
 
-      User.getAllRiders((err, riders) => {
+      User.getAllDrivers((err, drivers) => {
         if (err) {
-          console.error('Error getting riders:', err);
-          return res.status(500).send('Errore del server - riders');
+          console.error('Error getting drivers:', err);
+          return res.status(500).send('Errore del server - drivers');
         }
 
-        console.log('Riders fetched:', riders ? riders.length : 0);
+        console.log('Drivers fetched:', drivers ? drivers.length : 0);
 
         // Ottieni stato furgoni con assegnamenti correnti
         Vehicle.getAllWithAssignments((err, vehicles) => {
@@ -101,7 +101,7 @@ router.get('/dashboard', requireAdmin, (req, res) => {
               AND u.is_active = 1
               AND u.id NOT IN (
                 SELECT DISTINCT user_id 
-                FROM reports 
+                FROM daily_reports 
                 WHERE data_giorno = ?
               )
               ORDER BY u.cognome, u.nome
@@ -117,11 +117,11 @@ router.get('/dashboard', requireAdmin, (req, res) => {
                   cognome: req.session.cognome
                 },
                 reports: filteredReports,
-                riders: riders || [],
+                drivers: drivers || [],
                 vehicles: vehicles || [],
                 driversWithoutReport: driversWithoutReport || [],
-                selectedRider: rider || null,
-                searchFilters: { rider, data: req.query.data, rotta, targa },
+                selectedDriver: driver || null,
+                searchFilters: { driver, data: req.query.data, rotta, targa },
                 pendingMaintenanceCount: pendingMaintenanceCount || 0,
                 success: req.flash('success'),
                 error: req.flash('error')
@@ -137,8 +137,8 @@ router.get('/dashboard', requireAdmin, (req, res) => {
   }
 });
 
-// Filtra per rider
-router.get('/reports/rider/:userId', requireAdmin, (req, res) => {
+// Filtra per driver
+router.get('/reports/driver/:userId', requireAdmin, (req, res) => {
   const userId = req.params.userId;
 
   Report.getByUserId(userId, (err, reports) => {
@@ -147,7 +147,7 @@ router.get('/reports/rider/:userId', requireAdmin, (req, res) => {
       return res.status(500).send('Errore del server');
     }
 
-    User.getAllRiders((err, riders) => {
+    User.getAllDrivers((err, drivers) => {
       if (err) {
         console.error(err);
         return res.status(500).send('Errore del server');
@@ -159,8 +159,8 @@ router.get('/reports/rider/:userId', requireAdmin, (req, res) => {
           cognome: req.session.cognome
         },
         reports: reports || [],
-        riders: riders || [],
-        selectedRider: userId,
+        drivers: drivers || [],
+        selectedDriver: userId,
         success: req.flash('success'),
         error: req.flash('error')
       });
@@ -286,10 +286,10 @@ router.post('/report/delete-multiple', requireAdmin, (req, res) => {
 
 // Esporta in Excel
 router.get('/export', requireAdmin, (req, res) => {
-  const riderId = req.query.rider;
+  const driverId = req.query.driver;
 
-  const getReports = riderId 
-    ? (callback) => Report.getByUserId(riderId, callback)
+  const getReports = driverId 
+    ? (callback) => Report.getByUserId(driverId, callback)
     : (callback) => Report.getAll(callback);
 
   getReports(async (err, reports) => {
@@ -350,8 +350,8 @@ router.get('/export', requireAdmin, (req, res) => {
       });
 
       // Imposta il nome del file
-      const filename = riderId 
-        ? `report_rider_${riderId}_${new Date().toISOString().split('T')[0]}.xlsx`
+      const filename = driverId 
+        ? `report_driver_${driverId}_${new Date().toISOString().split('T')[0]}.xlsx`
         : `report_tutti_${new Date().toISOString().split('T')[0]}.xlsx`;
 
       res.setHeader(
@@ -370,11 +370,11 @@ router.get('/export', requireAdmin, (req, res) => {
   });
 });
 
-// ========== GESTIONE DIPENDENTI (RIDER) ==========
+// ========== GESTIONE DIPENDENTI (DRIVER) ==========
 
 // Pagina gestione dipendenti
 router.get('/dipendenti', requireAdmin, (req, res) => {
-  // Ottieni tutti gli utenti (rider e admin)
+  // Ottieni tutti gli utenti (driver e admin)
   const db = require('../config/database');
   db.all('SELECT id, username, nome, cognome, codice_fiscale, role, fixed_vehicle_id, is_active, created_at FROM users ORDER BY role, cognome, nome', (err, users) => {
     if (err) {
@@ -389,6 +389,17 @@ router.get('/dipendenti', requireAdmin, (req, res) => {
         return res.status(500).send('Errore del server');
       }
 
+      // Filtra veicoli: rimuovi quelli già assegnati fissi ad altri driver
+      const fixedVehicleIds = users
+        .filter(u => u.fixed_vehicle_id && u.role === 'rider')
+        .map(u => u.fixed_vehicle_id);
+      
+      // Per ogni veicolo, segna se è disponibile per assegnazione fissa
+      const vehiclesWithAvailability = vehicles.map(v => ({
+        ...v,
+        isFixedToOther: fixedVehicleIds.includes(v.id)
+      }));
+
       // Conta manutenzioni pending
       getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
         res.render('admin/dipendenti', {
@@ -396,8 +407,8 @@ router.get('/dipendenti', requireAdmin, (req, res) => {
             nome: req.session.nome,
             cognome: req.session.cognome
           },
-          riders: users || [],
-          vehicles: vehicles || [],
+          drivers: users || [],
+          vehicles: vehiclesWithAvailability || [],
           pendingMaintenanceCount: pendingMaintenanceCount || 0,
           success: req.flash('success'),
           error: req.flash('error')
@@ -407,7 +418,7 @@ router.get('/dipendenti', requireAdmin, (req, res) => {
   });
 });
 
-// Crea nuovo rider
+// Crea nuovo driver
 router.post('/dipendenti/create', requireAdmin, async (req, res) => {
   const { nome, cognome, username, codice_fiscale, role, fixed_vehicle_id, password, is_active } = req.body;
 
@@ -493,7 +504,7 @@ router.post('/dipendenti/create', requireAdmin, async (req, res) => {
   });
 });
 
-// Aggiorna rider
+// Aggiorna driver
 router.post('/dipendenti/update/:userId', requireAdmin, (req, res) => {
   const userId = req.params.userId;
   const { nome, cognome, username, codice_fiscale, role, fixed_vehicle_id, is_active } = req.body;
@@ -571,7 +582,7 @@ router.post('/dipendenti/update/:userId', requireAdmin, (req, res) => {
   });
 });
 
-// Resetta password rider
+// Resetta password driver
 router.post('/dipendenti/reset-password/:userId', requireAdmin, async (req, res) => {
   const userId = req.params.userId;
 
@@ -606,10 +617,12 @@ router.post('/dipendenti/reset-password/:userId', requireAdmin, async (req, res)
   }
 });
 
-// Elimina rider
+// Elimina driver
 router.post('/dipendenti/delete/:userId', requireAdmin, (req, res) => {
   const userId = req.params.userId;
   const db = require('../config/database');
+
+  console.log('🗑️ Tentativo eliminazione driver ID:', userId);
 
   // Verifica che non sia l'utente corrente
   if (userId == req.session.userId) {
@@ -617,31 +630,88 @@ router.post('/dipendenti/delete/:userId', requireAdmin, (req, res) => {
     return res.redirect('/admin/dipendenti');
   }
 
-  // Prima elimina tutti i report del rider
-  db.run('DELETE FROM daily_reports WHERE user_id = ?', [userId], (err) => {
+  // Prima elimina tutti i record collegati per evitare errori di foreign key
+  // 1. Elimina report
+  db.run('DELETE FROM daily_reports WHERE user_id = ?', [userId], function(err) {
     if (err) {
-      console.error(err);
-      req.flash('error', 'Errore durante l\'eliminazione');
+      console.error('❌ Errore eliminazione daily_reports:', err);
+      req.flash('error', 'Errore durante l\'eliminazione dei report');
       return res.redirect('/admin/dipendenti');
     }
+    console.log(`✅ Eliminati ${this.changes} report per driver ${userId}`);
 
-    // Poi elimina l'utente
-    db.run('DELETE FROM users WHERE id = ?', [userId], (err) => {
+    // 2. Elimina assegnamenti veicoli
+    db.run('DELETE FROM vehicle_assignments WHERE rider_id = ?', [userId], function(err) {
       if (err) {
-        console.error(err);
-        req.flash('error', 'Errore durante l\'eliminazione');
+        console.error('❌ Errore eliminazione vehicle_assignments:', err);
+        req.flash('error', 'Errore durante l\'eliminazione degli assegnamenti');
         return res.redirect('/admin/dipendenti');
       }
+      console.log(`✅ Eliminati ${this.changes} assegnamenti per driver ${userId}`);
 
-      req.flash('success', 'Utente eliminato con successo!');
-      res.redirect('/admin/dipendenti');
+      // 3. Elimina dal roster
+      db.run('DELETE FROM roster_daily WHERE driver_id = ?', [userId], function(err) {
+        if (err) {
+          console.error('❌ Errore eliminazione roster_daily:', err);
+          req.flash('error', 'Errore durante l\'eliminazione dal roster');
+          return res.redirect('/admin/dipendenti');
+        }
+        console.log(`✅ Eliminati ${this.changes} record roster per driver ${userId}`);
+
+        // 4. Elimina activity log
+        db.run('DELETE FROM activity_log WHERE user_id = ?', [userId], function(err) {
+          if (err) {
+            console.error('❌ Errore eliminazione activity_log:', err);
+            req.flash('error', 'Errore durante l\'eliminazione del log attività');
+            return res.redirect('/admin/dipendenti');
+          }
+          console.log(`✅ Eliminati ${this.changes} log attività per driver ${userId}`);
+
+          // 5. Elimina richieste di manutenzione dove è reporter
+          db.run('DELETE FROM maintenance_requests WHERE reporter_id = ?', [userId], function(err) {
+            if (err) {
+              console.error('❌ Errore eliminazione maintenance_requests (reporter):', err);
+              req.flash('error', 'Errore durante l\'eliminazione delle richieste di manutenzione');
+              return res.redirect('/admin/dipendenti');
+            }
+            console.log(`✅ Eliminate ${this.changes} richieste manutenzione (reporter)`);
+
+            // 6. Aggiorna resolved_by a NULL per manutenzioni risolte da questo driver
+            db.run('UPDATE maintenance_requests SET resolved_by = NULL WHERE resolved_by = ?', [userId], function(err) {
+              if (err) {
+                console.error('❌ Errore aggiornamento maintenance_requests (resolved_by):', err);
+              }
+              console.log(`✅ Aggiornati ${this.changes} maintenance requests (resolved_by)`);
+
+              // 7. Finalmente elimina l'utente
+              db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
+                if (err) {
+                  console.error('❌ Errore eliminazione user:', err);
+                  req.flash('error', 'Errore durante l\'eliminazione dell\'utente: ' + err.message);
+                  return res.redirect('/admin/dipendenti');
+                }
+                
+                if (this.changes === 0) {
+                  console.log('⚠️ Nessun utente eliminato - ID non trovato:', userId);
+                  req.flash('error', 'Driver non trovato');
+                  return res.redirect('/admin/dipendenti');
+                }
+
+                console.log(`✅ Driver ${userId} eliminato con successo`);
+                req.flash('success', 'Driver eliminato con successo!');
+                res.redirect('/admin/dipendenti');
+              });
+            });
+          });
+        });
+      });
     });
   });
 });
 
 // Export Excel
 router.get('/report/export', requireAdmin, (req, res) => {
-  let { rider, data, rotta, targa } = req.query;
+  let { driver, data, rotta, targa } = req.query;
 
   if (data && data.includes('/')) {
     const parts = data.split('/');
@@ -659,7 +729,7 @@ router.get('/report/export', requireAdmin, (req, res) => {
     let reports = allReports || [];
 
     // Applica gli stessi filtri della dashboard
-    if (rider) reports = reports.filter(r => r.user_id == rider);
+    if (driver) reports = reports.filter(r => r.user_id == driver);
     if (data) reports = reports.filter(r => r.data_giorno === data);
     if (rotta) reports = reports.filter(r => r.codice_rotta && r.codice_rotta.toLowerCase().includes(rotta.toLowerCase()));
     if (targa) reports = reports.filter(r => r.targa_furgone && r.targa_furgone.toLowerCase().includes(targa.toLowerCase()));
@@ -682,7 +752,7 @@ router.get('/report/export', requireAdmin, (req, res) => {
 
     // Colonne
     worksheet.columns = [
-      { header: 'Rider', key: 'rider', width: 20 },
+      { header: 'Driver', key: 'driver', width: 20 },
       { header: 'Data', key: 'data', width: 12 },
       { header: 'Rotta', key: 'rotta', width: 15 },
       { header: 'Targa', key: 'targa', width: 12 },
@@ -711,7 +781,7 @@ router.get('/report/export', requireAdmin, (req, res) => {
         : '-';
 
       worksheet.addRow({
-        rider: report.username || '-',
+        driver: report.username || '-',
         data: report.data_giorno || '-',
         rotta: report.codice_rotta || '-',
         targa: report.targa_furgone || '-',
@@ -860,19 +930,26 @@ router.get('/assignments', requireAdmin, (req, res) => {
         return res.status(500).send('Errore server');
       }
 
-      User.getByRole('rider', (err, riders) => {
+      User.getByRole('rider', (err, drivers) => {
         if (err) {
           console.error(err);
           return res.status(500).send('Errore server');
         }
+
+        // Filtra solo driver e veicoli NON già assegnati
+        const assignedDriverIds = assignments ? assignments.map(a => a.rider_id) : [];
+        const assignedVehicleIds = assignments ? assignments.map(a => a.vehicle_id) : [];
+        
+        const availableDrivers = drivers.filter(r => !assignedDriverIds.includes(r.id));
+        const availableVehicles = vehicles.filter(v => !assignedVehicleIds.includes(v.id) && v.status === 'disponibile');
 
         // Conta manutenzioni pending
         getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
           res.render('admin/assignments', {
             user: req.session,
             assignments,
-            vehicles,
-            riders,
+            vehicles: availableVehicles,
+            drivers: availableDrivers,
             pendingMaintenanceCount: pendingMaintenanceCount || 0,
             success: req.flash('success'),
             error: req.flash('error')
@@ -993,16 +1070,14 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
   const dataAssegnazione = req.body.data_assegnazione || new Date().toISOString().split('T')[0];
   const db = require('../config/database');
 
-  // Data di domani per il roster
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
+  // Usa OGGI per roster e report
+  const today = new Date().toISOString().split('T')[0];
 
   console.log('📋 Assegnazione automatica avviata...');
   console.log('📅 Data assegnazione:', dataAssegnazione);
-  console.log('📅 Data roster (domani):', tomorrowDateStr);
+  console.log('📅 Data roster (oggi):', today);
 
-  // 1. Ottieni i driver in turno dal roster di domani
+  // 1. Ottieni i driver in turno dal roster di OGGI
   db.all(`
     SELECT DISTINCT u.id, u.nome, u.cognome, u.fixed_vehicle_id
     FROM roster_daily rd
@@ -1014,17 +1089,17 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
       SELECT rider_id FROM vehicle_assignments WHERE status = 'attivo'
     )
     ORDER BY u.fixed_vehicle_id DESC NULLS LAST, u.cognome, u.nome
-  `, [tomorrowDateStr], (err, riders) => {
+  `, [today], (err, drivers) => {
     if (err) {
-      console.error('❌ Errore recupero rider dal roster:', err);
-      req.flash('error', 'Errore durante il recupero dei rider dal roster');
+      console.error('❌ Errore recupero driver dal roster:', err);
+      req.flash('error', 'Errore durante il recupero dei driver dal roster');
       return res.redirect('/admin/assignments');
     }
 
-    console.log(`👥 Driver nel roster di domani: ${riders ? riders.length : 0}`);
+    console.log(`👥 Driver nel roster di oggi: ${drivers ? drivers.length : 0}`);
 
-    if (!riders || riders.length === 0) {
-      req.flash('error', 'Nessun driver nel roster per domani. Vai su ROSTER per selezionare i driver in turno.');
+    if (!drivers || drivers.length === 0) {
+      req.flash('error', 'Nessun driver nel roster per oggi. Vai su ROSTER per selezionare i driver in turno.');
       return res.redirect('/admin/assignments');
     }
 
@@ -1052,56 +1127,56 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
         return res.redirect('/admin/assignments');
       }
 
-      // 3. Separa rider con e senza furgone fisso
-      const ridersWithFixedVehicle = riders.filter(r => r.fixed_vehicle_id);
-      const ridersWithoutFixedVehicle = riders.filter(r => !r.fixed_vehicle_id);
+      // 3. Separa driver con e senza furgone fisso
+      const driversWithFixedVehicle = drivers.filter(r => r.fixed_vehicle_id);
+      const driversWithoutFixedVehicle = drivers.filter(r => !r.fixed_vehicle_id);
 
-      console.log(`✅ Driver con furgone fisso: ${ridersWithFixedVehicle.length}`);
-      console.log(`🎲 Driver con furgone casuale: ${ridersWithoutFixedVehicle.length}`);
+      console.log(`✅ Driver con furgone fisso: ${driversWithFixedVehicle.length}`);
+      console.log(`🎲 Driver con furgone casuale: ${driversWithoutFixedVehicle.length}`);
 
       let assigned = 0;
       let errors = [];
       const assignments = [];
 
       // 4. Assegna furgoni fissi (PRIORITÀ)
-      ridersWithFixedVehicle.forEach(rider => {
-        const vehicle = availableVehicles.find(v => v.id === rider.fixed_vehicle_id);
+      driversWithFixedVehicle.forEach(driver => {
+        const vehicle = availableVehicles.find(v => v.id === driver.fixed_vehicle_id);
         if (vehicle) {
           assignments.push({
-            rider_id: rider.id,
+            rider_id: driver.id,
             vehicle_id: vehicle.id,
-            rider_name: `${rider.nome} ${rider.cognome}`,
+            driver_name: `${driver.nome} ${driver.cognome}`,
             vehicle_targa: vehicle.targa,
             type: 'fisso'
           });
-          console.log(`  ✅ ${rider.nome} ${rider.cognome} → ${vehicle.targa} (FISSO)`);
+          console.log(`  ✅ ${driver.nome} ${driver.cognome} → ${vehicle.targa} (FISSO)`);
           // Rimuovi il veicolo dalla lista disponibili
           const index = availableVehicles.indexOf(vehicle);
           if (index > -1) availableVehicles.splice(index, 1);
         } else {
-          const errorMsg = `${rider.nome} ${rider.cognome}: furgone fisso non disponibile`;
+          const errorMsg = `${driver.nome} ${driver.cognome}: furgone fisso non disponibile`;
           errors.push(errorMsg);
           console.log(`  ❌ ${errorMsg}`);
         }
       });
 
-      // 5. Assegna furgoni casuali ai rider senza fixed_vehicle
-      ridersWithoutFixedVehicle.forEach(rider => {
+      // 5. Assegna furgoni casuali ai driver senza fixed_vehicle
+      driversWithoutFixedVehicle.forEach(driver => {
         if (availableVehicles.length > 0) {
           // Prendi il primo veicolo disponibile (casuale)
           const vehicle = availableVehicles[0];
           assignments.push({
-            rider_id: rider.id,
+            rider_id: driver.id,
             vehicle_id: vehicle.id,
-            rider_name: `${rider.nome} ${rider.cognome}`,
+            driver_name: `${driver.nome} ${driver.cognome}`,
             vehicle_targa: vehicle.targa,
             type: 'casuale'
           });
-          console.log(`  ✅ ${rider.nome} ${rider.cognome} → ${vehicle.targa} (CASUALE)`);
+          console.log(`  ✅ ${driver.nome} ${driver.cognome} → ${vehicle.targa} (CASUALE)`);
           // Rimuovi dalla lista
           availableVehicles.shift();
         } else {
-          const errorMsg = `${rider.nome} ${rider.cognome}: nessun furgone disponibile`;
+          const errorMsg = `${driver.nome} ${driver.cognome}: nessun furgone disponibile`;
           errors.push(errorMsg);
           console.log(`  ⚠️  ${errorMsg}`);
         }
@@ -1125,32 +1200,54 @@ router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
         }, (err) => {
           if (err) {
             console.error('Errore creazione assegnamento:', err);
-            errors.push(`${assignment.rider_name}: errore database`);
+            errors.push(`${assignment.driver_name}: errore database`);
+            completed++;
+            checkComplete();
           } else {
             // Aggiorna status veicolo
             Vehicle.updateStatus(assignment.vehicle_id, 'assegnato', (err) => {
               if (err) console.error('Errore update status:', err);
             });
-            assigned++;
-          }
-
-          completed++;
-
-          // Quando tutti sono stati processati
-          if (completed === assignments.length) {
-            if (assigned > 0) {
-              let message = `✅ ${assigned} furgoni assegnati automaticamente!`;
-              if (errors.length > 0) {
-                message += ` (${errors.length} errori: ${errors.join(', ')})`;
+            
+            // Crea il report base per la dashboard
+            db.run(`
+              INSERT INTO daily_reports (
+                user_id, 
+                data_giorno, 
+                targa_furgone, 
+                status,
+                created_at
+              ) VALUES (?, ?, ?, 'in_preparazione', datetime('now'))
+            `, [assignment.rider_id, today, assignment.vehicle_targa], (err) => {
+              if (err) {
+                console.error('Errore creazione report base:', err);
+                errors.push(`${assignment.driver_name}: errore creazione report`);
+              } else {
+                assigned++;
+                console.log(`  📝 Report base creato per ${assignment.driver_name}`);
               }
-              req.flash('success', message);
-            } else {
-              req.flash('error', 'Nessun assegnamento creato. Errori: ' + errors.join(', '));
-            }
-            res.redirect('/admin/assignments');
+              completed++;
+              checkComplete();
+            });
           }
         });
       });
+
+      function checkComplete() {
+        // Quando tutti sono stati processati
+        if (completed === assignments.length) {
+          if (assigned > 0) {
+            let message = `✅ ${assigned} furgoni assegnati automaticamente con report base creati!`;
+            if (errors.length > 0) {
+              message += ` (${errors.length} errori: ${errors.join(', ')})`;
+            }
+            req.flash('success', message);
+          } else {
+            req.flash('error', 'Nessun assegnamento creato. Errori: ' + errors.join(', '));
+          }
+          res.redirect('/admin/assignments');
+        }
+      }
     });
   });
 });
@@ -1318,11 +1415,9 @@ router.post('/maintenance/change-status/:id', requireAdmin, (req, res) => {
 router.get('/roster', requireAdmin, (req, res) => {
   const db = require('../config/database');
   
-  // Data di domani
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
-  const tomorrowDisplay = tomorrow.toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  // Data di OGGI
+  const today = new Date().toISOString().split('T')[0];
+  const todayDisplay = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // Ottieni tutti i driver attivi
   db.all(`
@@ -1337,11 +1432,11 @@ router.get('/roster', requireAdmin, (req, res) => {
       return res.status(500).send('Errore del server');
     }
 
-    // Ottieni roster per domani
+    // Ottieni roster per OGGI
     db.all(`
       SELECT driver_id FROM roster_daily 
       WHERE roster_date = ?
-    `, [tomorrowDateStr], (err, rosterEntries) => {
+    `, [today], (err, rosterEntries) => {
       if (err) {
         console.error(err);
         return res.status(500).send('Errore del server');
@@ -1359,7 +1454,7 @@ router.get('/roster', requireAdmin, (req, res) => {
           activeDrivers: drivers || [],
           selectedDrivers: selectedDriverIds,
           fixedVehicleCount,
-          tomorrowDate: tomorrowDisplay,
+          tomorrowDate: todayDisplay,
           pendingMaintenanceCount: pendingMaintenanceCount || 0,
           success: req.flash('success'),
           error: req.flash('error')
@@ -1378,13 +1473,11 @@ router.post('/roster/save', requireAdmin, (req, res) => {
     return res.json({ success: false, message: 'Nessun driver selezionato' });
   }
 
-  // Data di domani
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
+  // Data di OGGI
+  const today = new Date().toISOString().split('T')[0];
 
-  // Cancella roster esistente per domani
-  db.run('DELETE FROM roster_daily WHERE roster_date = ?', [tomorrowDateStr], (err) => {
+  // Cancella roster esistente per OGGI
+  db.run('DELETE FROM roster_daily WHERE roster_date = ?', [today], (err) => {
     if (err) {
       console.error(err);
       return res.json({ success: false, message: 'Errore durante l\'eliminazione del roster precedente' });
@@ -1396,7 +1489,7 @@ router.post('/roster/save', requireAdmin, (req, res) => {
     
     driverIds.forEach(driverId => {
       db.run('INSERT INTO roster_daily (driver_id, roster_date) VALUES (?, ?)', 
-        [driverId, tomorrowDateStr], 
+        [driverId, today], 
         (err) => {
           if (err) {
             console.error('Errore inserimento driver:', err);
@@ -1422,12 +1515,10 @@ router.post('/roster/save', requireAdmin, (req, res) => {
 router.post('/roster/reset', requireAdmin, (req, res) => {
   const db = require('../config/database');
   
-  // Data di domani
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
+  // Data di OGGI
+  const today = new Date().toISOString().split('T')[0];
 
-  db.run('DELETE FROM roster_daily WHERE roster_date = ?', [tomorrowDateStr], (err) => {
+  db.run('DELETE FROM roster_daily WHERE roster_date = ?', [today], (err) => {
     if (err) {
       console.error(err);
       req.flash('error', 'Errore durante il reset del roster');

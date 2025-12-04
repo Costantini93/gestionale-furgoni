@@ -114,9 +114,9 @@ body::before {
 }
 
 .card:hover {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 12px 48px rgba(99, 102, 241, 0.15);
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .card h3 {

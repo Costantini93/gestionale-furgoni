@@ -1,0 +1,56 @@
+SOSTITUISCI IL FORM DELLA PARTENZA (circa linea 120-145) CON QUESTO:
+
+    <!-- Form inserimento PARTENZA -->
+    <div class="card">
+      <% if (preparationReport) { %>
+        <h3>📝 Completa la Tua Partenza</h3>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+          Assegnamento del <%= new Date(preparationReport.data_giorno).toLocaleDateString('it-IT') %> - Completa i dati e scatta le 5 foto prima di partire
+        </p>
+      <form action="/rider/report/create" method="POST" id="reportForm" enctype="multipart/form-data">
+        <input type="hidden" name="report_id" value="<%= preparationReport.id %>">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="data_giorno">📅 Data</label>
+            <input type="date" id="data_giorno" name="data_giorno" value="<%= preparationReport.data_giorno %>" readonly style="background: #1e293b; cursor: not-allowed;">
+          </div>
+
+          <div class="form-group">
+            <label for="targa_furgone">🚐 Targa Furgone</label>
+            <input type="text" id="targa_furgone" name="targa_furgone" value="<%= preparationReport.targa_furgone %>" readonly style="background: #1e293b; cursor: not-allowed;">
+          </div>
+
+          <div class="form-group">
+            <label for="codice_rotta">🗺️ Codice Rotta *</label>
+            <input type="text" id="codice_rotta" name="codice_rotta" placeholder="ES: R001" required>
+          </div>
+        </div>
+      <% } else { %>
+        <h3>⚠️ Nessun Assegnamento</h3>
+        <p style="color: #f59e0b; font-size: 0.9rem; margin-bottom: 1.5rem;">
+          Non hai assegnamenti per oggi. Contatta l'amministratore.
+        </p>
+      <% } %>
+
+CHIAVI MODIFICHE:
+1. Aggiunto `<% if (preparationReport) { %>` per mostrare form solo se c'è assegnamento
+2. Aggiunto `<input type="hidden" name="report_id" value="<%= preparationReport.id %>">`  
+3. Data e Targa sono precompilate e readonly dal report in preparazione
+4. Rimosso asterisco (*) da Data e Targa perché sono già impostati
+5. Aggiunto messaggio se non c'è assegnamento
+
+POI CHIUDI IL FORM (dopo tutte le foto) CON:
+      </form>
+    </div>
+
+E AGGIUNGI DENTRO AL FORM, PRIMA DEL BUTTON SUBMIT:
+      <% if (!preparationReport) { %>
+        <button type="submit" class="btn btn-primary" disabled style="opacity: 0.5; cursor: not-allowed;">
+          Non puoi partire senza assegnamento
+        </button>
+      <% } else { %>
+        <button type="submit" class="btn btn-primary">
+          🚀 Registra Partenza
+        </button>
+      <% } %>

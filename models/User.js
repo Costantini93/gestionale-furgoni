@@ -11,8 +11,13 @@ const UserModel = {
     db.get('SELECT * FROM users WHERE id = ?', [id], callback);
   },
 
-  // Ottieni tutti gli utenti (solo rider)
+  // Ottieni tutti gli utenti (solo driver/rider)
   getAllRiders: (callback) => {
+    db.all('SELECT id, username, nome, cognome, codice_fiscale, created_at FROM users WHERE role = ?', ['rider'], callback);
+  },
+
+  // Alias per coerenza terminologica
+  getAllDrivers: (callback) => {
     db.all('SELECT id, username, nome, cognome, codice_fiscale, created_at FROM users WHERE role = ?', ['rider'], callback);
   },
 

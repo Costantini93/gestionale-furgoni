@@ -59,18 +59,10 @@
           <span>Assegnamenti Furgoni</span>
         </div>
         <div class="topbar-right">
-          <% if (assignments && assignments.length > 0) { %>
-          <form method="POST" action="/admin/assignments/reset-all" 
-                onsubmit="return confirm('ATTENZIONE: Terminare TUTTI gli assegnamenti attivi?\n\nTutti i furgoni torneranno disponibili.');" 
-                style="display: inline;">
-            <button type="submit" class="btn btn-danger btn-sm">
-              Termina Tutti
-            </button>
-          </form>
-          <% } %>
           <div class="user-info">
             <span><%= user.nome %> <%= user.cognome %></span>
           </div>
+          <a href="/auth/logout" class="btn btn-secondary">Logout</a>
         </div>
       </div>
 
@@ -109,12 +101,12 @@
             <form method="POST" action="/admin/assignments/create">
         <div class="form-row">
           <div class="form-group">
-            <label>Rider:</label>
+            <label>Driver:</label>
             <select name="rider_id" required>
-              <option value="">Seleziona rider...</option>
-              <% riders.forEach(rider => { %>
-                <option value="<%= rider.id %>">
-                  <%= rider.nome %> <%= rider.cognome %>
+              <option value="">Seleziona driver...</option>
+              <% drivers.forEach(driver => { %>
+                <option value="<%= driver.id %>">
+                  <%= driver.nome %> <%= driver.cognome %>
                 </option>
               <% }) %>
             </select>

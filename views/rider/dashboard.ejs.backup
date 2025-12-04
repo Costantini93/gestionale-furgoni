@@ -1,0 +1,920 @@
+﻿<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Rider - Gestionale Furgoni</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/premium.css">
+  <link rel="stylesheet" href="/css/clean-theme.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-content">
+      <div class="nav-left">
+        <h1>ï¿½ Gestionale Consegne</h1>
+      </div>
+      <div class="nav-right">
+        <span class="user-info">
+          ðŸ‘¤ <%= user.nome %> <%= user.cognome %>
+        </span>
+        <a href="/auth/logout" class="btn btn-secondary">ðŸšª Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h2>ðŸšš Dashboard Rider</h2>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Loading Spinner -->
+    <div class="spinner-overlay" id="loadingSpinner" style="display: none;">
+      <div class="spinner"></div>
+    </div>
+
+    <% if (success && success.length > 0) { %>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          showToast('âœ… <%= success[0] %>', 'success');
+        });
+      </script>
+    <% } %>
+
+    <% if (error && error.length > 0) { %>
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          showToast('âš ï¸ <%= error[0] %>', 'error');
+        });
+      </script>
+    <% } %>
+
+    <!-- Sezione Report Aperti (DA COMPLETARE) -->
+    <% if (openReports && openReports.length > 0) { %>
+      <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, #fef3c7 0%, #fef9e6 100%);">
+        <h3 style="color: #f59e0b;">âš ï¸ Report da Completare</h3>
+        <p style="color: #92400e; margin-bottom: 1rem;">
+          Hai <strong><%= openReports.length %></strong> rientro/i da registrare:
+        </p>
+        
+        <% openReports.forEach(report => { %>
+          <div class="open-report-card">
+            <div class="open-report-info">
+              <h4>ðŸ“… <%= formatDate(report.data_giorno) %></h4>
+              <p>
+                ðŸš <strong><%= report.targa_furgone %></strong> | 
+                ðŸ—ºï¸ Rotta: <strong><%= report.codice_rotta %></strong> | 
+                ðŸ“ KM Partenza: <strong><%= report.km_partenza %></strong>
+              </p>
+            </div>
+            
+            <button 
+              class="btn btn-warning" 
+              onclick="openCompleteModal(<%= report.id %>, '<%= formatDate(report.data_giorno) %>', '<%= report.targa_furgone %>', <%= report.km_partenza %>)"
+              style="background: #f59e0b; min-width: 180px;">
+              âœ… Completa Rientro
+            </button>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <!-- Furgone Assegnato -->
+    <% if (assignment) { %>
+      <div class="vehicle-card" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div>
+            <h3 style="margin: 0; font-size: 1.75rem; color: #6366f1;">
+              ðŸš Il tuo furgone
+            </h3>
+            <p style="margin: 0.5rem 0 0 0; color: #94a3b8; font-size: 0.875rem;">
+              Assegnato dal <%= new Date(assignment.data_assegnazione).toLocaleDateString('it-IT') %>
+            </p>
+          </div>
+          <div class="vehicle-badge">
+            ASSEGNATO
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+          <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Targa</p>
+            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #f8fafc;">
+              <%= assignment.targa %>
+            </p>
+          </div>
+          <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Modello</p>
+            <p style="margin: 0.25rem 0 0 0; font-size: 1.125rem; font-weight: 600; color: #cbd5e1;">
+              <%= assignment.modello %>
+            </p>
+          </div>
+        </div>
+
+        <button onclick="showMaintenanceModal('<%= assignment.vehicle_id %>', '<%= assignment.targa %>')" class="btn-gradient" style="margin-top: 1.5rem; background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+          ðŸ”§ Segnala Problema
+        </button>
+      </div>
+    <% } %>
+
+    <!-- Form inserimento PARTENZA -->
+    <div class="card">
+      <h3>ðŸš€ Registra Partenza</h3>
+      <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Compila i dati e scatta le 5 foto del furgone prima di partire
+      </p>
+      <form action="/rider/report/create" method="POST" id="reportForm" enctype="multipart/form-data">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="data_giorno">ï¿½ Data *</label>
+            <input type="date" id="data_giorno" name="data_giorno" required>
+          </div>
+
+          <div class="form-group">
+            <label for="targa_furgone">ðŸš Targa Furgone *</label>
+            <input type="text" id="targa_furgone" name="targa_furgone" placeholder="ES: AB123CD" required>
+          </div>
+
+          <div class="form-group">
+            <label for="codice_rotta">ðŸ—ºï¸ Codice Rotta *</label>
+            <input type="text" id="codice_rotta" name="codice_rotta" placeholder="ES: R001" required>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="km_partenza">ðŸ“ Km Partenza *</label>
+            <input type="number" id="km_partenza" name="km_partenza" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label for="numero_scheda_dkv">ðŸ”– Numero Scheda DKV</label>
+            <input type="text" id="numero_scheda_dkv" name="numero_scheda_dkv" placeholder="Opzionale">
+          </div>
+
+          <div class="form-group">
+            <label for="importo_rifornimento">â›½ Importo Rifornimento (â‚¬)</label>
+            <input type="number" id="importo_rifornimento" name="importo_rifornimento" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="numero_aziendale">ðŸ“ž Numero Aziendale</label>
+            <input type="text" id="numero_aziendale" name="numero_aziendale" placeholder="Opzionale">
+          </div>
+
+          <div class="form-group">
+            <label for="pacchi_resi">ðŸ“¦ Numero Pacchi Resi</label>
+            <input type="number" id="pacchi_resi" name="pacchi_resi" min="0" placeholder="0">
+          </div>
+
+          <div class="form-group">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #e2e8f0;">
+              ✍️ FIRMA - Firma qui sotto per confermare *
+            </label>
+            <div style="border: 2px solid #6366f1; border-radius: 8px; background: white; margin-bottom: 0.5rem;">
+              <canvas id="signatureCanvas" width="300" height="150" style="display: block; width: 100%; touch-action: none;"></canvas>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" onclick="clearSignature()" class="btn btn-secondary" style="flex: 1; padding: 0.5rem;">
+                🗑️ Cancella
+              </button>
+            </div>
+            <input type="hidden" id="firma" name="firma" required>
+          </div>
+        </div>
+
+        <!-- Sezione Foto Furgone -->
+        <div class="form-section">
+          <h4 style="color: #6366f1; margin-bottom: 1rem;">ðŸ“¸ Foto del Furgone (Obbligatorie)</h4>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Scatta o carica 5 foto del furgone prima di partire
+          </p>
+
+          <div class="foto-grid">
+            <div class="foto-upload-box">
+              <label for="foto_posteriore" class="foto-label">
+                <span>ðŸ“¸ Foto Posteriore *</span>
+                <input type="file" id="foto_posteriore" name="foto_posteriore" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_posteriore"></div>
+              <div class="foto-upload-progress" id="progress_posteriore">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_posteriore">âœ“</div>
+            </div>
+
+            <div class="foto-upload-box">
+              <label for="foto_anteriore" class="foto-label">
+                <span>ðŸ“¸ Foto Anteriore *</span>
+                <input type="file" id="foto_anteriore" name="foto_anteriore" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_anteriore"></div>
+              <div class="foto-upload-progress" id="progress_anteriore">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_anteriore">âœ“</div>
+            </div>
+
+            <div class="foto-upload-box">
+              <label for="foto_lato_destro" class="foto-label">
+                <span>ðŸ“¸ Lato Destro *</span>
+                <input type="file" id="foto_lato_destro" name="foto_lato_destro" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_lato_destro"></div>
+              <div class="foto-upload-progress" id="progress_lato_destro">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_lato_destro">âœ“</div>
+            </div>
+
+            <div class="foto-upload-box">
+              <label for="foto_lato_sinistro" class="foto-label">
+                <span>ðŸ“¸ Lato Sinistro *</span>
+                <input type="file" id="foto_lato_sinistro" name="foto_lato_sinistro" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_lato_sinistro"></div>
+              <div class="foto-upload-progress" id="progress_lato_sinistro">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_lato_sinistro">âœ“</div>
+            </div>
+
+            <div class="foto-upload-box">
+              <label for="foto_interno" class="foto-label">
+                <span>ðŸ“¸ Interno *</span>
+                <input type="file" id="foto_interno" name="foto_interno" accept="image/*" capture="environment" required>
+              </label>
+              <div class="foto-preview" id="preview_interno"></div>
+              <div class="foto-upload-progress" id="progress_interno">
+                <div class="foto-upload-progress-bar"></div>
+              </div>
+              <div class="foto-success" id="success_interno">âœ“</div>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          ï¿½ Registra Partenza
+        </button>
+      </form>
+    </div>
+
+    <!-- Modal Completa Rientro -->
+    <div id="completeModal" class="photo-modal">
+      <div class="photo-modal-content" style="max-width: 500px;">
+        <button class="photo-modal-close" onclick="closeCompleteModal()">Ã—</button>
+        <h3 style="color: #6366f1; margin-bottom: 1rem;">ðŸ Completa Rientro</h3>
+        
+        <div id="modalReportInfo" style="background: #1e293b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+          <!-- Info report compilata da JS -->
+        </div>
+
+        <form id="completeForm" method="POST" action="">
+          <div class="form-group">
+            <label for="km_rientro_modal">ðŸ“ Km Rientro *</label>
+            <input 
+              type="number" 
+              id="km_rientro_modal" 
+              name="km_rientro" 
+              min="0" 
+              required
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="orario_rientro_modal">🕐 Orario Rientro *</label>
+            <input 
+              type="time" 
+              id="orario_rientro_modal" 
+              name="orario_rientro" 
+              required
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="pacchi_ritornati_modal">📦 Pacchi Ritornati</label>
+            <input 
+              type="number" 
+              id="pacchi_ritornati_modal" 
+              name="pacchi_ritornati" 
+              min="0"
+              value="0"
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
+          </div>
+
+          <div class="form-group" style="margin-top: 1rem;">
+            <label for="rifornimento_modal">⛽ Rifornimento €</label>
+            <input 
+              type="number" 
+              id="rifornimento_modal" 
+              name="rifornimento_euro" 
+              min="0"
+              step="0.01"
+              value="0"
+              placeholder="0.00"
+              style="width: 100%; padding: 0.75rem; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 1rem;">
+          </div>
+
+          <div id="kmCalculation" style="margin-top: 1rem; padding: 1rem; background: #10b981; border-radius: 8px; display: none;">
+            <strong style="color: white; font-size: 1.1rem;">ðŸ“Š KM Percorsi: <span id="kmPercorsi">0</span></strong>
+          </div>
+
+          <div class="form-row" style="margin-top: 1.5rem; gap: 0.75rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeCompleteModal()" style="flex: 1;">
+              âŒ Annulla
+            </button>
+            <button type="submit" class="btn btn-success" style="flex: 1; background: #10b981;">
+              âœ… Conferma Rientro
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Storico report COMPLETATI -->
+    <div class="card">
+      <h3>ðŸ“Š Storico Report Completati</h3>
+      
+      <% if (reports.filter(r => r.status === 'completato').length === 0) { %>
+        <p class="no-data">Nessun report completato ancora.</p>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Targa</th>
+                <th>Rotta</th>
+                <th>Km Partenza</th>
+                <th>Km Rientro</th>
+                <th>Km Percorsi</th>
+                <th>Orario Rientro</th>
+                <th>ðŸ“¸ Foto</th>
+                <th>Firma</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% reports.filter(r => r.status === 'completato').forEach(report => { %>
+                <tr>
+                  <td><%= formatDate(report.data_giorno) %></td>
+                  <td><%= report.targa_furgone %></td>
+                  <td><%= report.codice_rotta %></td>
+                  <td><%= report.km_partenza %></td>
+                  <td><%= report.km_rientro %></td>
+                  <td><strong><%= report.km_rientro - report.km_partenza %></strong></td>
+                  <td><%= report.orario_rientro %></td>
+                  <td>
+                    <div class="photo-thumbnails">
+                      <% if (report.foto_posteriore) { %>
+                        <img src="<%= report.foto_posteriore %>" class="photo-thumb" alt="Posteriore" 
+                             onclick="openPhotoModal('<%= report.foto_posteriore %>', 'Foto Posteriore - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_anteriore) { %>
+                        <img src="<%= report.foto_anteriore %>" class="photo-thumb" alt="Anteriore"
+                             onclick="openPhotoModal('<%= report.foto_anteriore %>', 'Foto Anteriore - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_lato_destro) { %>
+                        <img src="<%= report.foto_lato_destro %>" class="photo-thumb" alt="Lato Destro"
+                             onclick="openPhotoModal('<%= report.foto_lato_destro %>', 'Lato Destro - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_lato_sinistro) { %>
+                        <img src="<%= report.foto_lato_sinistro %>" class="photo-thumb" alt="Lato Sinistro"
+                             onclick="openPhotoModal('<%= report.foto_lato_sinistro %>', 'Lato Sinistro - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                      <% if (report.foto_interno) { %>
+                        <img src="<%= report.foto_interno %>" class="photo-thumb" alt="Interno"
+                             onclick="openPhotoModal('<%= report.foto_interno %>', 'Interno - <%= formatDate(report.data_giorno) %>')">
+                      <% } %>
+                    </div>
+                  </td>
+                  <td>
+                    <% if (report.firma) { %>
+                      <span class="badge badge-success">âœ“</span>
+                    <% } else { %>
+                      <span class="badge badge-error">âœ—</span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <script>
+    // Toast Notification System
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <span class="toast-icon">${type === 'success' ? 'âœ“' : 'âš '}</span>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Imposta la data di oggi nel date picker
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    document.getElementById('data_giorno').value = `${year}-${month}-${day}`;
+
+    // Compressione e Watermark Immagini
+    async function compressAndWatermarkImage(file, inputId) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Ridimensiona se troppo grande (max 1920px)
+            let width = img.width;
+            let height = img.height;
+            const maxSize = 1920;
+            
+            if (width > maxSize || height > maxSize) {
+              if (width > height) {
+                height = (height / width) * maxSize;
+                width = maxSize;
+              } else {
+                width = (width / height) * maxSize;
+                height = maxSize;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Disegna immagine
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Aggiungi watermark
+            const watermarkText = `${new Date().toLocaleString('it-IT')} - <%= user.nome %> <%= user.cognome %>`;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, height - 40, width, 40);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(watermarkText, 10, height - 15);
+            
+            // Converti in WebP con compressione
+            canvas.toBlob((blob) => {
+              resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.webp'), {
+                type: 'image/webp',
+                lastModified: Date.now()
+              }));
+            }, 'image/webp', 0.85);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Gestione foto con progress e feedback
+    const fotoInputs = ['foto_posteriore', 'foto_anteriore', 'foto_lato_destro', 'foto_lato_sinistro', 'foto_interno'];
+    
+    fotoInputs.forEach(inputId => {
+      const input = document.getElementById(inputId);
+      const preview = document.getElementById('preview_' + inputId.replace('foto_', ''));
+      const progress = document.getElementById('progress_' + inputId.replace('foto_', ''));
+      const success = document.getElementById('success_' + inputId.replace('foto_', ''));
+      const label = input.closest('.foto-label');
+      
+      input.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          // Mostra progress
+          progress.classList.add('active');
+          
+          try {
+            // Comprimi e aggiungi watermark
+            const processedFile = await compressAndWatermarkImage(file, inputId);
+            
+            // Crea anteprima
+            const reader = new FileReader();
+            reader.onload = function(event) {
+              preview.innerHTML = `<img src="${event.target.result}" alt="Anteprima">`;
+              preview.classList.add('active');
+              label.classList.add('has-image');
+              
+              // Nascondi progress, mostra success
+              progress.classList.remove('active');
+              success.classList.add('active');
+              
+              setTimeout(() => {
+                success.classList.remove('active');
+              }, 1500);
+              
+              showToast(`Foto ${inputId.replace('foto_', '').replace('_', ' ')} caricata e ottimizzata!`, 'success');
+            };
+            reader.readAsDataURL(processedFile);
+            
+            // Sostituisci il file originale con quello processato
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(processedFile);
+            input.files = dataTransfer.files;
+            
+          } catch (error) {
+            progress.classList.remove('active');
+            showToast('Errore nel processamento dell\'immagine', 'error');
+          }
+        }
+      });
+    });
+
+    // Autocomplete per Targa e Rotta
+    const targaInput = document.getElementById('targa_furgone');
+    const rottaInput = document.getElementById('codice_rotta');
+    
+    // Raccogli targhe e rotte esistenti dalla tabella
+    const existingData = {
+      targhe: new Set(),
+      rotte: new Set()
+    };
+    
+    document.querySelectorAll('.data-table tbody tr').forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length > 1) {
+        existingData.targhe.add(cells[1].textContent.trim());
+        existingData.rotte.add(cells[2].textContent.trim());
+      }
+    });
+    
+    // Aggiungi datalist per autocomplete
+    if (existingData.targhe.size > 0) {
+      const targaDatalist = document.createElement('datalist');
+      targaDatalist.id = 'targa-list';
+      existingData.targhe.forEach(targa => {
+        const option = document.createElement('option');
+        option.value = targa;
+        targaDatalist.appendChild(option);
+      });
+      document.body.appendChild(targaDatalist);
+      targaInput.setAttribute('list', 'targa-list');
+    }
+    
+    if (existingData.rotte.size > 0) {
+      const rottaDatalist = document.createElement('datalist');
+      rottaDatalist.id = 'rotta-list';
+      existingData.rotte.forEach(rotta => {
+        const option = document.createElement('option');
+        option.value = rotta;
+        rottaDatalist.appendChild(option);
+      });
+      document.body.appendChild(rottaDatalist);
+      rottaInput.setAttribute('list', 'rotta-list');
+    }
+
+    // Mostra spinner al submit
+    document.getElementById('reportForm').addEventListener('submit', function() {
+      document.getElementById('loadingSpinner').style.display = 'flex';
+    });
+
+    // Modal per visualizzare foto
+    function openPhotoModal(photoUrl, caption) {
+      const modal = document.createElement('div');
+      modal.className = 'photo-modal active';
+      modal.innerHTML = `
+        <div class="photo-modal-content">
+          <button class="photo-modal-close" onclick="this.closest('.photo-modal').remove()">Ã—</button>
+          <img src="${photoUrl}" alt="${caption}">
+          <div class="photo-modal-caption">${caption}</div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+    }
+
+    // ===== MODAL COMPLETA RIENTRO =====
+    let currentReportId = null;
+    let currentKmPartenza = 0;
+
+    function openCompleteModal(reportId, dataGiorno, targa, kmPartenza) {
+      currentReportId = reportId;
+      currentKmPartenza = parseInt(kmPartenza);
+      
+      // Imposta info report nel modal
+      document.getElementById('modalReportInfo').innerHTML = `
+        <p style="margin: 0; color: #e2e8f0;">
+          <strong>ðŸ“… Data:</strong> ${dataGiorno}<br>
+          <strong>ðŸš Targa:</strong> ${targa}<br>
+          <strong>ðŸ“ KM Partenza:</strong> ${kmPartenza}
+        </p>
+      `;
+      
+      // Imposta action del form
+      document.getElementById('completeForm').action = `/rider/report/complete/${reportId}`;
+      
+      // Imposta ora attuale
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('orario_rientro_modal').value = `${hours}:${minutes}`;
+      
+      // Reset km rientro
+      document.getElementById('km_rientro_modal').value = '';
+      document.getElementById('kmCalculation').style.display = 'none';
+      
+      // Mostra modal
+      document.getElementById('completeModal').classList.add('active');
+    }
+
+    function closeCompleteModal() {
+      document.getElementById('completeModal').classList.remove('active');
+      currentReportId = null;
+      currentKmPartenza = 0;
+    }
+
+    // Calcola KM percorsi in tempo reale
+    document.getElementById('km_rientro_modal').addEventListener('input', function() {
+      const kmRientro = parseInt(this.value);
+      if (kmRientro && kmRientro >= currentKmPartenza) {
+        const kmPercorsi = kmRientro - currentKmPartenza;
+        document.getElementById('kmPercorsi').textContent = kmPercorsi;
+        document.getElementById('kmCalculation').style.display = 'block';
+      } else {
+        document.getElementById('kmCalculation').style.display = 'none';
+      }
+    });
+
+    // Valida KM rientro prima del submit
+    document.getElementById('completeForm').addEventListener('submit', function(e) {
+      const kmRientro = parseInt(document.getElementById('km_rientro_modal').value);
+      if (kmRientro < currentKmPartenza) {
+        e.preventDefault();
+        showToast(`âš ï¸ I KM di rientro (${kmRientro}) non possono essere inferiori ai KM di partenza (${currentKmPartenza})`, 'error');
+        return false;
+      }
+      document.getElementById('loadingSpinner').style.display = 'flex';
+    });
+
+    // Chiudi modal cliccando fuori
+    document.getElementById('completeModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeCompleteModal();
+      }
+    });
+  </script>
+
+  <!-- Modal Segnalazione Manutenzione -->
+  <div id="maintenanceModal" class="modal" style="display: none;">
+    <div class="modal-content glass-card" style="max-width: 600px;">
+      <h3>ðŸ”§ Segnala Problema con AI</h3>
+      <form action="/rider/maintenance/create" method="POST" id="maintenanceForm">
+        <input type="hidden" id="maintenance_vehicle_id" name="vehicle_id">
+        
+        <div class="form-group">
+          <label>ðŸš Furgone:</label>
+          <input type="text" id="maintenance_vehicle_targa" readonly style="background: rgba(30, 41, 59, 0.5);">
+        </div>
+
+        <div class="form-group">
+          <label>âš ï¸ Descrizione Problema *</label>
+          <textarea 
+            id="issue_description" 
+            name="issue_description" 
+            rows="4" 
+            required 
+            placeholder="Descrivi il problema riscontrato... L'AI analizzerÃ  la gravitÃ !"
+            style="resize: vertical;"></textarea>
+          <small style="color: #94a3b8; font-size: 0.875rem; margin-top: 0.5rem; display: block;">
+            ðŸ’¡ Scrivi dettagli come: rumore, vibrazione, perdite, luci, funzionamento...
+          </small>
+        </div>
+
+        <!-- AI Priority Preview -->
+        <div id="aiPriorityPreview" style="display: none; margin: 1rem 0; padding: 1rem; border-radius: 12px; background: rgba(99, 102, 241, 0.1); border: 2px solid rgba(99, 102, 241, 0.3);">
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <span style="font-size: 1.5rem;">ðŸ¤–</span>
+            <div>
+              <strong style="color: #a5b4fc; font-size: 0.875rem;">AI ANALISI:</strong>
+              <div id="aiSuggestion" style="font-size: 1.125rem; font-weight: 600; margin-top: 0.25rem;"></div>
+            </div>
+          </div>
+          <div id="aiExplanation" style="font-size: 0.875rem; color: #cbd5e1; margin-top: 0.5rem;"></div>
+          <div id="aiConfidence" style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem;"></div>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem;">
+            ðŸŽ¯ PrioritÃ : 
+            <small style="color: #94a3b8; font-weight: normal;">(Lascia vuoto per usare AI)</small>
+          </label>
+          <select id="priority_select" name="priority">
+            <option value="">ðŸ¤– Automatica (AI)</option>
+            <option value="bassa">ðŸŸ¢ Bassa - Non urgente</option>
+            <option value="media">ðŸŸ¡ Media - Importante</option>
+            <option value="alta">ðŸ”´ Alta - Urgente</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn-gradient" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+            ðŸ“© Invia Richiesta
+          </button>
+          <button type="button" onclick="closeMaintenanceModal()" class="btn btn-secondary">
+            âŒ Annulla
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let aiDebounceTimer = null;
+
+    function showMaintenanceModal(vehicleId, targa) {
+      document.getElementById('maintenance_vehicle_id').value = vehicleId;
+      document.getElementById('maintenance_vehicle_targa').value = targa;
+      document.getElementById('issue_description').value = '';
+      document.getElementById('priority_select').value = '';
+      document.getElementById('aiPriorityPreview').style.display = 'none';
+      document.getElementById('maintenanceModal').style.display = 'flex';
+    }
+
+    function closeMaintenanceModal() {
+      document.getElementById('maintenanceModal').style.display = 'none';
+    }
+
+    // AI Live Preview
+    document.getElementById('issue_description').addEventListener('input', function() {
+      const description = this.value.trim();
+      
+      // Clear previous timer
+      if (aiDebounceTimer) clearTimeout(aiDebounceTimer);
+      
+      if (description.length < 10) {
+        document.getElementById('aiPriorityPreview').style.display = 'none';
+        return;
+      }
+
+      // Debounce 500ms
+      aiDebounceTimer = setTimeout(() => {
+        fetch('/rider/maintenance/preview-priority', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ issue_description: description })
+        })
+        .then(res => res.json())
+        .then(data => {
+          const preview = document.getElementById('aiPriorityPreview');
+          const suggestion = document.getElementById('aiSuggestion');
+          const explanation = document.getElementById('aiExplanation');
+          const confidence = document.getElementById('aiConfidence');
+
+          // Badge colore
+          let badgeColor, emoji;
+          if (data.priority === 'alta') {
+            badgeColor = '#ef4444';
+            emoji = 'ðŸ”´';
+          } else if (data.priority === 'media') {
+            badgeColor = '#f59e0b';
+            emoji = 'ðŸŸ¡';
+          } else {
+            badgeColor = '#10b981';
+            emoji = 'ðŸŸ¢';
+          }
+
+          suggestion.innerHTML = `${emoji} PrioritÃ : <span style="color: ${badgeColor}">${data.priority.toUpperCase()}</span>`;
+          explanation.textContent = data.explanation;
+          confidence.textContent = `Confidenza: ${data.confidence}%`;
+          
+          preview.style.display = 'block';
+        })
+        .catch(err => {
+          console.error('AI error:', err);
+        });
+      }, 500);
+    });
+
+    // Chiudi modal cliccando fuori
+    document.getElementById('maintenanceModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeMaintenanceModal();
+      }
+    });
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('active');
+      overlay.classList.toggle('active');
+    }
+
+    // === CANVAS FIRMA DIGITALE ===
+    const canvas = document.getElementById('signatureCanvas');
+    const ctx = canvas.getContext('2d');
+    const firmaInput = document.getElementById('firma');
+    let isDrawing = false;
+    let hasSignature = false;
+
+    // Imposta dimensioni canvas
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * 2;
+      canvas.height = rect.height * 2;
+      ctx.scale(2, 2);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+    resizeCanvas();
+
+    // Mouse events
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+
+    // Touch events
+    canvas.addEventListener('touchstart', handleTouch);
+    canvas.addEventListener('touchmove', handleTouch);
+    canvas.addEventListener('touchend', stopDrawing);
+
+    function startDrawing(e) {
+      isDrawing = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+      if (!isDrawing) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      hasSignature = true;
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+      if (hasSignature) {
+        firmaInput.value = canvas.toDataURL('image/png');
+      }
+    }
+
+    function handleTouch(e) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+        clientX: touch.clientX,
+        clientY: touch.clientY
+      });
+      canvas.dispatchEvent(mouseEvent);
+    }
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) / 2,
+        y: (e.clientY - rect.top) / 2
+      };
+    }
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasSignature = false;
+      firmaInput.value = '';
+    }
+
+    // Validazione form - controlla firma
+    document.querySelector('form[action="/rider/report"]').addEventListener('submit', function(e) {
+      if (!hasSignature) {
+        e.preventDefault();
+        alert('⚠️ Per favore, firma prima di inviare il report!');
+        canvas.style.border = '2px solid #ef4444';
+        setTimeout(() => {
+          canvas.style.border = '2px solid #6366f1';
+        }, 2000);
+      }
+    });
+  </script>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+
+
+
