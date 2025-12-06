@@ -102,14 +102,16 @@ class Assignment {
   }
 
   static getByRider(riderId, callback) {
+    const today = new Date().toISOString().split('T')[0];
     db.get(
       `SELECT va.*, v.targa, v.modello
        FROM vehicle_assignments va
        JOIN vehicles v ON va.vehicle_id = v.id
-       WHERE va.rider_id = ? AND va.status = 'attivo'
-       ORDER BY va.data_assegnazione DESC
+       WHERE va.rider_id = ? 
+       AND va.status = 'attivo'
+       AND va.data_assegnazione = ?
        LIMIT 1`,
-      [riderId],
+      [riderId, today],
       callback
     );
   }

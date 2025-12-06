@@ -852,16 +852,56 @@ router.get('/vehicles', requireAdmin, (req, res) => {
       return res.redirect('/admin/dashboard');
     }
 
+    // Ottieni data selezionata o usa oggi
+    const selectedDate = req.query.date || new Date().toISOString().split('T')[0];
+
     // Conta manutenzioni pending
     getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
       res.render('admin/vehicles', {
         user: req.session,
         vehicles: vehicles || [],
+        selectedDate: selectedDate,
         pendingMaintenanceCount: pendingMaintenanceCount || 0,
         success: req.flash('success'),
         error: req.flash('error')
       });
     });
+  });
+});
+
+// API per ottenere assegnazioni per data
+router.get('/vehicles/assignments', requireAdmin, (req, res) => {
+  const db = require('../config/database');
+  const date = req.query.date;
+  
+  if (!date) {
+    return res.json([]);
+  }
+
+  db.all(`
+    SELECT 
+      va.vehicle_id,
+      va.rider_id,
+      u.nome as rider_nome,
+      u.cognome as rider_cognome,
+      v.targa,
+      v.modello,
+      dr.status as report_status,
+      dr.orario_partenza_effettivo
+    FROM vehicle_assignments va
+    JOIN users u ON va.rider_id = u.id
+    JOIN vehicles v ON va.vehicle_id = v.id
+    LEFT JOIN daily_reports dr ON dr.user_id = va.rider_id 
+      AND dr.data_giorno = va.data_assegnazione
+    WHERE va.data_assegnazione = ?
+    AND va.status = 'attivo'
+  `, [date], (err, assignments) => {
+    if (err) {
+      console.error('Error fetching assignments:', err);
+      return res.status(500).json({ error: 'Errore nel caricamento delle assegnazioni' });
+    }
+    
+    res.json(assignments || []);
   });
 });
 
@@ -948,7 +988,8 @@ router.get('/assignments', requireAdmin, (req, res) => {
           res.render('admin/assignments', {
             user: req.session,
             assignments,
-            vehicles: availableVehicles,
+            allVehicles: vehicles, // Tutti i veicoli per le statistiche
+            vehicles: availableVehicles, // Solo disponibili per il form
             drivers: availableDrivers,
             pendingMaintenanceCount: pendingMaintenanceCount || 0,
             success: req.flash('success'),
@@ -1065,190 +1106,241 @@ router.post('/assignments/reset-all', requireAdmin, (req, res) => {
   });
 });
 
-// Assegnazione automatica furgoni (fissi + casuali)
+// Assegnazione automatica furgoni (fissi + casuali) - MULTI-DATE
 router.post('/assignments/auto-assign', requireAdmin, (req, res) => {
-  const dataAssegnazione = req.body.data_assegnazione || new Date().toISOString().split('T')[0];
   const db = require('../config/database');
 
-  // Usa OGGI per roster e report
-  const today = new Date().toISOString().split('T')[0];
+  console.log('📋 Assegnazione automatica avviata per TUTTE le date con roster...');
 
-  console.log('📋 Assegnazione automatica avviata...');
-  console.log('📅 Data assegnazione:', dataAssegnazione);
-  console.log('📅 Data roster (oggi):', today);
-
-  // 1. Ottieni i driver in turno dal roster di OGGI
+  // 1. Trova tutte le date con roster salvato (future o oggi)
   db.all(`
-    SELECT DISTINCT u.id, u.nome, u.cognome, u.fixed_vehicle_id
-    FROM roster_daily rd
-    JOIN users u ON rd.driver_id = u.id
-    WHERE rd.roster_date = ?
-    AND u.role = 'rider'
-    AND u.is_active = 1
-    AND u.id NOT IN (
-      SELECT rider_id FROM vehicle_assignments WHERE status = 'attivo'
-    )
-    ORDER BY u.fixed_vehicle_id DESC NULLS LAST, u.cognome, u.nome
-  `, [today], (err, drivers) => {
+    SELECT DISTINCT roster_date 
+    FROM roster_daily 
+    WHERE roster_date >= date('now')
+    ORDER BY roster_date
+  `, [], (err, dates) => {
     if (err) {
-      console.error('❌ Errore recupero driver dal roster:', err);
-      req.flash('error', 'Errore durante il recupero dei driver dal roster');
+      console.error('❌ Errore recupero date roster:', err);
+      req.flash('error', 'Errore durante il recupero delle date con roster');
       return res.redirect('/admin/assignments');
     }
 
-    console.log(`👥 Driver nel roster di oggi: ${drivers ? drivers.length : 0}`);
-
-    if (!drivers || drivers.length === 0) {
-      req.flash('error', 'Nessun driver nel roster per oggi. Vai su ROSTER per selezionare i driver in turno.');
+    if (!dates || dates.length === 0) {
+      req.flash('error', 'Nessun roster trovato. Vai su ROSTER per selezionare i driver in turno.');
       return res.redirect('/admin/assignments');
     }
 
-    // 2. Ottieni tutti i veicoli disponibili (non assegnati, non in manutenzione)
-    db.all(`
-      SELECT v.id, v.targa, v.modello
-      FROM vehicles v
-      WHERE v.status = 'disponibile'
-      AND (v.in_manutenzione = 0 OR v.in_manutenzione IS NULL)
-      AND v.id NOT IN (
-        SELECT vehicle_id FROM vehicle_assignments WHERE status = 'attivo'
-      )
-      ORDER BY v.targa
-    `, [], (err, availableVehicles) => {
-      if (err) {
-        console.error('❌ Errore recupero veicoli:', err);
-        req.flash('error', 'Errore durante il recupero dei veicoli');
+    console.log(`📅 Trovate ${dates.length} date con roster: ${dates.map(d => d.roster_date).join(', ')}`);
+    
+    let completedDates = 0;
+    let totalAssignments = 0;
+    const dateResults = [];
+
+    // Processa ogni data sequenzialmente
+    function processNextDate(index) {
+      if (index >= dates.length) {
+        // Tutte le date processate
+        const successMsg = dateResults.filter(r => r.success).map(r => r.message).join('; ');
+        const errorMsg = dateResults.filter(r => !r.success).map(r => r.message).join('; ');
+        
+        if (successMsg) req.flash('success', successMsg);
+        if (errorMsg) req.flash('error', errorMsg);
+        
         return res.redirect('/admin/assignments');
       }
 
-      console.log(`🚐 Veicoli disponibili: ${availableVehicles ? availableVehicles.length : 0}`);
+      const assignmentDate = dates[index].roster_date;
+      console.log(`\n🗓️  === Processando ${assignmentDate} ===`);
 
-      if (!availableVehicles || availableVehicles.length === 0) {
-        req.flash('error', 'Nessun veicolo disponibile per l\'assegnazione');
-        return res.redirect('/admin/assignments');
-      }
-
-      // 3. Separa driver con e senza furgone fisso
-      const driversWithFixedVehicle = drivers.filter(r => r.fixed_vehicle_id);
-      const driversWithoutFixedVehicle = drivers.filter(r => !r.fixed_vehicle_id);
-
-      console.log(`✅ Driver con furgone fisso: ${driversWithFixedVehicle.length}`);
-      console.log(`🎲 Driver con furgone casuale: ${driversWithoutFixedVehicle.length}`);
-
-      let assigned = 0;
-      let errors = [];
-      const assignments = [];
-
-      // 4. Assegna furgoni fissi (PRIORITÀ)
-      driversWithFixedVehicle.forEach(driver => {
-        const vehicle = availableVehicles.find(v => v.id === driver.fixed_vehicle_id);
-        if (vehicle) {
-          assignments.push({
-            rider_id: driver.id,
-            vehicle_id: vehicle.id,
-            driver_name: `${driver.nome} ${driver.cognome}`,
-            vehicle_targa: vehicle.targa,
-            type: 'fisso'
-          });
-          console.log(`  ✅ ${driver.nome} ${driver.cognome} → ${vehicle.targa} (FISSO)`);
-          // Rimuovi il veicolo dalla lista disponibili
-          const index = availableVehicles.indexOf(vehicle);
-          if (index > -1) availableVehicles.splice(index, 1);
-        } else {
-          const errorMsg = `${driver.nome} ${driver.cognome}: furgone fisso non disponibile`;
-          errors.push(errorMsg);
-          console.log(`  ❌ ${errorMsg}`);
+      // Ottieni driver dal roster per questa data
+      db.all(`
+        SELECT DISTINCT u.id, u.nome, u.cognome, u.fixed_vehicle_id
+        FROM roster_daily rd
+        JOIN users u ON rd.driver_id = u.id
+        WHERE rd.roster_date = ?
+        AND u.role = 'rider'
+        AND u.is_active = 1
+        ORDER BY u.fixed_vehicle_id DESC NULLS LAST, u.cognome, u.nome
+      `, [assignmentDate], (err, drivers) => {
+        if (err) {
+          console.error(`❌ Errore driver per ${assignmentDate}:`, err);
+          dateResults.push({ success: false, message: `Errore ${assignmentDate}` });
+          return processNextDate(index + 1);
         }
-      });
 
-      // 5. Assegna furgoni casuali ai driver senza fixed_vehicle
-      driversWithoutFixedVehicle.forEach(driver => {
-        if (availableVehicles.length > 0) {
-          // Prendi il primo veicolo disponibile (casuale)
-          const vehicle = availableVehicles[0];
-          assignments.push({
-            rider_id: driver.id,
-            vehicle_id: vehicle.id,
-            driver_name: `${driver.nome} ${driver.cognome}`,
-            vehicle_targa: vehicle.targa,
-            type: 'casuale'
-          });
-          console.log(`  ✅ ${driver.nome} ${driver.cognome} → ${vehicle.targa} (CASUALE)`);
-          // Rimuovi dalla lista
-          availableVehicles.shift();
-        } else {
-          const errorMsg = `${driver.nome} ${driver.cognome}: nessun furgone disponibile`;
-          errors.push(errorMsg);
-          console.log(`  ⚠️  ${errorMsg}`);
+        if (!drivers || drivers.length === 0) {
+          console.log(`⚠️  Nessun driver per ${assignmentDate}`);
+          dateResults.push({ success: false, message: `Nessun driver in roster per ${assignmentDate}` });
+          return processNextDate(index + 1);
         }
-      });
 
-      // 6. Crea gli assegnamenti nel database
-      if (assignments.length === 0) {
-        req.flash('error', 'Nessun assegnamento possibile. Errori: ' + errors.join(', '));
-        return res.redirect('/admin/assignments');
-      }
+        console.log(`👥 Driver per ${assignmentDate}: ${drivers.length}`);
 
-      console.log(`\n📊 Totale assegnamenti da creare: ${assignments.length}`);
-
-      let completed = 0;
-      assignments.forEach(assignment => {
-        Assignment.create({
-          rider_id: assignment.rider_id,
-          vehicle_id: assignment.vehicle_id,
-          data_assegnazione: dataAssegnazione,
-          note: `Assegnazione automatica (${assignment.type})`
-        }, (err) => {
+        // Ottieni veicoli disponibili per questa data (ignora status globale, controlla solo assegnamenti per questa data)
+        db.all(`
+          SELECT v.id, v.targa, v.modello
+          FROM vehicles v
+          WHERE (v.in_manutenzione = 0 OR v.in_manutenzione IS NULL)
+          AND v.id NOT IN (
+            SELECT vehicle_id FROM vehicle_assignments 
+            WHERE data_assegnazione = ? AND status = 'attivo'
+          )
+          ORDER BY v.targa
+        `, [assignmentDate], (err, availableVehicles) => {
           if (err) {
-            console.error('Errore creazione assegnamento:', err);
-            errors.push(`${assignment.driver_name}: errore database`);
-            completed++;
-            checkComplete();
-          } else {
-            // Aggiorna status veicolo
-            Vehicle.updateStatus(assignment.vehicle_id, 'assegnato', (err) => {
-              if (err) console.error('Errore update status:', err);
-            });
-            
-            // Crea il report base per la dashboard
+            console.error(`❌ Errore veicoli per ${assignmentDate}:`, err);
+            dateResults.push({ success: false, message: `Errore veicoli ${assignmentDate}` });
+            return processNextDate(index + 1);
+          }
+
+          console.log(`🚐 Veicoli disponibili per ${assignmentDate}: ${availableVehicles.length}`);
+
+          // Separazione driver con/senza furgone fisso
+          const driversWithFixedVehicle = drivers.filter(d => d.fixed_vehicle_id !== null);
+          const driversWithoutFixedVehicle = drivers.filter(d => d.fixed_vehicle_id === null);
+
+          console.log(`✅ Driver con furgone fisso: ${driversWithFixedVehicle.length}`);
+          console.log(`🎲 Driver con furgone casuale: ${driversWithoutFixedVehicle.length}`);
+
+          const assignments = [];
+          const dateErrors = [];
+
+          // Assegna furgoni fissi
+          driversWithFixedVehicle.forEach(driver => {
+            const vehicle = availableVehicles.find(v => v.id === driver.fixed_vehicle_id);
+            if (vehicle) {
+              assignments.push({
+                rider_id: driver.id,
+                vehicle_id: vehicle.id,
+                driver_name: `${driver.nome} ${driver.cognome}`,
+                vehicle_targa: vehicle.targa
+              });
+              console.log(`  ✅ ${driver.nome} ${driver.cognome} → ${vehicle.targa} (FISSO)`);
+              const index = availableVehicles.indexOf(vehicle);
+              if (index > -1) availableVehicles.splice(index, 1);
+            } else {
+              dateErrors.push(`${driver.nome} ${driver.cognome}: furgone fisso non disponibile`);
+              console.log(`  ❌ ${driver.nome} ${driver.cognome}: furgone fisso non disponibile`);
+            }
+          });
+
+          // Assegna furgoni casuali
+          driversWithoutFixedVehicle.forEach(driver => {
+            if (availableVehicles.length > 0) {
+              const vehicle = availableVehicles.shift();
+              assignments.push({
+                rider_id: driver.id,
+                vehicle_id: vehicle.id,
+                driver_name: `${driver.nome} ${driver.cognome}`,
+                vehicle_targa: vehicle.targa
+              });
+              console.log(`  ✅ ${driver.nome} ${driver.cognome} → ${vehicle.targa} (CASUALE)`);
+            } else {
+              dateErrors.push(`${driver.nome} ${driver.cognome}: nessun furgone disponibile`);
+              console.log(`  ❌ ${driver.nome} ${driver.cognome}: nessun furgone disponibile`);
+            }
+          });
+
+          if (assignments.length === 0) {
+            dateResults.push({ success: false, message: `Nessun assegnamento per ${assignmentDate}` });
+            return processNextDate(index + 1);
+          }
+
+          console.log(`\n📊 Totale assegnamenti da creare per ${assignmentDate}: ${assignments.length}`);
+
+          // Crea gli assegnamenti
+          let completed = 0;
+          let successCount = 0;
+
+          assignments.forEach(assignment => {
+            // Crea assegnamento veicolo
             db.run(`
-              INSERT INTO daily_reports (
-                user_id, 
-                data_giorno, 
-                targa_furgone, 
-                status,
-                created_at
-              ) VALUES (?, ?, ?, 'in_preparazione', datetime('now'))
-            `, [assignment.rider_id, today, assignment.vehicle_targa], (err) => {
+              INSERT INTO vehicle_assignments (rider_id, vehicle_id, data_assegnazione, status)
+              VALUES (?, ?, ?, 'attivo')
+            `, [assignment.rider_id, assignment.vehicle_id, assignmentDate], function(err) {
               if (err) {
-                console.error('Errore creazione report base:', err);
-                errors.push(`${assignment.driver_name}: errore creazione report`);
-              } else {
-                assigned++;
-                console.log(`  📝 Report base creato per ${assignment.driver_name}`);
+                console.error(`❌ Errore assegnamento per ${assignment.driver_name}:`, err);
+                dateErrors.push(`Errore assegnamento ${assignment.driver_name}`);
+                completed++;
+                checkDateComplete();
+                return;
               }
-              completed++;
-              checkComplete();
+
+              // Non aggiorniamo più lo status globale del veicolo
+              // I veicoli possono essere assegnati a date diverse
+
+              // Verifica che NON esista già un report per questo driver in questa data
+              db.get(`SELECT id FROM daily_reports WHERE user_id = ? AND data_giorno = ?`, 
+                [assignment.rider_id, assignmentDate], (err, existing) => {
+                if (existing) {
+                  console.log(`  ⚠️  Report già esistente per ${assignment.driver_name} in data ${assignmentDate}`);
+                  completed++;
+                  checkDateComplete();
+                  return;
+                }
+                
+                // Crea report base
+                db.run(`
+                  INSERT INTO daily_reports (user_id, data_giorno, targa_furgone, codice_rotta, 
+                                            km_partenza, km_rientro, pacchi_resi, firma, status)
+                  VALUES (?, ?, ?, '', 0, 0, 0, 0, 'in_preparazione')
+                `, [assignment.rider_id, assignmentDate, assignment.vehicle_targa], function(err) {
+                if (err) {
+                  console.error(`❌ Errore report per ${assignment.driver_name}:`, err);
+                  dateErrors.push(`Errore report ${assignment.driver_name}`);
+                } else {
+                  console.log(`  📝 Report base creato per ${assignment.driver_name}`);
+                  successCount++;
+                }
+                
+                  completed++;
+                  checkDateComplete();
+                });
+              });
             });
+          });
+
+          function checkDateComplete() {
+            if (completed === assignments.length) {
+              if (successCount > 0) {
+                const dateFormatted = new Date(assignmentDate + 'T12:00:00').toLocaleDateString('it-IT', { 
+                  day: 'numeric', 
+                  month: 'short' 
+                });
+                dateResults.push({ 
+                  success: true, 
+                  message: `✅ ${successCount} furgoni assegnati per ${dateFormatted}` 
+                });
+                totalAssignments += successCount;
+              } else {
+                dateResults.push({ 
+                  success: false, 
+                  message: `❌ Errori per ${assignmentDate}` 
+                });
+              }
+              
+              // Processa prossima data
+              processNextDate(index + 1);
+            }
           }
         });
       });
+    }
 
-      function checkComplete() {
-        // Quando tutti sono stati processati
-        if (completed === assignments.length) {
-          if (assigned > 0) {
-            let message = `✅ ${assigned} furgoni assegnati automaticamente con report base creati!`;
-            if (errors.length > 0) {
-              message += ` (${errors.length} errori: ${errors.join(', ')})`;
-            }
-            req.flash('success', message);
-          } else {
-            req.flash('error', 'Nessun assegnamento creato. Errori: ' + errors.join(', '));
-          }
-          res.redirect('/admin/assignments');
-        }
-      }
-    });
+    // Inizia processamento dalla prima data
+    processNextDate(0);
+  });
+});
+
+// Elimina assegnamento
+router.delete('/assignments/:id', requireAdmin, (req, res) => {
+  Assignment.delete(req.params.id, (err) => {
+    if (err) {
+      req.flash('error', 'Errore durante l\'eliminazione dell\'assegnamento');
+    } else {
+      req.flash('success', 'Assegnamento eliminato con successo');
+    }
+    res.redirect('/admin/assignments');
   });
 });
 
@@ -1415,9 +1507,10 @@ router.post('/maintenance/change-status/:id', requireAdmin, (req, res) => {
 router.get('/roster', requireAdmin, (req, res) => {
   const db = require('../config/database');
   
-  // Data di OGGI
-  const today = new Date().toISOString().split('T')[0];
-  const todayDisplay = new Date().toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  // Data selezionata dal query param o OGGI
+  const selectedDate = req.query.date || new Date().toISOString().split('T')[0];
+  const dateObj = new Date(selectedDate + 'T12:00:00');
+  const dateDisplay = dateObj.toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // Ottieni tutti i driver attivi
   db.all(`
@@ -1432,11 +1525,11 @@ router.get('/roster', requireAdmin, (req, res) => {
       return res.status(500).send('Errore del server');
     }
 
-    // Ottieni roster per OGGI
+    // Ottieni roster per la data selezionata
     db.all(`
       SELECT driver_id FROM roster_daily 
       WHERE roster_date = ?
-    `, [today], (err, rosterEntries) => {
+    `, [selectedDate], (err, rosterEntries) => {
       if (err) {
         console.error(err);
         return res.status(500).send('Errore del server');
@@ -1454,7 +1547,8 @@ router.get('/roster', requireAdmin, (req, res) => {
           activeDrivers: drivers || [],
           selectedDrivers: selectedDriverIds,
           fixedVehicleCount,
-          tomorrowDate: todayDisplay,
+          selectedDate: selectedDate,
+          dateDisplay: dateDisplay,
           pendingMaintenanceCount: pendingMaintenanceCount || 0,
           success: req.flash('success'),
           error: req.flash('error')
@@ -1466,18 +1560,19 @@ router.get('/roster', requireAdmin, (req, res) => {
 
 // Salva roster
 router.post('/roster/save', requireAdmin, (req, res) => {
-  const { driverIds } = req.body;
+  const { driverIds, rosterDate } = req.body;
   const db = require('../config/database');
 
   if (!driverIds || driverIds.length === 0) {
     return res.json({ success: false, message: 'Nessun driver selezionato' });
   }
 
-  // Data di OGGI
-  const today = new Date().toISOString().split('T')[0];
+  if (!rosterDate) {
+    return res.json({ success: false, message: 'Data non specificata' });
+  }
 
-  // Cancella roster esistente per OGGI
-  db.run('DELETE FROM roster_daily WHERE roster_date = ?', [today], (err) => {
+  // Cancella roster esistente per la data selezionata
+  db.run('DELETE FROM roster_daily WHERE roster_date = ?', [rosterDate], (err) => {
     if (err) {
       console.error(err);
       return res.json({ success: false, message: 'Errore durante l\'eliminazione del roster precedente' });
@@ -1489,7 +1584,7 @@ router.post('/roster/save', requireAdmin, (req, res) => {
     
     driverIds.forEach(driverId => {
       db.run('INSERT INTO roster_daily (driver_id, roster_date) VALUES (?, ?)', 
-        [driverId, today], 
+        [driverId, rosterDate], 
         (err) => {
           if (err) {
             console.error('Errore inserimento driver:', err);
@@ -1502,13 +1597,40 @@ router.post('/roster/save', requireAdmin, (req, res) => {
             if (hasError) {
               res.json({ success: false, message: 'Alcuni driver non sono stati aggiunti al roster' });
             } else {
-              res.json({ success: true, message: 'Roster salvato con successo' });
+              res.json({ success: true, message: 'Roster salvato con successo per ' + new Date(rosterDate + 'T12:00:00').toLocaleDateString('it-IT') });
             }
           }
         }
       );
     });
   });
+});
+
+// Reset roster per una specifica data
+router.post('/roster/reset-day', requireAdmin, (req, res) => {
+  const db = require('../config/database');
+  const { rosterDate } = req.body;
+  
+  if (!rosterDate) {
+    return res.json({ success: false, message: 'Data non specificata' });
+  }
+
+  db.run(
+    'DELETE FROM roster_daily WHERE roster_date = ?',
+    [rosterDate],
+    function(err) {
+      if (err) {
+        console.error('❌ Errore reset roster:', err);
+        return res.json({ success: false, message: 'Errore durante il reset del roster' });
+      }
+      
+      console.log(`🔄 Roster resettato per ${rosterDate} (${this.changes} righe eliminate)`);
+      res.json({ 
+        success: true, 
+        message: `Roster resettato per ${new Date(rosterDate + 'T12:00:00').toLocaleDateString('it-IT')}` 
+      });
+    }
+  );
 });
 
 // Reset roster (nuova giornata)

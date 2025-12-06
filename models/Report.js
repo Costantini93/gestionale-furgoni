@@ -124,21 +124,41 @@ const ReportModel = {
     );
   },
 
-  // Completa rientro (aggiorna km_rientro, orario_rientro, status)
+  // Completa il rientro
   completeReturn: (reportId, returnData, callback) => {
     const { km_rientro, orario_rientro, pacchi_ritornati, rifornimento_euro } = returnData;
     
-    db.run(
-      `UPDATE daily_reports SET 
-        km_rientro = ?, 
-        orario_rientro = ?,
-        pacchi_resi = ?,
-        importo_rifornimento = ?,
-        status = 'completato'
-       WHERE id = ?`,
-      [km_rientro, orario_rientro, pacchi_ritornati || 0, rifornimento_euro || 0, reportId],
-      callback
-    );
+    // Prima ottieni user_id e data_giorno dal report
+    db.get('SELECT user_id, data_giorno FROM daily_reports WHERE id = ?', [reportId], (err, report) => {
+      if (err) return callback(err);
+      if (!report) return callback(new Error('Report non trovato'));
+      
+      // Aggiorna il report
+      db.run(
+        `UPDATE daily_reports SET 
+          km_rientro = ?, 
+          orario_rientro = ?,
+          pacchi_resi = ?,
+          importo_rifornimento = ?,
+          status = 'completato'
+         WHERE id = ?`,
+        [km_rientro, orario_rientro, pacchi_ritornati || 0, rifornimento_euro || 0, reportId],
+        (err) => {
+          if (err) return callback(err);
+          
+          // Disattiva l'assegnazione del veicolo
+          db.run(
+            `UPDATE vehicle_assignments 
+             SET status = 'completato'
+             WHERE rider_id = ? 
+             AND data_assegnazione = ?
+             AND status = 'attivo'`,
+            [report.user_id, report.data_giorno],
+            callback
+          );
+        }
+      );
+    });
   },
 
   // Aggiorna report (solo admin)

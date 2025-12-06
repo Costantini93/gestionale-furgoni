@@ -15,7 +15,7 @@
       const toast = document.createElement('div');
       toast.className = `toast toast-${type}`;
       toast.innerHTML = `
-        <span class="toast-icon">${type === 'success' ? '?' : '?'}</span>
+        <span class="toast-icon">${type === 'success' ? '✅' : '❌'}</span>
         <span>${message}</span>
       `;
       container.appendChild(toast);
@@ -25,14 +25,23 @@
     }
   </script>
 </head>
-<body style="background: #F5F7FA;">
-  <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; align-items: center; gap: 15px;">
-    <span style="color: #2C3E50; font-weight: 500;"><%= user.nome %> <%= user.cognome %></span>
-    <a href="/auth/logout" class="btn btn-secondary">Logout</a>
+<body>
+  <div class="topbar">
+    <div class="breadcrumb">
+      <span>Dashboard Rider</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-info">
+        <span><%= user.nome %> <%= user.cognome %></span>
+      </div>
+      <a href="/auth/logout" class="btn btn-secondary">Logout</a>
+    </div>
   </div>
 
-  <div class="container" style="padding-top: 80px;">
-    <h2 style="color: #2C3E50; margin-bottom: 2rem;">Dashboard Rider</h2>
+  <div class="container">
+    <div class="section-header">
+      <h2>📦 Dashboard Rider</h2>
+    </div>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
@@ -53,16 +62,16 @@
     <% if (error && error.length > 0) { %>
       <script>
         document.addEventListener('DOMContentLoaded', function() {
-          showToast('�� <%= error[0] %>', 'error');
+          showToast('<%= error[0] %>', 'error');
         });
       </script>
     <% } %>
 
     <!-- Sezione Report Aperti (DA COMPLETARE) -->
     <% if (openReports && openReports.length > 0) { %>
-      <div class="card" style="border: 2px solid #f59e0b; background: linear-gradient(135deg, #fef3c7 0%, #fef9e6 100%);">
-        <h3 style="color: #f59e0b;">Report da Completare</h3>
-        <p style="color: #7F8C8D; margin-bottom: 1rem;">
+      <div class="alert alert-warning">
+        <h3>⚠️ Report da Completare</h3>
+        <p>
           Hai <strong><%= openReports.length %></strong> rientro/i da registrare:
         </p>
         
@@ -90,61 +99,60 @@
 
     <!-- Furgone Assegnato (solo se ci sono report attivi) -->
     <% if (assignment && (preparationReport || (openReports && openReports.length > 0))) { %>
-      <div class="card" style="margin-bottom: 2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <div>
-            <h3 style="margin: 0; font-size: 1.75rem; color: #6366f1;">
-              Il tuo furgone
-            </h3>
-            <p style="margin: 0.5rem 0 0 0; color: #7F8C8D; font-size: 0.875rem;">
-              Assegnato dal <%= new Date(assignment.data_assegnazione).toLocaleDateString('it-IT') %>
-            </p>
-          </div>
-          <div class="vehicle-badge">
-            ASSEGNATO
-          </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>🚚 Il tuo furgone</h3>
+          <span class="badge badge-success">ASSEGNATO</span>
         </div>
+        <div class="card-body">
+          <p style="margin-bottom: 1rem; color: #64748b;">
+            Assegnato dal <%= new Date(assignment.data_assegnazione).toLocaleDateString('it-IT') %>
+          </p>
 
-        <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
-          <div>
-            <p style="margin: 0; color: #7F8C8D; font-size: 0.875rem;">Targa</p>
-            <p style="margin: 0.25rem 0 0 0; font-size: 1.5rem; font-weight: 700; color: #2C3E50;">
-              <%= assignment.targa %>
-            </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Targa</label>
+              <p style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0.5rem 0;">
+                <%= assignment.targa %>
+              </p>
+            </div>
+            <div class="form-group">
+              <label>Modello</label>
+              <p style="font-size: 1.125rem; font-weight: 600; color: #1e293b; margin: 0.5rem 0;">
+                <%= assignment.modello %>
+              </p>
+            </div>
           </div>
-          <div>
-            <p style="margin: 0; color: #7F8C8D; font-size: 0.875rem;">Modello</p>
-            <p style="margin: 0.25rem 0 0 0; font-size: 1.125rem; font-weight: 600; color: #2C3E50;">
-              <%= assignment.modello %>
-            </p>
-          </div>
+
+          <button onclick="showMaintenanceModal('<%= assignment.vehicle_id %>', '<%= assignment.targa %>')" class="btn btn-warning">
+            🔧 Segnala Problema
+          </button>
         </div>
-
-        <button onclick="showMaintenanceModal('<%= assignment.vehicle_id %>', '<%= assignment.targa %>')" class="btn btn-warning">
-          �� Segnala Problema
-        </button>
       </div>
     <% } %>
 
     <!-- Form inserimento PARTENZA -->
     <div class="card">
       <% if (preparationReport) { %>
-        <h3>Completa la Tua Partenza</h3>
-        <p style="color: #7F8C8D; font-size: 0.9rem; margin-bottom: 1.5rem;">
-          Assegnamento del <%= new Date(preparationReport.data_giorno).toLocaleDateString('it-IT') %> - Completa i dati e scatta le 5 foto prima di partire
-        </p>
+        <div class="card-header">
+          <h3>🚀 Completa la Tua Partenza</h3>
+        </div>
+        <div class="card-body">
+          <p style="color: #64748b; margin-bottom: 1.5rem;">
+            Assegnamento del <%= new Date(preparationReport.data_giorno).toLocaleDateString('it-IT') %> - Completa i dati e scatta le 5 foto prima di partire
+          </p>
         <form action="/rider/report/create" method="POST" id="reportForm" enctype="multipart/form-data">
           <input type="hidden" name="report_id" value="<%= preparationReport.id %>">
           
           <div class="form-row">
             <div class="form-group">
               <label for="data_giorno">Data</label>
-              <input type="date" id="data_giorno" name="data_giorno" value="<%= preparationReport.data_giorno %>" readonly style="background: #FFFFFF; cursor: not-allowed; color: #7F8C8D;">
+              <input type="date" id="data_giorno" name="data_giorno" value="<%= preparationReport.data_giorno %>" readonly>
             </div>
 
             <div class="form-group">
               <label for="targa_furgone">Targa Furgone</label>
-              <input type="text" id="targa_furgone" name="targa_furgone" value="<%= preparationReport.targa_furgone %>" readonly style="background: #FFFFFF; cursor: not-allowed; color: #7F8C8D;">
+              <input type="text" id="targa_furgone" name="targa_furgone" value="<%= preparationReport.targa_furgone %>" readonly>
             </div>
 
             <div class="form-group">
@@ -165,25 +173,21 @@
             </div>
 
             <div class="form-group">
-              <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #2C3E50;">
-                FIRMA - Firma qui sotto per confermare *
-              </label>
-              <div style="border: 2px solid #6366f1; border-radius: 8px; background: white; margin-bottom: 0.5rem; position: relative;">
-                <canvas id="signatureCanvas" width="600" height="200" style="display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair;"></canvas>
+              <label>\u270d\ufe0f FIRMA - Firma qui sotto per confermare *</label>
+              <div style="border: 2px solid #3b82f6; border-radius: 8px; background: white; margin-bottom: 0.5rem;">
+                <canvas id="signatureCanvas" width="600" height="200" style="display: block; width: 100%; height: auto; touch-action: none;"></canvas>
               </div>
-              <div style="display: flex; gap: 0.5rem;">
-                <button type="button" onclick="clearSignature()" class="btn btn-secondary" style="flex: 1; padding: 0.5rem;">
-                  Cancella
-                </button>
-              </div>
+              <button type="button" onclick="clearSignature()" class="btn btn-secondary">
+                Cancella Firma
+              </button>
               <input type="hidden" id="firma" name="firma" required>
             </div>
           </div>
 
           <!-- Foto Furgone -->
           <div class="form-section">
-            <h4 style="color: #6366f1; margin-bottom: 1rem;">Foto del Furgone (Obbligatorie)</h4>
-            <p style="color: #7F8C8D; font-size: 0.9rem; margin-bottom: 1.5rem;">
+            <h4>\ud83d\udcf8 Foto del Furgone (Obbligatorie)</h4>
+            <p style="color: #64748b; margin-bottom: 1.5rem;">
               Scatta o carica 5 foto del furgone prima di partire
             </p>
 
@@ -251,7 +255,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary">
-          ?? Registra Partenza
+          🚀 Registra Partenza
         </button>
       </form>
       <% } else { %>

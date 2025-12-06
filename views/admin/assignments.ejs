@@ -149,6 +149,16 @@
             <h3>Assegnazioni Attive</h3>
           </div>
           <div class="card-body">
+            <!-- Filtro Data -->
+            <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
+              <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <label style="font-weight: 600; color: #1e293b;">📅 Filtra per data:</label>
+                <input type="date" id="filterDate" onchange="filterByDate()" style="padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;">
+                <button onclick="showToday()" class="btn btn-sm" style="background: #3b82f6; color: white;">Oggi</button>
+                <button onclick="showAll()" class="btn btn-sm" style="background: #64748b; color: white;">Tutti</button>
+                <span id="dateInfo" style="color: #64748b; margin-left: auto;"></span>
+              </div>
+            </div>
             <% if (assignments && assignments.length > 0) { %>
               <div class="table-responsive">
                 <table class="table">
@@ -162,9 +172,9 @@
                       <th>Azioni</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody id="assignmentsTableBody">
                     <% assignments.forEach(assignment => { %>
-                      <tr>
+                      <tr data-date="<%= assignment.data_assegnazione %>">
                         <td><strong><%= assignment.targa %></strong></td>
                         <td><%= assignment.modello %></td>
                         <td><%= assignment.rider_name %></td>
@@ -198,40 +208,42 @@
     </div>
 
     <!-- Stats -->
-    <div class="section-header" style="margin-top: 3rem;">
-      <h2>📊 Statistiche Flotta</h2>
-    </div>
-
-    <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
-      <div class="stat-card">
-        <div class="stat-icon">🚐</div>
-        <div class="stat-content">
-          <h3><%= vehicles.length %></h3>
-          <p>Furgoni Totali</p>
-        </div>
+    <div id="statsSection" style="display: none;">
+      <div class="section-header" style="margin-top: 3rem;">
+        <h2>📊 Statistiche Flotta <span id="statsDateLabel" style="font-size: 0.9rem; color: #64748b; font-weight: normal;"></span></h2>
       </div>
 
-      <div class="stat-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%); border-color: rgba(16, 185, 129, 0.3);">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-          ✅
+      <div class="features-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+        <div class="stat-card">
+          <div class="stat-icon">🚐</div>
+          <div class="stat-content">
+            <h3 id="statTotalVehicles"><%= allVehicles.length %></h3>
+            <p>Furgoni Totali</p>
+          </div>
         </div>
-        <div class="stat-content">
-          <h3 style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-            <%= vehicles.filter(v => v.status === 'disponibile').length %>
-          </h3>
-          <p>Disponibili</p>
-        </div>
-      </div>
 
-      <div class="stat-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%); border-color: rgba(245, 158, 11, 0.3);">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-          🔑
+        <div class="stat-card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%); border-color: rgba(16, 185, 129, 0.3);">
+          <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            ✅
+          </div>
+          <div class="stat-content">
+            <h3 id="statAvailableVehicles" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+              <%= allVehicles.filter(v => v.status === 'disponibile').length %>
+            </h3>
+            <p>Disponibili</p>
+          </div>
         </div>
-        <div class="stat-content">
-          <h3 style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-            <%= assignments.length %>
-          </h3>
-          <p>Assegnati</p>
+
+        <div class="stat-card" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%); border-color: rgba(245, 158, 11, 0.3);">
+          <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            🔑
+          </div>
+          <div class="stat-content">
+            <h3 id="statAssignedVehicles" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+              <%= assignments.length %>
+            </h3>
+            <p>Assegnati</p>
+          </div>
         </div>
       </div>
     </div>
@@ -245,6 +257,104 @@
           sidebar.classList.toggle('active');
           overlay.classList.toggle('active');
         }
+
+        // Filtro per data
+        let allAssignments = [];
+        const totalVehicles = <%= allVehicles.length %>;
+        
+        function initAssignments() {
+          const rows = document.querySelectorAll('#assignmentsTableBody tr');
+          allAssignments = Array.from(rows).map(row => ({
+            element: row,
+            date: row.dataset.date || ''
+          }));
+          updateDateInfo();
+        }
+
+        function filterByDate() {
+          const selectedDate = document.getElementById('filterDate').value;
+          if (!selectedDate) return showAll();
+          
+          allAssignments.forEach(assignment => {
+            if (assignment.date === selectedDate) {
+              assignment.element.style.display = '';
+            } else {
+              assignment.element.style.display = 'none';
+            }
+          });
+          updateDateInfo(selectedDate);
+          updateStats(selectedDate);
+        }
+
+        function showToday() {
+          const today = new Date().toISOString().split('T')[0];
+          document.getElementById('filterDate').value = today;
+          filterByDate();
+        }
+
+        function showAll() {
+          document.getElementById('filterDate').value = '';
+          allAssignments.forEach(assignment => {
+            assignment.element.style.display = '';
+          });
+          updateDateInfo();
+          updateStats(null);
+        }
+
+        function updateDateInfo(date = null) {
+          const info = document.getElementById('dateInfo');
+          const visible = allAssignments.filter(a => a.element.style.display !== 'none').length;
+          
+          if (date) {
+            const dateObj = new Date(date + 'T12:00:00');
+            const formatted = dateObj.toLocaleDateString('it-IT', { 
+              day: 'numeric', 
+              month: 'long',
+              year: 'numeric'
+            });
+            info.textContent = `${visible} assegnamenti - ${formatted}`;
+          } else {
+            info.textContent = `${visible} assegnamenti totali`;
+          }
+        }
+
+        function updateStats(date = null) {
+          const statsSection = document.getElementById('statsSection');
+          
+          if (!date) {
+            // Se non c'è una data specifica, nascondi le statistiche
+            statsSection.style.display = 'none';
+            return;
+          }
+          
+          // Mostra le statistiche per la data selezionata
+          statsSection.style.display = 'block';
+          
+          const visibleAssignments = allAssignments.filter(a => a.element.style.display !== 'none').length;
+          const assignedVehicles = visibleAssignments;
+          const availableVehicles = totalVehicles - assignedVehicles;
+          
+          // Aggiorna i numeri nelle card
+          document.getElementById('statTotalVehicles').textContent = totalVehicles;
+          document.getElementById('statAvailableVehicles').textContent = availableVehicles;
+          document.getElementById('statAssignedVehicles').textContent = assignedVehicles;
+          
+          // Aggiorna il label della data nelle statistiche
+          const statsLabel = document.getElementById('statsDateLabel');
+          const dateObj = new Date(date + 'T12:00:00');
+          const formatted = dateObj.toLocaleDateString('it-IT', { 
+            day: 'numeric', 
+            month: 'long',
+            year: 'numeric'
+          });
+          statsLabel.textContent = `(${formatted})`;
+        }
+
+        // Inizializza al caricamento
+        document.addEventListener('DOMContentLoaded', () => {
+          initAssignments();
+          showToday(); // Mostra solo assegnamenti di oggi di default
+        });
       </script>
     </main>
   </div>

@@ -64,6 +64,19 @@
       </div>
     <% } %>
 
+    <!-- Filtro Data -->
+    <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <label style="font-weight: 600; color: #1e293b;">📅 Filtra per data:</label>
+        <input type="date" id="filterDate" value="<%= new Date().toISOString().split('T')[0] %>" 
+               style="padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 0.95rem;"
+               onchange="filterByDate()">
+        <button onclick="showToday()" class="btn btn-primary" style="padding: 0.5rem 1rem;">Oggi</button>
+        <button onclick="showAll()" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Tutti</button>
+        <span id="dateInfo" style="margin-left: auto; color: #64748b; font-size: 0.9rem;"></span>
+      </div>
+    </div>
+
     <!-- Tabella report -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
@@ -97,7 +110,7 @@
         <p class="no-data">Nessun report disponibile.</p>
       <% } else { %>
         <div class="table-responsive">
-          <table class="data-table">
+          <table class="data-table" id="reportsTable">
             <thead>
               <tr>
                 <th>
@@ -135,6 +148,7 @@
               <% reports.forEach(report => { %>
                 <tr id="row-<%= report.id %>" 
                     class="<%= report.status === 'partito' ? 'row-in-viaggio' : '' %>"
+                    data-date="<%= report.data_giorno %>"
                     data-data_giorno="<%= report.data_giorno %>"
                     data-driver="<%= report.nome %> <%= report.cognome %>"
                     data-status="<%= report.status %>"
@@ -155,6 +169,15 @@
                     <% } else if (report.status === 'partito') { %>
                       <span class="badge badge-warning" style="background: linear-gradient(135deg, #f59e0b 0%, #fb923c 100%); animation: pulse-warning 2s infinite; color: white; font-weight: 600;">
                         In Viaggio
+                        <% if (report.orario_partenza_effettivo) { 
+                          // SQLite datetime('now', 'localtime') restituisce già l'orario locale
+                          const dateStr = report.orario_partenza_effettivo.replace(' ', 'T');
+                          const partenzaDate = new Date(dateStr);
+                          const hours = String(partenzaDate.getHours()).padStart(2, '0');
+                          const minutes = String(partenzaDate.getMinutes()).padStart(2, '0');
+                        %>
+                          <br><small style="font-size: 0.75em; opacity: 0.9;">dalle <%= hours %>:<%= minutes %></small>
+                        <% } %>
                       </span>
                     <% } else { %>
                       <span class="badge badge-success" style="color: white; font-weight: 600;">
@@ -786,6 +809,78 @@
 
       document.body.insertAdjacentHTML('beforeend', html);
     }
+
+    // Filtro per data
+    let allReports = [];
+    
+    function initReports() {
+      const rows = document.querySelectorAll('#reportsTable tbody tr');
+      allReports = Array.from(rows).map(row => ({
+        element: row,
+        date: row.dataset.date || ''
+      }));
+      updateDateInfo();
+    }
+
+    function filterByDate() {
+      const selectedDate = document.getElementById('filterDate').value;
+      if (!selectedDate) return showAll();
+      
+      allReports.forEach(report => {
+        if (report.date === selectedDate) {
+          report.element.style.display = '';
+        } else {
+          report.element.style.display = 'none';
+        }
+      });
+      updateDateInfo(selectedDate);
+    }
+
+    function showToday() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('filterDate').value = today;
+      filterByDate();
+    }
+
+    function showAll() {
+      document.getElementById('filterDate').value = '';
+      allReports.forEach(report => {
+        report.element.style.display = '';
+      });
+      updateDateInfo();
+    }
+
+    function updateDateInfo(date = null) {
+      const info = document.getElementById('dateInfo');
+      const visible = allReports.filter(r => r.element.style.display !== 'none').length;
+      
+      if (date) {
+        const dateObj = new Date(date + 'T12:00:00');
+        const formatted = dateObj.toLocaleDateString('it-IT', { 
+          weekday: 'long', 
+          day: 'numeric', 
+          month: 'long',
+          year: 'numeric'
+        });
+        info.textContent = `${visible} report - ${formatted}`;
+      } else {
+        info.textContent = `${visible} report totali`;
+      }
+    }
+
+    // Inizializza al caricamento
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🔍 Inizializzazione filtro data...');
+      initReports();
+      console.log(`📊 Report totali trovati: ${allReports.length}`);
+      allReports.forEach(r => console.log(`  - Data: ${r.date}`));
+      
+      // Mostra solo i report di oggi di default (con delay per essere sicuri che il DOM sia pronto)
+      setTimeout(() => {
+        showToday();
+        console.log('✅ Filtro data applicato - solo oggi visibile');
+      }, 100);
+    });
   </script>
     </main>
   </div>

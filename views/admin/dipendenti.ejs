@@ -42,6 +42,13 @@
         </div>
       </div>
       <div class="content-wrapper" style="padding:2rem">
+        <% if (success && success.length > 0) { %>
+          <div class="alert alert-success"><%= success[0] %></div>
+        <% } %>
+        <% if (error && error.length > 0) { %>
+          <div class="alert alert-error"><%= error[0] %></div>
+        <% } %>
+        
         <div class="card">
           <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
             <h2 style="margin:0">Gestione Driver</h2>
@@ -92,6 +99,7 @@
                         <td>
                           <button class="btn btn-sm btn-secondary" onclick="openEditModal(<%= driver.id %>)">Modifica</button>
                           <% if (driver.role !== 'admin') { %>
+                            <button class="btn btn-sm btn-warning" onclick="resetPassword(<%= driver.id %>, '<%= driver.nome %>', '<%= driver.cognome %>')">Reset Password</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteDriver(<%= driver.id %>)">Elimina</button>
                           <% } %>
                         </td>
@@ -298,6 +306,16 @@
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `/admin/dipendenti/delete/${driverId}`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+
+    function resetPassword(driverId, nome, cognome) {
+      if (confirm(`Resettare la password di ${nome} ${cognome}?\n\nLa nuova password sarà: 1234\nL'utente dovrà cambiarla al prossimo accesso.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/dipendenti/reset-password/${driverId}`;
         document.body.appendChild(form);
         form.submit();
       }

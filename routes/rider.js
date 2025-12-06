@@ -52,13 +52,24 @@ router.get('/dashboard', requireRider, (req, res) => {
         return res.status(500).send('Errore del server');
       }
 
-      // Ottieni report in preparazione (creato dall'assegnazione automatica)
+      // Ottieni report in preparazione SOLO per oggi (creato dall'assegnazione automatica)
+      const today = new Date().toISOString().split('T')[0];
+      console.log(`🔍 Cercando report per user ${req.session.userId} in data ${today}`);
+      
       db.get(`
         SELECT * FROM daily_reports 
-        WHERE user_id = ? AND status = 'in_preparazione'
-        ORDER BY data_giorno DESC LIMIT 1
-      `, [req.session.userId], (err3, preparationReport) => {
+        WHERE user_id = ? 
+        AND status = 'in_preparazione'
+        AND data_giorno = ?
+        LIMIT 1
+      `, [req.session.userId, today], (err3, preparationReport) => {
         if (err3) console.error('Error getting preparation report:', err3);
+        
+        if (preparationReport) {
+          console.log(`✅ Report trovato: ID ${preparationReport.id}, Data: ${preparationReport.data_giorno}`);
+        } else {
+          console.log(`❌ Nessun report trovato per oggi (${today})`);
+        }
 
         // Ottieni furgone assegnato
         Assignment.getByRider(req.session.userId, (err4, assignment) => {
@@ -125,6 +136,11 @@ router.post('/report/create', requireRider, upload.fields([
   const foto_interno = req.files['foto_interno'] ? '/uploads/foto_furgoni/' + req.files['foto_interno'][0].filename : null;
 
   // Aggiorna il report in preparazione con i dati di partenza
+  // Calcola orario locale italiano (UTC+1)
+  const now = new Date();
+  const orarioPartenza = new Date(now.getTime() + (60 * 60 * 1000)); // +1 ora per UTC+1
+  const orarioPartenzaStr = orarioPartenza.toISOString().slice(0, 19).replace('T', ' ');
+
   db.run(`
     UPDATE daily_reports SET
       codice_rotta = ?,
@@ -139,7 +155,8 @@ router.post('/report/create', requireRider, upload.fields([
       foto_lato_destro = ?,
       foto_lato_sinistro = ?,
       foto_interno = ?,
-      status = 'partito'
+      status = 'partito',
+      orario_partenza_effettivo = ?
     WHERE id = ? AND user_id = ? AND status = 'in_preparazione'
   `, [
     codice_rotta,
@@ -154,6 +171,7 @@ router.post('/report/create', requireRider, upload.fields([
     foto_lato_destro,
     foto_lato_sinistro,
     foto_interno,
+    orarioPartenzaStr,
     report_id,
     req.session.userId
   ], (err) => {

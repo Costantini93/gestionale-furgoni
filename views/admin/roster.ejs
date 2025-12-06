@@ -5,6 +5,78 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Roster - Admin</title>
   <link rel="stylesheet" href="/css/clean-theme.css">
+  <style>
+    .date-picker-container {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      margin-bottom: 1.5rem;
+    }
+    
+    .date-picker-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 1rem;
+    }
+    
+    .date-picker-controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    .date-picker-controls input[type="date"] {
+      padding: 0.75rem 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.2s;
+      min-width: 200px;
+    }
+    
+    .date-picker-controls input[type="date"]:hover {
+      border-color: #3b82f6;
+    }
+    
+    .date-picker-controls input[type="date"]:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .date-picker-controls button {
+      padding: 0.75rem 1.25rem;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+    
+    .date-picker-controls button:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+    .selected-date-info {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid #3b82f6;
+    }
+  </style>
 </head>
 <body>
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -51,9 +123,9 @@
 
       <div class="container">
         <div class="section-header">
-          <h2>Roster Giornaliero</h2>
+          <h2>📅 Gestione Roster</h2>
           <p style="color: #64748b; margin-top: 0.5rem;">
-            Seleziona i driver in turno per domani (<strong><%= tomorrowDate %></strong>)
+            Seleziona una data dal calendario e organizza i turni dei driver
           </p>
         </div>
 
@@ -64,15 +136,17 @@
           <div class="alert alert-error"><%= error[0] %></div>
         <% } %>
 
-        <!-- Info Box -->
-        <div style="padding: 1rem; background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px; margin-bottom: 2rem;">
-          <strong>ℹ️ Come funziona:</strong>
-          <ul style="margin: 0.5rem 0 0 1.5rem; color: #64748b;">
-            <li>Seleziona i driver che lavoreranno domani</li>
-            <li>L'assegnazione automatica assegnerà i furgoni SOLO ai driver selezionati</li>
-            <li>Priorità: prima i driver con furgone fisso, poi assegnazione casuale</li>
-            <li>Usa "Nuova Giornata" per resettare le selezioni</li>
-          </ul>
+        <!-- Selettore Data -->
+        <div class="date-picker-container">
+          <div class="date-picker-controls">
+            <input 
+              type="date" 
+              id="rosterDate" 
+              value="<%= selectedDate %>" 
+              onchange="changeRosterDate()"
+            >
+            <button onclick="selectToday()">Oggi</button>
+          </div>
         </div>
 
         <!-- Stats -->
@@ -92,8 +166,8 @@
               <%= selectedDrivers.length %>
             </div>
             <div class="stat-content">
-              <h3 style="color: #10b981;">In Turno Domani</h3>
-              <p>Driver selezionati</p>
+              <h3 style="color: #10b981;">In Turno</h3>
+              <p>Per questa data</p>
             </div>
           </div>
 
@@ -109,20 +183,18 @@
         </div>
 
         <!-- Azioni -->
-        <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
           <button onclick="selectAll()" class="btn btn-primary">
             Seleziona Tutti
           </button>
           <button onclick="deselectAll()" class="btn btn-secondary">
             Deseleziona Tutti
           </button>
-          <form action="/admin/roster/reset" method="POST" style="display: inline;" onsubmit="return confirm('Vuoi resettare il roster e iniziare una nuova giornata?')">
-            <button type="submit" class="btn btn-warning">
-              Nuova Giornata
-            </button>
-          </form>
+          <button onclick="resetDay()" class="btn btn-warning">
+            🔄 Resetta Giornata
+          </button>
           <button onclick="saveRoster()" class="btn btn-success" style="margin-left: auto;">
-            Salva Roster
+            💾 Salva Roster per <span id="saveButtonDate"></span>
           </button>
         </div>
 
@@ -189,6 +261,30 @@
   </div>
 
   <script>
+    let selectedDate = '<%= selectedDate %>';
+    
+    function changeRosterDate() {
+      const newDate = document.getElementById('rosterDate').value;
+      if (newDate) {
+        window.location.href = `/admin/roster?date=${newDate}`;
+      }
+    }
+    
+    function selectToday() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('rosterDate').value = today;
+      window.location.href = `/admin/roster?date=${today}`;
+    }
+    
+    function updateSaveButtonDate() {
+      const date = new Date(selectedDate + 'T12:00:00');
+      const formatted = date.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+      document.getElementById('saveButtonDate').textContent = formatted;
+    }
+    
+    // Aggiorna il pulsante salva con la data
+    updateSaveButtonDate();
+
     function toggleSidebar() {
       document.getElementById('sidebar').classList.toggle('active');
       document.getElementById('sidebarOverlay').classList.toggle('active');
@@ -211,24 +307,55 @@
       document.getElementById('selectAllCheckbox').checked = false;
     }
 
+    function resetDay() {
+      const date = new Date(selectedDate + 'T12:00:00');
+      const formatted = date.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+      
+      if (!confirm(`🔄 Vuoi resettare il roster per ${formatted}?\n\nQuesto cancellerà tutte le selezioni per questa data.\nGli altri giorni non saranno modificati.`)) {
+        return;
+      }
+
+      fetch('/admin/roster/reset-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rosterDate: selectedDate })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert(`✅ Roster resettato per ${formatted}`);
+          location.reload();
+        } else {
+          alert('❌ Errore: ' + data.message);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('❌ Errore durante il reset');
+      });
+    }
+
     function saveRoster() {
       const checkboxes = document.querySelectorAll('.driver-checkbox:checked');
       const selectedIds = Array.from(checkboxes).map(cb => cb.getAttribute('data-driver-id'));
 
       if (selectedIds.length === 0) {
-        alert('Seleziona almeno un driver per il turno di domani');
+        alert('Seleziona almeno un driver per il turno');
         return;
       }
 
       fetch('/admin/roster/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ driverIds: selectedIds })
+        body: JSON.stringify({ 
+          driverIds: selectedIds,
+          rosterDate: selectedDate
+        })
       })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          alert(`✅ Roster salvato! ${selectedIds.length} driver in turno per domani`);
+          alert(`✅ ${data.message}\n${selectedIds.length} driver selezionati`);
           location.reload();
         } else {
           alert('❌ Errore: ' + data.message);
