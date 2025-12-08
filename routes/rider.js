@@ -54,7 +54,6 @@ router.get('/dashboard', requireRider, (req, res) => {
 
       // Ottieni report in preparazione SOLO per oggi (creato dall'assegnazione automatica)
       const today = new Date().toISOString().split('T')[0];
-      console.log(`🔍 Cercando report per user ${req.session.userId} in data ${today}`);
       
       db.get(`
         SELECT * FROM daily_reports 
@@ -64,33 +63,41 @@ router.get('/dashboard', requireRider, (req, res) => {
         LIMIT 1
       `, [req.session.userId, today], (err3, preparationReport) => {
         if (err3) console.error('Error getting preparation report:', err3);
-        
-        if (preparationReport) {
-          console.log(`✅ Report trovato: ID ${preparationReport.id}, Data: ${preparationReport.data_giorno}`);
-        } else {
-          console.log(`❌ Nessun report trovato per oggi (${today})`);
-        }
 
-        // Ottieni furgone assegnato
-        Assignment.getByRider(req.session.userId, (err4, assignment) => {
-          if (err4) console.error('Error getting assignment:', err4);
+        // Cerca report di sostituzione in attesa
+        db.get(`
+          SELECT * FROM daily_reports 
+          WHERE user_id = ? 
+          AND status = 'sostituzione_partenza'
+          AND data_giorno = ?
+          AND km_partenza IS NULL
+          ORDER BY created_at DESC
+          LIMIT 1
+        `, [req.session.userId, today], (err5, substitutionReport) => {
+          if (err5) console.error('Error getting substitution report:', err5);
 
-          const successMessages = req.flash('success');
-          const errorMessages = req.flash('error');
+          // Ottieni furgone assegnato
+          Assignment.getByRider(req.session.userId, (err4, assignment) => {
+            if (err4) console.error('Error getting assignment:', err4);
 
-          res.render('rider/dashboard', {
-            user: {
-              id: req.session.userId,
-              username: req.session.username,
-              nome: req.session.nome,
-              cognome: req.session.cognome
-            },
-            reports: reports || [],
-            openReports: openReports || [],
-            preparationReport: preparationReport || null,
-            assignment: assignment || null,
-            success: successMessages,
-            error: errorMessages
+            const successMessages = req.flash('success');
+            const errorMessages = req.flash('error');
+
+            res.render('rider/dashboard', {
+              user: {
+                id: req.session.userId,
+                username: req.session.username,
+                nome: req.session.nome,
+                cognome: req.session.cognome
+              },
+              reports: reports || [],
+              openReports: openReports || [],
+              preparationReport: preparationReport || null,
+              substitutionReport: substitutionReport || null,
+              assignment: assignment || null,
+              success: successMessages,
+              error: errorMessages
+            });
           });
         });
       });
@@ -111,6 +118,7 @@ router.post('/report/create', requireRider, upload.fields([
     report_id,
     codice_rotta,
     km_partenza,
+    orario_partenza,
     numero_scheda_dkv,
     importo_rifornimento,
     numero_aziendale,
@@ -119,7 +127,7 @@ router.post('/report/create', requireRider, upload.fields([
   } = req.body;
 
   // Validazione base (solo campi partenza)
-  if (!report_id || !codice_rotta || !km_partenza || !firma) {
+  if (!report_id || !codice_rotta || !km_partenza || !orario_partenza || !firma) {
     req.flash('error', 'Compila tutti i campi obbligatori per la partenza');
     req.session.save((saveErr) => {
       if (saveErr) console.error('Errore save session:', saveErr);
@@ -145,6 +153,7 @@ router.post('/report/create', requireRider, upload.fields([
     UPDATE daily_reports SET
       codice_rotta = ?,
       km_partenza = ?,
+      orario_partenza = ?,
       numero_scheda_dkv = ?,
       importo_rifornimento = ?,
       numero_aziendale = ?,
@@ -157,10 +166,11 @@ router.post('/report/create', requireRider, upload.fields([
       foto_interno = ?,
       status = 'partito',
       orario_partenza_effettivo = ?
-    WHERE id = ? AND user_id = ? AND status = 'in_preparazione'
+    WHERE id = ? AND user_id = ? AND status IN ('in_preparazione', 'sostituzione_partenza')
   `, [
     codice_rotta,
     km_partenza,
+    orario_partenza,
     numero_scheda_dkv || null,
     importo_rifornimento || null,
     numero_aziendale || null,
@@ -198,7 +208,15 @@ router.post('/report/create', requireRider, upload.fields([
 // Completa rientro
 router.post('/report/complete/:id', requireRider, (req, res) => {
   const reportId = req.params.id;
-  const { km_rientro, orario_rientro, pacchi_ritornati, rifornimento_euro } = req.body;
+  const { km_rientro, orario_rientro, pacchi_ritornati, rifornimento_ip, rifornimento_dkv, metodo_rifornimento, numero_scheda_dkv } = req.body;
+
+  // Determina l'importo rifornimento in base al metodo
+  let rifornimento_euro = 0;
+  if (metodo_rifornimento === 'IP' && rifornimento_ip) {
+    rifornimento_euro = parseFloat(rifornimento_ip);
+  } else if (metodo_rifornimento === 'DKV' && rifornimento_dkv) {
+    rifornimento_euro = parseFloat(rifornimento_dkv);
+  }
 
   // Validazione
   if (!km_rientro || !orario_rientro) {
@@ -254,7 +272,9 @@ router.post('/report/complete/:id', requireRider, (req, res) => {
       km_rientro,
       orario_rientro,
       pacchi_ritornati: parseInt(pacchi_ritornati) || 0,
-      rifornimento_euro: parseFloat(rifornimento_euro) || 0
+      rifornimento_euro: parseFloat(rifornimento_euro) || 0,
+      metodo_rifornimento: metodo_rifornimento || null,
+      numero_scheda_dkv: numero_scheda_dkv || null
     };
 
     Report.completeReturn(reportId, returnData, (err) => {

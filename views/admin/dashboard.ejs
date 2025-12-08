@@ -19,7 +19,7 @@
       <ul class="sidebar-menu">
         <li><a href="/admin/dashboard" class="active">Dashboard</a></li>
         <li><a href="/admin/vehicles">Gestione Furgoni</a></li>
-        <li><a href="/admin/dipendenti">Gestione Dipendenti</a></li>
+        <li><a href="/admin/dipendenti">Gestione Driver</a></li>
         <li><a href="/admin/roster">Roster</a></li>
         <li><a href="/admin/assignments">Assegnamenti</a></li>
         <li>
@@ -64,32 +64,134 @@
       </div>
     <% } %>
 
-    <!-- Filtro Data -->
-    <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-        <label style="font-weight: 600; color: #1e293b;">📅 Filtra per data:</label>
+    <!-- Ricerca Avanzata e Filtri -->
+    <div style="background: white; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+      <!-- Toggle Filtri Avanzati -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="margin: 0; color: #1e293b; font-size: 1.1rem;">🔍 Ricerca e Filtri</h3>
+        <button onclick="toggleAdvancedFilters()" class="btn btn-secondary btn-sm" id="toggleFiltersBtn">
+          Mostra Filtri Avanzati
+        </button>
+      </div>
+
+      <!-- Filtro Base: Data -->
+      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+        <label style="font-weight: 600; color: #1e293b;">📅 Data:</label>
         <input type="date" id="filterDate" value="<%= new Date().toISOString().split('T')[0] %>" 
                style="padding: 0.5rem 1rem; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 0.95rem;"
-               onchange="filterByDate()">
-        <button onclick="showToday()" class="btn btn-primary" style="padding: 0.5rem 1rem;">Oggi</button>
-        <button onclick="showAll()" class="btn btn-secondary" style="padding: 0.5rem 1rem;">Tutti</button>
-        <span id="dateInfo" style="margin-left: auto; color: #64748b; font-size: 0.9rem;"></span>
+               onchange="applyAdvancedFilters()">
+        <button onclick="showToday()" class="btn btn-primary btn-sm">Oggi</button>
+        <button onclick="showAll()" class="btn btn-secondary btn-sm">Tutti</button>
+        <button onclick="clearAllFilters()" class="btn btn-secondary btn-sm" style="margin-left: auto;">Pulisci Filtri</button>
       </div>
+
+      <!-- Filtri Avanzati (nascosti di default) -->
+      <div id="advancedFilters" style="display: none; border-top: 1px solid #e2e8f0; padding-top: 1rem; margin-top: 1rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          
+          <!-- Filtro Driver -->
+          <div>
+            <label style="display: block; font-weight: 600; color: #475569; margin-bottom: 0.5rem; font-size: 0.9rem;">Driver</label>
+            <select id="filterDriver" onchange="applyAdvancedFilters()" 
+                    style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem;">
+              <option value="">Tutti</option>
+              <% 
+                const uniqueDrivers = [...new Set(allReports.map(r => r.driver_name))].filter(Boolean).sort();
+                uniqueDrivers.forEach(driver => { 
+              %>
+                <option value="<%= driver %>"><%= driver %></option>
+              <% }); %>
+            </select>
+          </div>
+
+          <!-- Filtro Veicolo -->
+          <div>
+            <label style="display: block; font-weight: 600; color: #475569; margin-bottom: 0.5rem; font-size: 0.9rem;">Veicolo</label>
+            <select id="filterVehicle" onchange="applyAdvancedFilters()" 
+                    style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem;">
+              <option value="">Tutti</option>
+              <% 
+                const uniqueVehicles = [...new Set(allReports.map(r => r.targa_furgone))].filter(Boolean).sort();
+                uniqueVehicles.forEach(targa => { 
+              %>
+                <option value="<%= targa %>"><%= targa %></option>
+              <% }); %>
+            </select>
+          </div>
+
+          <!-- Filtro Tipo Rifornimento -->
+          <div>
+            <label style="display: block; font-weight: 600; color: #475569; margin-bottom: 0.5rem; font-size: 0.9rem;">Rifornimento</label>
+            <select id="filterRifornimento" onchange="applyAdvancedFilters()" 
+                    style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem;">
+              <option value="">Tutti</option>
+              <option value="IP">IP</option>
+              <option value="DKV">DKV</option>
+              <option value="NESSUNO">Nessuno</option>
+            </select>
+          </div>
+
+          <!-- Filtro Rotta -->
+          <div>
+            <label style="display: block; font-weight: 600; color: #475569; margin-bottom: 0.5rem; font-size: 0.9rem;">Rotta</label>
+            <input type="text" id="filterRotta" onkeyup="applyAdvancedFilters()" placeholder="Es: R01"
+                   style="width: 100%; padding: 0.5rem; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem;">
+          </div>
+
+        </div>
+
+        <!-- Statistiche Rifornimento -->
+        <div id="rifornimentoStats" style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 6px; border-left: 4px solid #3b82f6;">
+          <h4 style="margin: 0 0 0.75rem 0; color: #1e293b; font-size: 1rem;">📊 Statistiche Rifornimento (Periodo Selezionato)</h4>
+          <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+            <div>
+              <span style="font-weight: 600; color: #475569;">IP:</span>
+              <span id="statIP" style="margin-left: 0.5rem; color: #0ea5e9; font-weight: 700;">0</span>
+              <span style="color: #64748b; font-size: 0.85rem; margin-left: 0.25rem;">volte</span>
+            </div>
+            <div>
+              <span style="font-weight: 600; color: #475569;">DKV:</span>
+              <span id="statDKV" style="margin-left: 0.5rem; color: #8b5cf6; font-weight: 700;">0</span>
+              <span style="color: #64748b; font-size: 0.85rem; margin-left: 0.25rem;">volte</span>
+            </div>
+            <div>
+              <span style="font-weight: 600; color: #475569;">Nessuno:</span>
+              <span id="statNessuno" style="margin-left: 0.5rem; color: #64748b; font-weight: 700;">0</span>
+              <span style="color: #64748b; font-size: 0.85rem; margin-left: 0.25rem;">volte</span>
+            </div>
+            <div style="margin-left: auto;">
+              <span style="font-weight: 600; color: #475569;">Totale Report:</span>
+              <span id="statTotal" style="margin-left: 0.5rem; color: #1e293b; font-weight: 700; font-size: 1.1rem;">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pulsante Esportazione -->
+        <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+          <button onclick="exportToCSV()" class="btn btn-success" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            📥 Esporta in CSV
+          </button>
+          <button onclick="exportToExcel()" class="btn btn-success" style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+            📊 Esporta in Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- Info Risultati -->
+      <div id="dateInfo" style="margin-top: 1rem; color: #64748b; font-size: 0.9rem; text-align: center;"></div>
     </div>
 
     <!-- Tabella report -->
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin: 0;">Report Consegne</h3>
-        
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-          <button 
-            id="deleteSelectedBtn" 
-            class="btn" 
-            onclick="deleteSelected()" 
-            style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: none;">
-            Elimina Selezionati (<span id="selectedCount">0</span>)
-          </button>
+    <div class="filters-bar" style="margin-bottom: 1.5rem;">
+      <h2 style="margin: 0; color: #1f2937;">Report Consegne</h2>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <button 
+          id="deleteSelectedBtn" 
+          class="btn" 
+          onclick="deleteSelected()" 
+          style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: none;">
+          Elimina Selezionati (<span id="selectedCount">0</span>)
+        </button>
           
           <button class="btn btn-secondary" onclick="filterStatus('all')" id="btnAll">
             Tutti (<span id="countAll">0</span>)
@@ -138,7 +240,10 @@
                 <th class="sortable" onclick="sortTable('km_percorsi')" style="cursor: pointer;">
                   Km Tot. <span class="sort-icon" id="sort-km_percorsi">⇅</span>
                 </th>
-                <th>Orario</th>
+                <th>Orario P.</th>
+                <th>Orario R.</th>
+                <th>Rifornimento</th>
+                <th>Pacchi Ritornati</th>
                 <th>Foto</th>
                 <th>Firma</th>
                 <th>Azioni</th>
@@ -148,6 +253,7 @@
               <% reports.forEach(report => { %>
                 <tr id="row-<%= report.id %>" 
                     class="<%= report.status === 'partito' ? 'row-in-viaggio' : '' %>"
+                    data-report-id="<%= report.id %>"
                     data-date="<%= report.data_giorno %>"
                     data-data_giorno="<%= report.data_giorno %>"
                     data-driver="<%= report.nome %> <%= report.cognome %>"
@@ -155,7 +261,10 @@
                     data-targa_furgone="<%= report.targa_furgone %>"
                     data-codice_rotta="<%= report.codice_rotta %>"
                     data-km_partenza="<%= report.km_partenza %>"
-                    data-km_percorsi="<%= report.km_rientro ? report.km_rientro - report.km_partenza : 0 %>">
+                    data-km_percorsi="<%= report.km_rientro ? report.km_rientro - report.km_partenza : 0 %>"
+                    data-vehicle="<%= report.targa_furgone %>"
+                    data-rifornimento="<%= report.metodo_rifornimento || '' %>"
+                    data-rotta="<%= report.codice_rotta || '' %>">
                   <td>
                     <input type="checkbox" class="report-checkbox" value="<%= report.id %>" onchange="updateDeleteButton()">
                   </td>
@@ -178,6 +287,10 @@
                         %>
                           <br><small style="font-size: 0.75em; opacity: 0.9;">dalle <%= hours %>:<%= minutes %></small>
                         <% } %>
+                      </span>
+                    <% } else if (report.status === 'interrotto') { %>
+                      <span class="badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; font-weight: 600;">
+                        SOSTITUZIONE
                       </span>
                     <% } else { %>
                       <span class="badge badge-success" style="color: white; font-weight: 600;">
@@ -203,8 +316,34 @@
                     <% } %>
                   </td>
                   <td>
+                    <% if (report.orario_partenza) { %>
+                      <%= report.orario_partenza %>
+                    <% } else { %>
+                      <span style="color: #94a3b8; font-style: italic;">--</span>
+                    <% } %>
+                  </td>
+                  <td>
                     <% if (report.orario_rientro) { %>
                       <%= report.orario_rientro %>
+                    <% } else { %>
+                      <span style="color: #94a3b8; font-style: italic;">--</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (report.metodo_rifornimento) { %>
+                      <div style="font-size: 0.85em; <%= report.metodo_rifornimento === 'DKV' && report.numero_scheda_dkv ? 'cursor: help;' : '' %>" <% if (report.metodo_rifornimento === 'DKV' && report.numero_scheda_dkv) { %>title="Numero DKV: <%= report.numero_scheda_dkv %>"<% } %>>
+                        <strong><%= report.metodo_rifornimento %></strong>
+                        <% if (report.importo_rifornimento != null) { %>
+                          <br><span style="color: #059669;">€ <%= parseFloat(report.importo_rifornimento).toFixed(2) %></span>
+                        <% } %>
+                      </div>
+                    <% } else { %>
+                      <span style="color: #94a3b8; font-style: italic;">--</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (report.pacchi_resi != null && report.pacchi_resi >= 0) { %>
+                      <span style="color: #000000; font-weight: 600;"><%= report.pacchi_resi %></span>
                     <% } else { %>
                       <span style="color: #94a3b8; font-style: italic;">--</span>
                     <% } %>
@@ -220,18 +359,27 @@
                   </td>
                   <td>
                     <% if (report.firma) { %>
-                      <span class="badge badge-success">✓</span>
+                      <span style="color: #10b981; font-weight: 600;">✓</span>
                     <% } else { %>
-                      <span class="badge badge-error">✗</span>
+                      <span style="color: #94a3b8; font-style: italic;">--</span>
                     <% } %>
                   </td>
-                  <td class="actions">
-                    <button onclick="editReport(<%= report.id %>)" class="btn-icon btn-sm btn-primary" title="Modifica">
-                      ✏
-                    </button>
-                    <button onclick="deleteReport(<%= report.id %>)" class="btn-icon btn-sm btn-danger" title="Elimina">
-                      ×
-                    </button>
+                  <td>
+                    <div class="custom-dropdown" style="position: relative;">
+                      <button class="btn btn-sm btn-secondary" onclick="toggleActionMenu('<%= report.id %>')" style="padding: 0.25rem 0.5rem;">
+                        ⋮
+                      </button>
+                      <div id="actionMenu<%= report.id %>" class="action-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1000; min-width: 180px; margin-top: 4px;">
+                        <a href="#" onclick="openEditModal('<%= report.id %>'); toggleActionMenu('<%= report.id %>'); return false;" style="display: block; padding: 0.5rem 1rem; color: #333; text-decoration: none; border-bottom: 1px solid #eee;">
+                          📝 Modifica Dati Driver
+                        </a>
+                        <% if (report.status === 'partito') { %>
+                          <a href="#" onclick="openReassignModal('<%= report.id %>'); toggleActionMenu('<%= report.id %>'); return false;" style="display: block; padding: 0.5rem 1rem; color: #333; text-decoration: none;">
+                            🚛 Sostituisci Furgone
+                          </a>
+                        <% } %>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               <% }) %>
@@ -239,6 +387,218 @@
           </table>
         </div>
       <% } %>
+
+  <!-- Tabella Report Sostituzioni -->
+  <% if (substitutionReports && substitutionReports.length > 0) { %>
+  <div class="filters-bar" style="margin-top: 3rem; margin-bottom: 1.5rem;">
+    <h2 style="margin: 0; color: #f59e0b;">🔄 Report Sostituzioni Furgoni</h2>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+      <button 
+        id="deleteSelectedSubstitutionsBtn" 
+        class="btn" 
+        onclick="deleteSelectedSubstitutions()" 
+        style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); display: none;">
+        Elimina Selezionati (<span id="selectedSubstitutionsCount">0</span>)
+      </button>
+      <button class="btn btn-secondary" onclick="filterSubstitutionStatus('all')" id="btnSubstitutionAll">
+        Tutti (<span id="countSubstitutionAll">0</span>)
+      </button>
+      <button class="btn btn-info" onclick="filterSubstitutionStatus('sostituzione_partenza')" id="btnSubstitutionAttesa">
+        In Attesa Form (<span id="countSubstitutionAttesa">0</span>)
+      </button>
+      <button class="btn btn-warning" onclick="filterSubstitutionStatus('partito')" id="btnSubstitutionPartito">
+        In Viaggio (<span id="countSubstitutionPartito">0</span>)
+      </button>
+      <button class="btn btn-success" onclick="filterSubstitutionStatus('completato')" id="btnSubstitutionCompletato">
+        Rientrati (<span id="countSubstitutionCompletato">0</span>)
+      </button>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>
+            <input type="checkbox" id="selectAllSubstitutions" onchange="toggleAllSubstitutions(this)">
+          </th>
+          <th>Data</th>
+          <th>Driver</th>
+          <th>Stato</th>
+          <th>Targa Nuovo Furgone</th>
+          <th>Rotta</th>
+          <th>Km P.</th>
+          <th>Km R.</th>
+          <th>Km Tot.</th>
+          <th>Orario P.</th>
+          <th>Orario R.</th>
+          <th>Rifornimento</th>
+          <th>Pacchi Ritornati</th>
+          <th>Motivo Sostituzione</th>
+          <th>Report Originale</th>
+          <th>Foto</th>
+          <th>Firma</th>
+        </tr>
+      </thead>
+      <tbody>
+          <% substitutionReports.forEach(report => { %>
+            <tr id="row-substitution-<%= report.id %>" data-substitution-status="<%= report.status %>">
+              <td>
+                <input type="checkbox" class="substitution-checkbox" value="<%= report.id %>" onchange="updateSubstitutionDeleteButton()">
+              </td>
+              <td><%= formatDate(report.data_giorno) %></td>
+              <td><strong><%= report.nome %> <%= report.cognome %></strong></td>
+              <td>
+                <% if (report.status === 'sostituzione_partenza') { %>
+                  <span class="badge badge-info" style="background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); color: white; font-weight: 600;">
+                    In Attesa Form
+                  </span>
+                <% } else if (report.status === 'partito') { %>
+                  <span class="badge badge-warning" style="background: linear-gradient(135deg, #f59e0b 0%, #fb923c 100%); color: white; font-weight: 600;">
+                    In Viaggio
+                    <% if (report.orario_partenza_effettivo) { 
+                      const dateStr = report.orario_partenza_effettivo.replace(' ', 'T');
+                      const partenzaDate = new Date(dateStr);
+                      const hours = String(partenzaDate.getHours()).padStart(2, '0');
+                      const minutes = String(partenzaDate.getMinutes()).padStart(2, '0');
+                    %>
+                      <br><small style="font-size: 0.75em; opacity: 0.9;">dalle <%= hours %>:<%= minutes %></small>
+                    <% } %>
+                  </span>
+                <% } else if (report.status === 'completato') { %>
+                  <% if (report.km_rientro) { %>
+                    <span class="badge badge-success" style="color: white; font-weight: 600;">
+                      Rientrato
+                    </span>
+                  <% } else { %>
+                    <span class="badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; font-weight: 600;">
+                      SOSTITUZIONE
+                    </span>
+                  <% } %>
+                <% } %>
+              </td>
+              <td><strong><%= report.targa_furgone %></strong></td>
+              <td><%= report.codice_rotta %></td>
+              <td><%= report.km_partenza || 0 %></td>
+              <td>
+                <% if (report.km_rientro) { %>
+                  <%= report.km_rientro %>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-style: italic;">--</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (report.km_rientro && report.km_partenza) { %>
+                  <strong><%= report.km_rientro - report.km_partenza %></strong>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-style: italic;">--</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (report.orario_partenza) { %>
+                  <%= report.orario_partenza %>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-style: italic;">--</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (report.orario_rientro) { %>
+                  <%= report.orario_rientro %>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-style: italic;">--</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (report.metodo_rifornimento) { %>
+                  <div style="font-size: 0.85em; <%= report.metodo_rifornimento === 'DKV' && report.numero_scheda_dkv ? 'cursor: help;' : '' %>" <% if (report.metodo_rifornimento === 'DKV' && report.numero_scheda_dkv) { %>title="Numero DKV: <%= report.numero_scheda_dkv %>"<% } %>>
+                    <strong><%= report.metodo_rifornimento %></strong>
+                    <% if (report.importo_rifornimento != null) { %>
+                      <br><span style="color: #059669;">€ <%= parseFloat(report.importo_rifornimento).toFixed(2) %></span>
+                    <% } %>
+                  </div>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-style: italic;">--</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (report.pacchi_resi != null && report.pacchi_resi >= 0) { %>
+                  <span style="color: #000000; font-weight: 600;"><%= report.pacchi_resi %></span>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-style: italic;">--</span>
+                <% } %>
+              </td>
+              <td style="max-width: 300px; white-space: normal;">
+                <%= report.substitution_reason || 'N/A' %>
+              </td>
+              <td>
+                <% if (report.original_report_id) { %>
+                  <a href="#" onclick="viewOriginalReport(<%= report.original_report_id %>); return false;" 
+                     style="color: #3b82f6; text-decoration: underline;">
+                    Vedi #<%= report.original_report_id %>
+                  </a>
+                <% } else { %>
+                  <span style="color: #94a3b8;">N/A</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (report.foto_partenza || report.foto_rientro) { %>
+                  <button onclick="viewPhotos(<%= report.id %>)" class="btn-icon btn-sm" style="background: #6366f1; color: white;" title="Visualizza Foto">
+                    Foto (<%= (report.foto_partenza ? 1 : 0) + (report.foto_rientro ? 1 : 0) %>)
+                  </button>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-style: italic;">Nessuna</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (report.firma) { %>
+                  <span style="color: #10b981; font-weight: 600;">✓</span>
+                <% } else { %>
+                  <span style="color: #94a3b8; font-style: italic;">--</span>
+                <% } %>
+              </td>
+            </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    </div>
+  <% } %>
+
+  <!-- Modal Riassegna Furgone -->  <!-- Modal Riassegna Furgone -->
+  <div id="reassignModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <span class="close" onclick="closeReassignModal()">&times;</span>
+      <h3>Riassegna Furgone</h3>
+      
+      <div style="background: #fef3c7; border: 2px solid #f59e0b; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+        <p style="margin: 0; color: #92400e; font-weight: 600;">
+          Driver: <span id="reassign_driver_name"></span><br>
+          Furgone Attuale: <span id="reassign_old_vehicle"></span>
+        </p>
+      </div>
+
+      <form id="reassignForm" onsubmit="submitReassign(event)">
+        <input type="hidden" id="reassign_report_id">
+
+        <div class="form-group">
+          <label for="reassign_new_vehicle">Nuovo Furgone *</label>
+          <select id="reassign_new_vehicle" name="new_vehicle_id" required>
+            <option value="">Caricamento furgoni disponibili...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="reassign_reason">Motivo Sostituzione *</label>
+          <textarea id="reassign_reason" name="reason" rows="3" required placeholder="Es: Guasto motore, problema elettrico, foratura..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn btn-warning" style="flex: 1;">
+            Conferma Riassegnazione
+          </button>
+          <button type="button" onclick="closeReassignModal()" class="btn btn-secondary" style="flex: 1;">
+            Annulla
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -246,7 +606,7 @@
   <div id="editModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeEditModal()">&times;</span>
-      <h3>✏️ Modifica Report</h3>
+      <h3>Modifica Report</h3>
       
       <div id="statusWarning" style="display: none; background: rgba(245, 158, 11, 0.2); border: 2px solid #f59e0b; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
         <p style="margin: 0; color: #fbbf24; font-weight: 600;">
@@ -758,6 +1118,10 @@
       accent-color: #6366f1;
     }
 
+    .action-menu a:hover {
+      background-color: #f1f5f9;
+    }
+
     @media (max-width: 768px) {
       .vehicle-grid {
         grid-template-columns: 1fr;
@@ -771,6 +1135,27 @@
       sidebar.classList.toggle('active');
       overlay.classList.toggle('active');
     }
+
+    function toggleActionMenu(reportId) {
+      const menu = document.getElementById('actionMenu' + reportId);
+      // Chiudi tutti gli altri menu aperti
+      document.querySelectorAll('.action-menu').forEach(m => {
+        if (m.id !== 'actionMenu' + reportId) {
+          m.style.display = 'none';
+        }
+      });
+      // Toggle del menu corrente
+      menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Chiudi i menu quando si clicca fuori
+    document.addEventListener('click', function(event) {
+      if (!event.target.closest('.custom-dropdown')) {
+        document.querySelectorAll('.action-menu').forEach(m => {
+          m.style.display = 'none';
+        });
+      }
+    });
 
     function showPhotosModal(reportId, rider, date, posteriore, anteriore, destro, sinistro, interno) {
       const photos = [
@@ -812,19 +1197,371 @@
 
     // Filtro per data
     let allReports = [];
+    let allSubstitutions = [];
     
     function initReports() {
       const rows = document.querySelectorAll('#reportsTable tbody tr');
       allReports = Array.from(rows).map(row => ({
         element: row,
-        date: row.dataset.date || ''
+        date: row.dataset.date || '',
+        driver: row.dataset.driver || '',
+        vehicle: row.dataset.vehicle || '',
+        rifornimento: row.dataset.rifornimento || '',
+        rotta: row.dataset.rotta || ''
       }));
+      
+      const substitutionRows = document.querySelectorAll('[data-substitution-status]');
+      allSubstitutions = Array.from(substitutionRows).map(row => ({
+        element: row,
+        date: row.querySelector('td:nth-child(2)').textContent || ''
+      }));
+      
       updateDateInfo();
+      updateRifornimentoStats();
+    }
+
+    // Toggle Filtri Avanzati
+    function toggleAdvancedFilters() {
+      const filters = document.getElementById('advancedFilters');
+      const btn = document.getElementById('toggleFiltersBtn');
+      if (filters.style.display === 'none') {
+        filters.style.display = 'block';
+        btn.textContent = 'Nascondi Filtri Avanzati';
+      } else {
+        filters.style.display = 'none';
+        btn.textContent = 'Mostra Filtri Avanzati';
+      }
+    }
+
+    // Applica tutti i filtri avanzati
+    function applyAdvancedFilters() {
+      const selectedDate = document.getElementById('filterDate').value;
+      const selectedDriver = document.getElementById('filterDriver').value;
+      const selectedVehicle = document.getElementById('filterVehicle').value;
+      const selectedRifornimento = document.getElementById('filterRifornimento').value;
+      const selectedRotta = document.getElementById('filterRotta').value.trim().toUpperCase();
+      
+      allReports.forEach(report => {
+        let show = true;
+        
+        // Filtro data
+        if (selectedDate && report.date !== selectedDate) {
+          show = false;
+        }
+        
+        // Filtro driver
+        if (selectedDriver && report.driver !== selectedDriver) {
+          show = false;
+        }
+        
+        // Filtro veicolo
+        if (selectedVehicle && report.vehicle !== selectedVehicle) {
+          show = false;
+        }
+        
+        // Filtro rifornimento
+        if (selectedRifornimento) {
+          if (selectedRifornimento === 'NESSUNO') {
+            if (report.rifornimento !== '') {
+              show = false;
+            }
+          } else if (report.rifornimento !== selectedRifornimento) {
+            show = false;
+          }
+        }
+        
+        // Filtro rotta
+        if (selectedRotta && !report.rotta.includes(selectedRotta)) {
+          show = false;
+        }
+        
+        report.element.style.display = show ? '' : 'none';
+      });
+      
+      // Filtro sostituzioni solo per data
+      if (selectedDate) {
+        const dateObj = new Date(selectedDate + 'T12:00:00');
+        const formatted = dateObj.toLocaleDateString('it-IT', { 
+          day: '2-digit', 
+          month: '2-digit',
+          year: 'numeric'
+        });
+        
+        allSubstitutions.forEach(sub => {
+          sub.element.style.display = (sub.date === formatted) ? '' : 'none';
+        });
+      } else {
+        allSubstitutions.forEach(sub => {
+          sub.element.style.display = '';
+        });
+      }
+      
+      updateDateInfo(selectedDate);
+      updateRifornimentoStats();
+    }
+
+    // Aggiorna statistiche rifornimento
+    function updateRifornimentoStats() {
+      const visibleReports = allReports.filter(r => r.element.style.display !== 'none');
+      
+      const statIP = visibleReports.filter(r => r.rifornimento === 'IP').length;
+      const statDKV = visibleReports.filter(r => r.rifornimento === 'DKV').length;
+      const statNessuno = visibleReports.filter(r => r.rifornimento === '').length;
+      
+      document.getElementById('statIP').textContent = statIP;
+      document.getElementById('statDKV').textContent = statDKV;
+      document.getElementById('statNessuno').textContent = statNessuno;
+      document.getElementById('statTotal').textContent = visibleReports.length;
+    }
+
+    // Pulisci tutti i filtri
+    function clearAllFilters() {
+      document.getElementById('filterDate').value = '';
+      document.getElementById('filterDriver').value = '';
+      document.getElementById('filterVehicle').value = '';
+      document.getElementById('filterRifornimento').value = '';
+      document.getElementById('filterRotta').value = '';
+      showAll();
+    }
+
+    // Esportazione CSV
+    function exportToCSV() {
+      const visibleReports = allReports.filter(r => r.element.style.display !== 'none');
+      
+      if (visibleReports.length === 0) {
+        alert('Nessun report da esportare');
+        return;
+      }
+      
+      let csv = 'Data,Driver,Stato,Targa,Rotta,Km Partenza,Km Rientro,Km Totali,Orario Partenza,Orario Rientro,Rifornimento,Importo €,Pacchi Resi\n';
+      
+      visibleReports.forEach(report => {
+        const cells = report.element.querySelectorAll('td');
+        const data = cells[1].textContent.trim();
+        const driver = cells[2].textContent.trim();
+        const stato = cells[3].textContent.trim().replace(/\n.*/, '');
+        const targa = cells[4].textContent.trim();
+        const rotta = cells[5].textContent.trim();
+        const kmP = cells[6].textContent.trim();
+        const kmR = cells[7].textContent.trim();
+        const kmTot = cells[8].textContent.trim();
+        const orarioP = cells[9].textContent.trim();
+        const orarioR = cells[10].textContent.trim();
+        const rifornimento = report.rifornimento || 'Nessuno';
+        const importo = cells[11].textContent.match(/€\s*([\d,.]+)/)?.[1] || '0';
+        const pacchi = cells[12].textContent.trim();
+        
+        csv += `"${data}","${driver}","${stato}","${targa}","${rotta}","${kmP}","${kmR}","${kmTot}","${orarioP}","${orarioR}","${rifornimento}","${importo}","${pacchi}"\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `report_consegne_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Esportazione Excel (HTML Table)
+    // Esportazione Excel (HTML Table)
+    function exportToExcel() {
+      const visibleReports = allReports.filter(r => r.element.style.display !== 'none');
+      const visibleSubstitutions = allSubstitutions.filter(s => s.element.style.display !== 'none');
+      
+      if (visibleReports.length === 0 && visibleSubstitutions.length === 0) {
+        alert('Nessun report da esportare');
+        return;
+      }
+      
+      let html = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+        <head>
+          <meta charset="utf-8">
+          <style>
+            table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #4CAF50; color: white; font-weight: bold; }
+            h2 { color: #2C3E50; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <h2>Report Consegne</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Driver</th>
+                <th>Stato</th>
+                <th>Targa</th>
+                <th>Rotta</th>
+                <th>Km Partenza</th>
+                <th>Km Rientro</th>
+                <th>Km Totali</th>
+                <th>Orario Partenza</th>
+                <th>Orario Rientro</th>
+                <th>Rifornimento</th>
+                <th>Importo €</th>
+                <th>Pacchi Resi</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      visibleReports.forEach(report => {
+        const cells = report.element.querySelectorAll('td');
+        const data = cells[1].textContent.trim();
+        const driver = cells[2].textContent.trim();
+        const stato = cells[3].textContent.trim().replace(/\n.*/, ''); // Rimuove il timestamp "dalle XX:XX"
+        const targa = cells[4].textContent.trim();
+        const rotta = cells[5].textContent.trim();
+        const kmP = cells[6].textContent.trim();
+        const kmR = cells[7].textContent.trim();
+        const kmTot = cells[8].textContent.trim();
+        const orarioP = cells[9].textContent.trim();
+        const orarioR = cells[10].textContent.trim();
+        const rifornimento = report.rifornimento || 'Nessuno';
+        const importo = cells[11].textContent.match(/€\s*([\d,.]+)/)?.[1] || '0';
+        const pacchi = cells[12].textContent.trim();
+        
+        html += `
+          <tr>
+            <td>${data}</td>
+            <td>${driver}</td>
+            <td>${stato}</td>
+            <td>${targa}</td>
+            <td>${rotta}</td>
+            <td>${kmP}</td>
+            <td>${kmR}</td>
+            <td>${kmTot}</td>
+            <td>${orarioP}</td>
+            <td>${orarioR}</td>
+            <td>${rifornimento}</td>
+            <td>${importo}</td>
+            <td>${pacchi}</td>
+          </tr>
+        `;
+      });
+      
+      html += `
+            </tbody>
+          </table>
+      `;
+      
+      // Aggiungi tabella sostituzioni se ci sono
+      if (visibleSubstitutions.length > 0) {
+        html += `
+          <h2>Report Sostituzioni Furgoni</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Driver</th>
+                <th>Stato</th>
+                <th>Vecchia Targa</th>
+                <th>Nuova Targa</th>
+                <th>Rotta</th>
+                <th>Km Partenza</th>
+                <th>Km Rientro</th>
+                <th>Km Totali</th>
+                <th>Orario Partenza</th>
+                <th>Orario Rientro</th>
+                <th>Rifornimento</th>
+                <th>Importo €</th>
+                <th>Pacchi Resi</th>
+                <th>Motivo Sostituzione</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        
+        visibleSubstitutions.forEach(sub => {
+          const cells = sub.element.querySelectorAll('td');
+          const data = cells[1].textContent.trim();
+          const driver = cells[2].textContent.trim();
+          const stato = cells[3].textContent.trim().replace(/\n.*/, '');
+          const nuovaTarga = cells[4].textContent.trim();
+          const rotta = cells[5].textContent.trim();
+          const kmP = cells[6].textContent.trim();
+          const kmR = cells[7].textContent.trim();
+          const kmTot = cells[8].textContent.trim();
+          const orarioP = cells[9].textContent.trim();
+          const orarioR = cells[10].textContent.trim();
+          const rifornimento = cells[11].textContent.trim().split('\n')[0] || 'Nessuno';
+          const importo = cells[11].textContent.match(/€\s*([\d,.]+)/)?.[1] || '0';
+          const pacchi = cells[12].textContent.trim();
+          const motivo = cells[13].textContent.trim();
+          
+          // Trova la vecchia targa dal report originale (se disponibile)
+          let vecchiaTarga = 'N/A';
+          const originalReportCell = cells[14].textContent.trim();
+          if (originalReportCell.includes('#')) {
+            const originalId = originalReportCell.match(/#(\d+)/)?.[1];
+            if (originalId) {
+              // Cerca nel DOM il report originale per trovare la targa
+              const originalRow = document.querySelector(`#row-${originalId}`);
+              if (originalRow) {
+                vecchiaTarga = originalRow.querySelector('td:nth-child(5)').textContent.trim();
+              }
+            }
+          }
+          
+          html += `
+            <tr>
+              <td>${data}</td>
+              <td>${driver}</td>
+              <td>${stato}</td>
+              <td>${vecchiaTarga}</td>
+              <td>${nuovaTarga}</td>
+              <td>${rotta}</td>
+              <td>${kmP}</td>
+              <td>${kmR}</td>
+              <td>${kmTot}</td>
+              <td>${orarioP}</td>
+              <td>${orarioR}</td>
+              <td>${rifornimento}</td>
+              <td>${importo}</td>
+              <td>${pacchi}</td>
+              <td>${motivo}</td>
+            </tr>
+          `;
+        });
+        
+        html += `
+            </tbody>
+          </table>
+        `;
+      }
+      
+      html += `
+        </body>
+        </html>
+      `;
+      
+      const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `report_completo_${new Date().toISOString().split('T')[0]}.xls`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function filterByDate() {
       const selectedDate = document.getElementById('filterDate').value;
       if (!selectedDate) return showAll();
+      
+      // Converti la data selezionata in formato locale per confronto
+      const dateObj = new Date(selectedDate + 'T12:00:00');
+      const formatted = dateObj.toLocaleDateString('it-IT', { 
+        day: '2-digit', 
+        month: '2-digit',
+        year: 'numeric'
+      });
       
       allReports.forEach(report => {
         if (report.date === selectedDate) {
@@ -833,6 +1570,15 @@
           report.element.style.display = 'none';
         }
       });
+      
+      allSubstitutions.forEach(sub => {
+        if (sub.date === formatted) {
+          sub.element.style.display = '';
+        } else {
+          sub.element.style.display = 'none';
+        }
+      });
+      
       updateDateInfo(selectedDate);
     }
 
@@ -847,12 +1593,17 @@
       allReports.forEach(report => {
         report.element.style.display = '';
       });
+      allSubstitutions.forEach(sub => {
+        sub.element.style.display = '';
+      });
       updateDateInfo();
     }
 
     function updateDateInfo(date = null) {
       const info = document.getElementById('dateInfo');
-      const visible = allReports.filter(r => r.element.style.display !== 'none').length;
+      const visibleReports = allReports.filter(r => r.element.style.display !== 'none').length;
+      const visibleSubstitutions = allSubstitutions.filter(s => s.element.style.display !== 'none').length;
+      const total = visibleReports + visibleSubstitutions;
       
       if (date) {
         const dateObj = new Date(date + 'T12:00:00');
@@ -862,9 +1613,9 @@
           month: 'long',
           year: 'numeric'
         });
-        info.textContent = `${visible} report - ${formatted}`;
+        info.textContent = `${total} report (${visibleReports} normali + ${visibleSubstitutions} sostituzioni) - ${formatted}`;
       } else {
-        info.textContent = `${visible} report totali`;
+        info.textContent = `${total} report totali (${visibleReports} normali + ${visibleSubstitutions} sostituzioni)`;
       }
     }
 
@@ -881,10 +1632,233 @@
         console.log('✅ Filtro data applicato - solo oggi visibile');
       }, 100);
     });
+
+    // Gestione Riassegnazione Furgone
+    function openReassignModal(reportId, driverName, currentVehicle, userId) {
+      document.getElementById('reassign_report_id').value = reportId;
+      document.getElementById('reassign_driver_name').textContent = driverName;
+      document.getElementById('reassign_old_vehicle').textContent = currentVehicle;
+      
+      // Carica furgoni disponibili
+      const today = new Date().toISOString().split('T')[0];
+      fetch(`/admin/vehicles/available?date=${today}`)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(vehicles => {
+          const select = document.getElementById('reassign_new_vehicle');
+          select.innerHTML = '<option value="">Seleziona nuovo furgone...</option>';
+          
+          if (vehicles.length === 0) {
+            select.innerHTML = '<option value="">Nessun furgone disponibile</option>';
+          } else {
+            vehicles.forEach(v => {
+              select.innerHTML += `<option value="${v.id}">${v.targa} - ${v.modello}</option>`;
+            });
+          }
+        })
+        .catch(err => {
+          console.error('Errore caricamento furgoni:', err);
+          alert('Errore nel caricamento dei furgoni disponibili: ' + err.message);
+        });
+      
+      // Cerca problema segnalato per questo driver/furgone
+      fetch(`/admin/maintenance/latest-for-driver?user_id=${userId}&vehicle=${encodeURIComponent(currentVehicle)}`)
+        .then(res => res.json())
+        .then(data => {
+          const reasonTextarea = document.getElementById('reassign_reason');
+          if (data.issue_description) {
+            reasonTextarea.value = data.issue_description;
+            reasonTextarea.placeholder = 'Modifica se necessario...';
+          } else {
+            reasonTextarea.value = '';
+            reasonTextarea.placeholder = 'Es: Guasto motore, problema elettrico...';
+          }
+        })
+        .catch(err => {
+          console.log('Nessun problema trovato, campo vuoto');
+        });
+      
+      document.getElementById('reassignModal').style.display = 'block';
+    }
+
+    function closeReassignModal() {
+      document.getElementById('reassignModal').style.display = 'none';
+      document.getElementById('reassignForm').reset();
+    }
+
+    function submitReassign(event) {
+      event.preventDefault();
+      
+      const reportId = document.getElementById('reassign_report_id').value;
+      const newVehicleId = document.getElementById('reassign_new_vehicle').value;
+      const reason = document.getElementById('reassign_reason').value;
+
+      if (!newVehicleId || !reason) {
+        alert('Compila tutti i campi richiesti');
+        return;
+      }
+
+      if (!confirm('Confermi la riassegnazione? Il driver dovrà compilare un nuovo form di partenza.')) {
+        return;
+      }
+
+      fetch(`/admin/reports/${reportId}/reassign-vehicle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_vehicle_id: newVehicleId, reason })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert(`✅ Furgone riassegnato con successo!\nNuovo furgone: ${data.new_vehicle}\n\nIl driver riceverà la notifica per compilare il nuovo form.`);
+          closeReassignModal();
+          location.reload();
+        } else {
+          alert('❌ Errore: ' + data.error);
+        }
+      })
+      .catch(err => {
+        console.error('Errore riassegnazione:', err);
+        alert('Errore nella riassegnazione del furgone');
+      });
+    }
+
+    // Visualizza report originale
+    function viewOriginalReport(reportId) {
+      // Rimuovi evidenziazione precedente
+      document.querySelectorAll('tr.highlighted-report').forEach(row => {
+        row.classList.remove('highlighted-report');
+        row.style.backgroundColor = '';
+      });
+
+      // Scroll alla tabella report normali e evidenzia il report
+      const reportRow = document.querySelector(`tr[data-report-id="${reportId}"]`);
+      if (reportRow) {
+        reportRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        reportRow.classList.add('highlighted-report');
+        reportRow.style.backgroundColor = '#fef3c7';
+        setTimeout(() => {
+          reportRow.style.backgroundColor = '';
+          reportRow.classList.remove('highlighted-report');
+        }, 3000);
+      } else {
+        alert(`Report #${reportId} non trovato nella vista corrente`);
+      }
+    }
+
+    // Chiudi modal cliccando fuori
+    window.onclick = function(event) {
+      const reassignModal = document.getElementById('reassignModal');
+      if (event.target === reassignModal) {
+        closeReassignModal();
+      }
+    };
+
+    // Gestione Sostituzioni - Checkbox e Delete
+    function toggleAllSubstitutions(checkbox) {
+      const checkboxes = document.querySelectorAll('.substitution-checkbox');
+      checkboxes.forEach(cb => {
+        if (cb.closest('tr').style.display !== 'none') {
+          cb.checked = checkbox.checked;
+        }
+      });
+      updateSubstitutionDeleteButton();
+    }
+
+    function updateSubstitutionDeleteButton() {
+      const checkboxes = document.querySelectorAll('.substitution-checkbox:checked');
+      const deleteBtn = document.getElementById('deleteSelectedSubstitutionsBtn');
+      const countSpan = document.getElementById('selectedSubstitutionsCount');
+      
+      if (checkboxes.length > 0) {
+        deleteBtn.style.display = 'inline-flex';
+        countSpan.textContent = checkboxes.length;
+      } else {
+        deleteBtn.style.display = 'none';
+        document.getElementById('selectAllSubstitutions').checked = false;
+      }
+    }
+
+    function deleteSelectedSubstitutions() {
+      const checkboxes = document.querySelectorAll('.substitution-checkbox:checked');
+      if (checkboxes.length === 0) return;
+      
+      if (!confirm(`Vuoi eliminare ${checkboxes.length} report di sostituzione selezionati?`)) return;
+      
+      const ids = Array.from(checkboxes).map(cb => cb.value);
+      
+      Promise.all(ids.map(id => 
+        fetch(`/admin/reports/${id}`, { method: 'DELETE' })
+          .then(res => res.json())
+      ))
+      .then(results => {
+        const success = results.filter(r => r.success).length;
+        const failed = results.length - success;
+        
+        if (failed === 0) {
+          alert(`✅ ${success} report eliminati con successo!`);
+        } else {
+          alert(`⚠️ ${success} eliminati, ${failed} errori`);
+        }
+        location.reload();
+      })
+      .catch(err => {
+        console.error('Errore eliminazione:', err);
+        alert('❌ Errore durante l\'eliminazione');
+      });
+    }
+
+    // Filtri per Sostituzioni
+    function filterSubstitutionStatus(status) {
+      const rows = document.querySelectorAll('[data-substitution-status]');
+      rows.forEach(row => {
+        if (status === 'all' || row.dataset.substitutionStatus === status) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+      
+      // Update button styles
+      document.querySelectorAll('[id^="btnSubstitution"]').forEach(btn => {
+        btn.style.opacity = '0.6';
+      });
+      document.getElementById(`btnSubstitution${status === 'all' ? 'All' : status === 'sostituzione_partenza' ? 'Attesa' : status === 'partito' ? 'Partito' : 'Completato'}`).style.opacity = '1';
+      
+      // Reset checkbox
+      document.getElementById('selectAllSubstitutions').checked = false;
+      updateSubstitutionDeleteButton();
+    }
+
+    // Conta sostituzioni per status
+    document.addEventListener('DOMContentLoaded', () => {
+      const rows = document.querySelectorAll('[data-substitution-status]');
+      let all = 0, attesa = 0, partito = 0, completato = 0;
+      
+      rows.forEach(row => {
+        all++;
+        const status = row.dataset.substitutionStatus;
+        if (status === 'sostituzione_partenza') attesa++;
+        else if (status === 'partito') partito++;
+        else if (status === 'completato') completato++;
+      });
+      
+      document.getElementById('countSubstitutionAll').textContent = all;
+      document.getElementById('countSubstitutionAttesa').textContent = attesa;
+      document.getElementById('countSubstitutionPartito').textContent = partito;
+      document.getElementById('countSubstitutionCompletato').textContent = completato;
+      
+      // Mostra tutti di default
+      filterSubstitutionStatus('all');
+    });
   </script>
     </main>
   </div>
 </body>
 </html>
+
+
 
 

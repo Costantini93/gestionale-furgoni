@@ -126,7 +126,7 @@ const ReportModel = {
 
   // Completa il rientro
   completeReturn: (reportId, returnData, callback) => {
-    const { km_rientro, orario_rientro, pacchi_ritornati, rifornimento_euro } = returnData;
+    const { km_rientro, orario_rientro, pacchi_ritornati, rifornimento_euro, metodo_rifornimento, numero_scheda_dkv } = returnData;
     
     // Prima ottieni user_id e data_giorno dal report
     db.get('SELECT user_id, data_giorno FROM daily_reports WHERE id = ?', [reportId], (err, report) => {
@@ -140,9 +140,11 @@ const ReportModel = {
           orario_rientro = ?,
           pacchi_resi = ?,
           importo_rifornimento = ?,
+          metodo_rifornimento = ?,
+          numero_scheda_dkv = ?,
           status = 'completato'
          WHERE id = ?`,
-        [km_rientro, orario_rientro, pacchi_ritornati || 0, rifornimento_euro || 0, reportId],
+        [km_rientro, orario_rientro, pacchi_ritornati || 0, rifornimento_euro || 0, metodo_rifornimento || null, numero_scheda_dkv || null, reportId],
         (err) => {
           if (err) return callback(err);
           

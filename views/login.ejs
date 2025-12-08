@@ -7,12 +7,52 @@
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/premium.css">
   <link rel="stylesheet" href="/css/clean-theme.css">
+  <style>
+    body.login-page {
+      background: white !important;
+    }
+    .login-box {
+      background: white !important;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    }
+    .login-box h1 {
+      color: #22c55e !important;
+      background: none !important;
+      -webkit-text-fill-color: #22c55e !important;
+      filter: none !important;
+      text-shadow: none !important;
+    }
+    .password-wrapper {
+      position: relative;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      user-select: none;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .password-toggle svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: #000;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  </style>
 </head>
 <body class="login-page">
   <div class="login-container">
     <div class="login-box">
-      <h1>Gestionale Consegne</h1>
-      <h2>Accedi al Sistema</h2>
+      <h1>Login</h1>
       
       <% if (error && error.length > 0) { %>
         <div class="alert alert-error">
@@ -28,12 +68,12 @@
 
       <form action="/auth/login" method="POST">
         <div class="form-group">
-          <label for="username">Username</label>
+          <label for="username">User Name</label>
           <input 
             type="text" 
             id="username" 
             name="username" 
-            placeholder="nome_cognome"
+            placeholder="MP Codes"
             required 
             autofocus
           >
@@ -41,24 +81,45 @@
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            name="password" 
-            placeholder="Inserisci la password"
-            required
-          >
+          <div class="password-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              placeholder="••••••••"
+              required
+              style="padding-right: 40px;"
+            >
+            <span class="password-toggle" onclick="togglePassword()" id="toggleIcon">
+              <svg id="eyeIcon" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+                <line id="eyeSlash" x1="1" y1="1" x2="23" y2="23" style="display: block;"></line>
+              </svg>
+            </span>
+          </div>
         </div>
 
         <button type="submit" class="btn btn-primary btn-block">
-          Accedi
+          Login
         </button>
       </form>
-
-      <div class="login-info">
-        <p><small>Al primo accesso verrà richiesto il cambio password</small></p>
-      </div>
     </div>
   </div>
+
+  <script>
+    function togglePassword() {
+      const passwordInput = document.getElementById('password');
+      const eyeSlash = document.getElementById('eyeSlash');
+      
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeSlash.style.display = 'none';
+      } else {
+        passwordInput.type = 'password';
+        eyeSlash.style.display = 'block';
+      }
+    }
+  </script>
 </body>
 </html>

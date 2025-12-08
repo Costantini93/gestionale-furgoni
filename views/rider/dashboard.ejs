@@ -28,7 +28,7 @@
 <body>
   <div class="topbar">
     <div class="breadcrumb">
-      <span>Dashboard Rider</span>
+      <span>Dashboard </span>
     </div>
     <div class="topbar-right">
       <div class="user-info">
@@ -40,7 +40,7 @@
 
   <div class="container">
     <div class="section-header">
-      <h2>📦 Dashboard Rider</h2>
+      <h2>Dashboard Driver</h2>
     </div>
 
     <!-- Toast Container -->
@@ -65,6 +65,25 @@
           showToast('<%= error[0] %>', 'error');
         });
       </script>
+    <% } %>
+
+    <!-- Alert Sostituzione Furgone -->
+    <% if (substitutionReport) { %>
+      <div class="alert" style="background: #fef3c7; border: 2px solid #f59e0b; margin-bottom: 2rem;">
+        <h3 style="color: #92400e;">🔄 Furgone Sostituito!</h3>
+        <p style="color: #92400e;">
+          Il tuo furgone è stato cambiato. <strong>Compila il form di partenza per il nuovo furgone: <%= substitutionReport.targa_furgone %></strong>
+        </p>
+        <p style="color: #92400e; font-size: 0.9rem; margin-top: 0.5rem;">
+          <strong>Motivo:</strong> <%= substitutionReport.substitution_reason %>
+        </p>
+        <button 
+          class="btn" 
+          style="background: #f59e0b; color: white; margin-top: 1rem;"
+          onclick="document.getElementById('substitutionFormSection').scrollIntoView({ behavior: 'smooth' })">
+          Vai al Form →
+        </button>
+      </div>
     <% } %>
 
     <!-- Sezione Report Aperti (DA COMPLETARE) -->
@@ -125,34 +144,39 @@
           </div>
 
           <button onclick="showMaintenanceModal('<%= assignment.vehicle_id %>', '<%= assignment.targa %>')" class="btn btn-warning">
-            🔧 Segnala Problema
+            Segnala Problema
           </button>
         </div>
       </div>
     <% } %>
 
     <!-- Form inserimento PARTENZA -->
-    <div class="card">
-      <% if (preparationReport) { %>
+    <div class="card" id="<%= substitutionReport ? 'substitutionFormSection' : '' %>">
+      <% if (preparationReport || substitutionReport) { %>
+        <% const activeReport = substitutionReport || preparationReport; %>
         <div class="card-header">
-          <h3>🚀 Completa la Tua Partenza</h3>
+          <h3><%= substitutionReport ? '🔄 Completa Partenza con Nuovo Furgone' : 'Completa la Tua Partenza' %></h3>
         </div>
         <div class="card-body">
           <p style="color: #64748b; margin-bottom: 1.5rem;">
-            Assegnamento del <%= new Date(preparationReport.data_giorno).toLocaleDateString('it-IT') %> - Completa i dati e scatta le 5 foto prima di partire
+            <% if (substitutionReport) { %>
+              <strong style="color: #f59e0b;">Furgone sostituito:</strong> Compila i dati per il nuovo furgone <%= activeReport.targa_furgone %>
+            <% } else { %>
+              Assegnamento del <%= new Date(activeReport.data_giorno).toLocaleDateString('it-IT') %> - Completa i dati e scatta le 5 foto prima di partire
+            <% } %>
           </p>
         <form action="/rider/report/create" method="POST" id="reportForm" enctype="multipart/form-data">
-          <input type="hidden" name="report_id" value="<%= preparationReport.id %>">
+          <input type="hidden" name="report_id" value="<%= activeReport.id %>">
           
           <div class="form-row">
             <div class="form-group">
               <label for="data_giorno">Data</label>
-              <input type="date" id="data_giorno" name="data_giorno" value="<%= preparationReport.data_giorno %>" readonly>
+              <input type="date" id="data_giorno" name="data_giorno" value="<%= activeReport.data_giorno %>" readonly>
             </div>
 
             <div class="form-group">
               <label for="targa_furgone">Targa Furgone</label>
-              <input type="text" id="targa_furgone" name="targa_furgone" value="<%= preparationReport.targa_furgone %>" readonly>
+              <input type="text" id="targa_furgone" name="targa_furgone" value="<%= activeReport.targa_furgone %>" readonly>
             </div>
 
             <div class="form-group">
@@ -168,12 +192,17 @@
             </div>
 
             <div class="form-group">
+              <label for="orario_partenza">Orario Partenza *</label>
+              <input type="time" id="orario_partenza" name="orario_partenza" required>
+            </div>
+
+            <div class="form-group">
               <label for="numero_aziendale">Numero Aziendale</label>
               <input type="text" id="numero_aziendale" name="numero_aziendale" placeholder="Opzionale">
             </div>
 
             <div class="form-group">
-              <label>\u270d\ufe0f FIRMA - Firma qui sotto per confermare *</label>
+              <label>Firma qui sotto per confermare *</label>
               <div style="border: 2px solid #3b82f6; border-radius: 8px; background: white; margin-bottom: 0.5rem;">
                 <canvas id="signatureCanvas" width="600" height="200" style="display: block; width: 100%; height: auto; touch-action: none;"></canvas>
               </div>
@@ -186,7 +215,7 @@
 
           <!-- Foto Furgone -->
           <div class="form-section">
-            <h4>\ud83d\udcf8 Foto del Furgone (Obbligatorie)</h4>
+            <h4>Foto del Furgone (Obbligatorie)</h4>
             <p style="color: #64748b; margin-bottom: 1.5rem;">
               Scatta o carica 5 foto del furgone prima di partire
             </p>
@@ -255,7 +284,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary">
-          🚀 Registra Partenza
+          Registra Partenza
         </button>
       </form>
       <% } else { %>
@@ -313,11 +342,12 @@
             <label for="tipo_rifornimento_modal" style="color: #2C3E50; font-weight: 500;">Tipo Rifornimento</label>
             <select 
               id="tipo_rifornimento_modal" 
+              name="metodo_rifornimento"
               class="form-control"
               onchange="toggleRifornimentoFields()">
-              <option value="nessuno">Nessun Rifornimento</option>
-              <option value="ip">IP</option>
-              <option value="dkv">DKV</option>
+              <option value="">Nessun Rifornimento</option>
+              <option value="IP">IP</option>
+              <option value="DKV">DKV</option>
             </select>
           </div>
 
@@ -327,7 +357,7 @@
               <input 
                 type="number" 
                 id="importo_rifornimento_modal" 
-                name="importo_rifornimento" 
+                name="rifornimento_ip" 
                 min="0"
                 step="0.01"
                 placeholder="0.00"
@@ -350,7 +380,7 @@
               <input 
                 type="number" 
                 id="importo_dkv_modal" 
-                name="importo_rifornimento_dkv" 
+                name="rifornimento_dkv" 
                 min="0"
                 step="0.01"
                 placeholder="0.00"
@@ -400,10 +430,10 @@
       document.getElementById('importo_dkv_modal').removeAttribute('required');
       
       // Mostra i campi appropriati
-      if (tipoRifornimento === 'ip') {
+      if (tipoRifornimento === 'IP') {
         ipFields.style.display = 'block';
         document.getElementById('importo_rifornimento_modal').setAttribute('required', 'required');
-      } else if (tipoRifornimento === 'dkv') {
+      } else if (tipoRifornimento === 'DKV') {
         dkvFields.style.display = 'block';
         document.getElementById('numero_dkv_modal').setAttribute('required', 'required');
         document.getElementById('importo_dkv_modal').setAttribute('required', 'required');
@@ -643,17 +673,17 @@
   <!-- Modal Segnalazione Manutenzione -->
   <div id="maintenanceModal" class="modal" style="display: none;">
     <div class="modal-content glass-card" style="max-width: 600px;">
-      <h3>�� Segnala Problema con AI</h3>
+      <h3>Segnala Problema con AI</h3>
       <form action="/rider/maintenance/create" method="POST" id="maintenanceForm">
         <input type="hidden" id="maintenance_vehicle_id" name="vehicle_id">
         
         <div class="form-group">
-          <label>� Furgone:</label>
+          <label>Furgone:</label>
           <input type="text" id="maintenance_vehicle_targa" readonly style="background: rgba(30, 41, 59, 0.5);">
         </div>
 
         <div class="form-group">
-          <label>�� Descrizione Problema *</label>
+          <label>Descrizione Problema *</label>
           <textarea 
             id="issue_description" 
             name="issue_description" 
@@ -662,39 +692,35 @@
             placeholder="Descrivi il problema riscontrato... L'AI analizzerà la gravità!"
             style="resize: vertical;"></textarea>
           <small style="color: #7F8C8D; font-size: 0.875rem; margin-top: 0.5rem; display: block;">
-            �� Scrivi dettagli come: rumore, vibrazione, perdite, luci, funzionamento...
+            Scrivi dettagli come: rumore, vibrazione, perdite, luci, funzionamento...
           </small>
         </div>
 
         <!-- AI Priority Preview -->
         <div id="aiPriorityPreview" style="display: none; margin: 1rem 0; padding: 1rem; border-radius: 12px; background: rgba(99, 102, 241, 0.1); border: 2px solid rgba(99, 102, 241, 0.3);">
-          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-            <span style="font-size: 1.5rem;">��</span>
-            <div>
-              <strong style="color: #a5b4fc; font-size: 0.875rem;">AI ANALISI:</strong>
-              <div id="aiSuggestion" style="font-size: 1.125rem; font-weight: 600; margin-top: 0.25rem;"></div>
-            </div>
+          <div style="margin-bottom: 0.5rem;">
+            <strong style="color: #a5b4fc; font-size: 0.875rem;">AI ANALISI:</strong>
+            <div id="aiSuggestion" style="font-size: 1.125rem; font-weight: 600; margin-top: 0.25rem;"></div>
           </div>
           <div id="aiExplanation" style="font-size: 0.875rem; color: #2C3E50; margin-top: 0.5rem;"></div>
-          <div id="aiConfidence" style="font-size: 0.75rem; color: #7F8C8D; margin-top: 0.5rem;"></div>
         </div>
 
         <div class="form-group">
           <label style="display: flex; align-items: center; gap: 0.5rem;">
-            �� Priorità: 
+            Priorità: 
             <small style="color: #7F8C8D; font-weight: normal;">(Lascia vuoto per usare AI)</small>
           </label>
           <select id="priority_select" name="priority">
-            <option value="">�� Automatica (AI)</option>
-            <option value="bassa">�� Bassa - Non urgente</option>
-            <option value="media">�� Media - Importante</option>
-            <option value="alta">�� Alta - Urgente</option>
+            <option value="">Automatica (AI)</option>
+            <option value="bassa">Bassa - Non urgente</option>
+            <option value="media">Media - Importante</option>
+            <option value="alta">Alta - Urgente</option>
           </select>
         </div>
 
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
           <button type="submit" class="btn btn-warning">
-            �� Invia Richiesta
+            Invia Richiesta
           </button>
           <button type="button" onclick="closeMaintenanceModal()" class="btn btn-secondary">
             Annulla
@@ -746,24 +772,22 @@
           const preview = document.getElementById('aiPriorityPreview');
           const suggestion = document.getElementById('aiSuggestion');
           const explanation = document.getElementById('aiExplanation');
-          const confidence = document.getElementById('aiConfidence');
 
-          // Badge colore
-          let badgeColor, emoji;
+          // Badge colore - solo pallini
+          let badgeColor, priorityDot;
           if (data.priority === 'alta') {
             badgeColor = '#ef4444';
-            emoji = '��';
+            priorityDot = '<span style="display: inline-block; width: 12px; height: 12px; background: #ef4444; border-radius: 50%; margin-right: 8px;"></span>';
           } else if (data.priority === 'media') {
             badgeColor = '#f59e0b';
-            emoji = '��';
+            priorityDot = '<span style="display: inline-block; width: 12px; height: 12px; background: #f59e0b; border-radius: 50%; margin-right: 8px;"></span>';
           } else {
             badgeColor = '#10b981';
-            emoji = '��';
+            priorityDot = '<span style="display: inline-block; width: 12px; height: 12px; background: #10b981; border-radius: 50%; margin-right: 8px;"></span>';
           }
 
-          suggestion.innerHTML = `${emoji} Priorità: <span style="color: ${badgeColor}">${data.priority.toUpperCase()}</span>`;
+          suggestion.innerHTML = `${priorityDot}Priorità: <span style="color: ${badgeColor}">${data.priority.toUpperCase()}</span>`;
           explanation.textContent = data.explanation;
-          confidence.textContent = `Confidenza: ${data.confidence}%`;
           
           preview.style.display = 'block';
         })

@@ -632,6 +632,168 @@ tr:hover {
   .user-info {
     display: none;
   }
+
+  /* Tabelle responsive - overflow scroll */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 800px; /* Forza scroll orizzontale */
+    font-size: 12px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  /* Filtri responsive - stack verticale */
+  .filters-bar {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filters-bar > div {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .filters-bar .btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+    padding: 0.5rem 0.75rem;
+    font-size: 12px;
+  }
+
+  /* Form responsive */
+  .form-group label {
+    font-size: 13px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  /* Modal responsive */
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 10px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-body {
+    padding: 15px;
+  }
+
+  /* Buttons responsive */
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 13px;
+  }
+
+  .btn-sm {
+    padding: 0.4rem 0.75rem;
+    font-size: 12px;
+  }
+
+  /* Card responsive */
+  .card {
+    margin-bottom: 15px;
+  }
+
+  .card-body {
+    padding: 15px;
+  }
+
+  /* Filtri avanzati grid responsive */
+  div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Statistiche rifornimento responsive */
+  #rifornimentoStats > div[style*="display: flex"] {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  #rifornimentoStats > div[style*="display: flex"] > div {
+    width: 100%;
+  }
+
+  /* Badge più piccoli su mobile */
+  .badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  /* Action menu dropdown più grande su mobile */
+  .action-menu {
+    min-width: 150px !important;
+    font-size: 13px;
+  }
+
+  .action-menu a {
+    padding: 0.6rem 1rem !important;
+  }
+
+  /* Rider Dashboard Responsive */
+  .open-report-card {
+    padding: 12px;
+  }
+
+  .open-report-info h4 {
+    font-size: 14px;
+  }
+
+  /* Cards di stato responsive */
+  .status-card {
+    padding: 15px;
+  }
+
+  .status-card h3 {
+    font-size: 16px;
+  }
+
+  /* Alert responsive */
+  .alert h3 {
+    font-size: 16px;
+  }
+
+  .alert p {
+    font-size: 13px;
+  }
+}
+
+/* === TABLET RESPONSIVE (768px - 1024px) === */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .data-table {
+    font-size: 13px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 8px;
+  }
+
+  .container {
+    padding: 20px;
+  }
+
+  .sidebar {
+    width: 220px;
+  }
+
+  .main-content {
+    margin-left: 220px;
+  }
 }
 
 /* === MOBILE MENU BUTTON === */
