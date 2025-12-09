@@ -362,28 +362,20 @@
       document.getElementById('statManutenzione').textContent = countManutenzione;
     });
 
-    // Carica assegnazioni per la data selezionata all'avvio
-    document.addEventListener('DOMContentLoaded', () => {
-      const date = document.getElementById('assignmentDate').value;
-      if (date) {
-        loadAssignments(date);
-      }
-    });
-
-    // MODAL MODIFICA FURGONE
+    // MODAL MODIFICA FURGONE - Definita prima per essere disponibile globalmente
     function editVehicle(vehicleId) {
       const btn = event.target;
       const id = vehicleId;
-      const targa = btn.dataset.targa;
-      const modello = btn.dataset.modello;
-      const anno = btn.dataset.anno;
-      const kmAttuali = btn.dataset.km;
-      const prossimoTagliandoKm = btn.dataset.tagliandoKm;
-      const ultimoTagliandoData = btn.dataset.tagliandoData;
-      const scadenzaContratto = btn.dataset.contratto;
-      const scadenzaAssicurazione = btn.dataset.assicurazione;
-      const scadenzaRevisione = btn.dataset.revisione;
-      const note = btn.dataset.note;
+      const targa = btn.dataset.targa || '';
+      const modello = btn.dataset.modello || '';
+      const anno = btn.dataset.anno || '';
+      const kmAttuali = btn.dataset.km || 0;
+      const prossimoTagliandoKm = btn.dataset.tagliandoKm || 0;
+      const ultimoTagliandoData = btn.dataset.tagliandoData || '';
+      const scadenzaContratto = btn.dataset.contratto || '';
+      const scadenzaAssicurazione = btn.dataset.assicurazione || '';
+      const scadenzaRevisione = btn.dataset.revisione || '';
+      const note = btn.dataset.note || '';
       
       const modal = document.createElement('div');
       modal.className = 'modal';
@@ -460,6 +452,14 @@
       const modal = document.querySelector('.modal');
       if (modal) modal.remove();
     }
+
+    // Carica assegnazioni per la data selezionata all'avvio
+    document.addEventListener('DOMContentLoaded', () => {
+      const date = document.getElementById('assignmentDate').value;
+      if (date) {
+        loadAssignments(date);
+      }
+    });
   </script>
 </body>
 </html>
