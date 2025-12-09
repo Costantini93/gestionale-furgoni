@@ -7,6 +7,7 @@
   
   <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#4CAF50">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ROBI Furgoni">
@@ -950,8 +951,8 @@
       
       checkboxes.forEach(checkbox => {
         // Solo seleziona checkbox visibili
-        const row = checkbox.closest('tr');
-        if (row.style.display !== 'none') {
+        const row = checkbox ? checkbox.closest('tr') : null;
+        if (row && row.style.display !== 'none') {
           checkbox.checked = selectAllCheckbox.checked;
         }
       });
@@ -973,9 +974,13 @@
 
       // Aggiorna stato "Seleziona tutti"
       const allCheckboxes = Array.from(document.querySelectorAll('.report-checkbox'));
-      const visibleCheckboxes = allCheckboxes.filter(cb => cb.closest('tr').style.display !== 'none');
+      const visibleCheckboxes = allCheckboxes.filter(cb => {
+        const row = cb ? cb.closest('tr') : null;
+        return row && row.style.display !== 'none';
+      });
       const allVisibleChecked = visibleCheckboxes.length > 0 && visibleCheckboxes.every(cb => cb.checked);
-      document.getElementById('selectAll').checked = allVisibleChecked;
+      const selectAllEl = document.getElementById('selectAll');
+      if (selectAllEl) selectAllEl.checked = allVisibleChecked;
     }
 
     function deleteSelected() {
@@ -1800,7 +1805,8 @@
     function toggleAllSubstitutions(checkbox) {
       const checkboxes = document.querySelectorAll('.substitution-checkbox');
       checkboxes.forEach(cb => {
-        if (cb.closest('tr').style.display !== 'none') {
+        const row = cb ? cb.closest('tr') : null;
+        if (row && row.style.display !== 'none') {
           cb.checked = checkbox.checked;
         }
       });
