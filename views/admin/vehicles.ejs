@@ -167,8 +167,18 @@
                         <span class="vehicle-assignment">-</span>
                       </td>
                       <td>
-                        <button onclick="editVehicle(<%= vehicle.id %>, '<%= vehicle.targa %>', '<%= vehicle.modello %>', <%= vehicle.anno %>, <%= vehicle.km_attuali || 0 %>, <%= vehicle.prossimo_tagliando_km || 0 %>, '<%= vehicle.ultimo_tagliando_data || '' %>', '<%= vehicle.data_scadenza_contratto || '' %>', '<%= vehicle.data_scadenza_assicurazione || '' %>', '<%= vehicle.data_scadenza_revisione || '' %>', '<%= (vehicle.note_manutenzione || '').replace(/'/g, "\\'") %>')" 
-                                class="btn btn-sm btn-primary" style="margin-right: 0.5rem;">
+                        <button onclick="editVehicle(<%= vehicle.id %>)" 
+                                data-targa="<%= vehicle.targa %>"
+                                data-modello="<%= vehicle.modello %>"
+                                data-anno="<%= vehicle.anno %>"
+                                data-km="<%= vehicle.km_attuali || 0 %>"
+                                data-tagliando-km="<%= vehicle.prossimo_tagliando_km || 0 %>"
+                                data-tagliando-data="<%= vehicle.ultimo_tagliando_data || '' %>"
+                                data-contratto="<%= vehicle.data_scadenza_contratto || '' %>"
+                                data-assicurazione="<%= vehicle.data_scadenza_assicurazione || '' %>"
+                                data-revisione="<%= vehicle.data_scadenza_revisione || '' %>"
+                                data-note="<%= (vehicle.note_manutenzione || '').replace(/"/g, '&quot;') %>"
+                                class="btn btn-sm btn-primary edit-vehicle-btn" style="margin-right: 0.5rem;">
                           Modifica
                         </button>
                         <% if (vehicle.status !== 'assegnato') { %>
@@ -361,7 +371,20 @@
     });
 
     // MODAL MODIFICA FURGONE
-    function editVehicle(id, targa, modello, anno, kmAttuali, prossimoTagliandoKm, ultimoTagliandoData, scadenzaContratto, scadenzaAssicurazione, scadenzaRevisione, note) {
+    function editVehicle(vehicleId) {
+      const btn = event.target;
+      const id = vehicleId;
+      const targa = btn.dataset.targa;
+      const modello = btn.dataset.modello;
+      const anno = btn.dataset.anno;
+      const kmAttuali = btn.dataset.km;
+      const prossimoTagliandoKm = btn.dataset.tagliandoKm;
+      const ultimoTagliandoData = btn.dataset.tagliandoData;
+      const scadenzaContratto = btn.dataset.contratto;
+      const scadenzaAssicurazione = btn.dataset.assicurazione;
+      const scadenzaRevisione = btn.dataset.revisione;
+      const note = btn.dataset.note;
+      
       const modal = document.createElement('div');
       modal.className = 'modal';
       modal.style.display = 'flex';
