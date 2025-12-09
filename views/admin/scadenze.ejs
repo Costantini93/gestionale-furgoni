@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scadenze Furgoni - Admin</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#27AE60">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gestionale">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+  
+  <link rel="stylesheet" href="/css/clean-theme.css">
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href="/admin/dashboard" class="sidebar-logo">Gestionale Consegne</a>
+      </div>
+      <ul class="sidebar-menu">
+        <li><a href="/admin/dashboard">Dashboard</a></li>
+        <li><a href="/admin/vehicles">Gestione Furgoni</a></li>
+        <li><a href="/admin/dipendenti">Gestione Driver</a></li>
+        <li><a href="/admin/roster">Roster</a></li>
+        <li><a href="/admin/assignments">Assegnamenti</a></li>
+        <li><a href="/admin/maintenance">Manutenzioni</a></li>
+        <li><a href="/admin/scadenze" class="active">Scadenze</a></li>
+        <li><a href="/auth/logout">Logout</a></li>
+      </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="topbar">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+        <h1>📅 Scadenze Furgoni</h1>
+        <div class="user-info">
+          <span>👤 Admin</span>
+        </div>
+      </div>
+
+      <div class="container">
+        <!-- STATISTICHE SCADENZE -->
+        <div class="stats-grid" style="margin-bottom: 2rem;">
+          <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+            <div style="font-size: 2.5rem; font-weight: bold;"><%= scadenzeScadute %></div>
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">Scadenze Scadute</div>
+          </div>
+          
+          <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+            <div style="font-size: 2.5rem; font-weight: bold;"><%= scadenzeImminenti %></div>
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">Entro 30 Giorni</div>
+          </div>
+          
+          <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+            <div style="font-size: 2.5rem; font-weight: bold;"><%= tagliandiImminenti %></div>
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">Tagliandi Vicini</div>
+          </div>
+          
+          <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <div style="font-size: 2.5rem; font-weight: bold;"><%= furgoniOk %></div>
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">Furgoni OK</div>
+          </div>
+        </div>
+
+        <!-- FILTRI -->
+        <div class="filter-bar" style="margin-bottom: 1.5rem;">
+          <select id="filterType" class="form-control" onchange="applyFilters()" style="max-width: 250px;">
+            <option value="">Tutte le Scadenze</option>
+            <option value="tagliando">Solo Tagliandi</option>
+            <option value="contratto">Solo Contratti</option>
+            <option value="assicurazione">Solo Assicurazioni</option>
+            <option value="revisione">Solo Revisioni</option>
+          </select>
+          
+          <select id="filterUrgency" class="form-control" onchange="applyFilters()" style="max-width: 250px;">
+            <option value="">Tutte le Urgenze</option>
+            <option value="scaduto">Scadute</option>
+            <option value="imminente">Imminenti (30gg)</option>
+            <option value="ok">OK</option>
+          </select>
+        </div>
+
+        <!-- LISTA SCADENZE -->
+        <div class="card">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Targa</th>
+                  <th>Tipo Scadenza</th>
+                  <th>Data Scadenza</th>
+                  <th>Giorni Mancanti</th>
+                  <th>Km Attuali</th>
+                  <th>Prossimo Tagliando</th>
+                  <th>Stato</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody id="scadenzeTableBody">
+                <% vehicles.forEach(vehicle => { %>
+                  <% 
+                    const today = new Date();
+                    const alerts = [];
+                    
+                    // Controlla contratto
+                    if (vehicle.data_scadenza_contratto) {
+                      const scadenza = new Date(vehicle.data_scadenza_contratto);
+                      const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
+                      alerts.push({
+                        tipo: 'contratto',
+                        data: vehicle.data_scadenza_contratto,
+                        giorni: diffDays
+                      });
+                    }
+                    
+                    // Controlla assicurazione
+                    if (vehicle.data_scadenza_assicurazione) {
+                      const scadenza = new Date(vehicle.data_scadenza_assicurazione);
+                      const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
+                      alerts.push({
+                        tipo: 'assicurazione',
+                        data: vehicle.data_scadenza_assicurazione,
+                        giorni: diffDays
+                      });
+                    }
+                    
+                    // Controlla revisione
+                    if (vehicle.data_scadenza_revisione) {
+                      const scadenza = new Date(vehicle.data_scadenza_revisione);
+                      const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
+                      alerts.push({
+                        tipo: 'revisione',
+                        data: vehicle.data_scadenza_revisione,
+                        giorni: diffDays
+                      });
+                    }
+                    
+                    // Controlla tagliando
+                    if (vehicle.prossimo_tagliando_km && vehicle.km_attuali) {
+                      const kmMancanti = vehicle.prossimo_tagliando_km - vehicle.km_attuali;
+                      alerts.push({
+                        tipo: 'tagliando',
+                        km: vehicle.prossimo_tagliando_km,
+                        kmMancanti: kmMancanti
+                      });
+                    }
+                  %>
+                  
+                  <% alerts.forEach(alert => { %>
+                    <tr class="scadenza-row" 
+                        data-targa="<%= vehicle.targa %>"
+                        data-tipo="<%= alert.tipo %>"
+                        data-giorni="<%= alert.giorni || 999 %>"
+                        data-urgency="<%= alert.giorni < 0 ? 'scaduto' : alert.giorni <= 30 ? 'imminente' : (alert.tipo === 'tagliando' && alert.kmMancanti < 1000) ? 'imminente' : 'ok' %>">
+                      <td><strong><%= vehicle.targa %></strong></td>
+                      <td>
+                        <% if (alert.tipo === 'tagliando') { %>
+                          🔧 Tagliando
+                        <% } else if (alert.tipo === 'contratto') { %>
+                          📄 Contratto
+                        <% } else if (alert.tipo === 'assicurazione') { %>
+                          🛡️ Assicurazione
+                        <% } else if (alert.tipo === 'revisione') { %>
+                          ✅ Revisione
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (alert.data) { %>
+                          <%= new Date(alert.data).toLocaleDateString('it-IT') %>
+                        <% } else { %>
+                          -
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (alert.giorni !== undefined) { %>
+                          <% if (alert.giorni < 0) { %>
+                            <span style="color: #ef4444; font-weight: 600;">SCADUTO da <%= Math.abs(alert.giorni) %> giorni</span>
+                          <% } else { %>
+                            <%= alert.giorni %> giorni
+                          <% } %>
+                        <% } else if (alert.kmMancanti !== undefined) { %>
+                          <% if (alert.kmMancanti < 0) { %>
+                            <span style="color: #ef4444; font-weight: 600;">SUPERATO di <%= Math.abs(alert.kmMancanti) %> km</span>
+                          <% } else { %>
+                            <%= alert.kmMancanti %> km
+                          <% } %>
+                        <% } else { %>
+                          -
+                        <% } %>
+                      </td>
+                      <td><%= vehicle.km_attuali || 0 %> km</td>
+                      <td>
+                        <% if (vehicle.prossimo_tagliando_km) { %>
+                          <%= vehicle.prossimo_tagliando_km %> km
+                        <% } else { %>
+                          <span style="opacity: 0.5;">Non impostato</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (alert.giorni < 0 || (alert.kmMancanti !== undefined && alert.kmMancanti < 0)) { %>
+                          <span class="badge badge-danger">SCADUTO</span>
+                        <% } else if (alert.giorni <= 30 || (alert.kmMancanti !== undefined && alert.kmMancanti < 1000)) { %>
+                          <span class="badge badge-warning">IMMINENTE</span>
+                        <% } else { %>
+                          <span class="badge badge-success">OK</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <button onclick="updateScadenza('<%= vehicle.id %>', '<%= alert.tipo %>')" class="btn btn-sm btn-primary">
+                          Aggiorna
+                        </button>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL AGGIORNA SCADENZA -->
+  <div id="updateModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <h3 id="modalTitle">Aggiorna Scadenza</h3>
+      <form id="updateForm" method="POST" action="/admin/vehicles/update-scadenza">
+        <input type="hidden" name="vehicle_id" id="modal_vehicle_id">
+        <input type="hidden" name="tipo_scadenza" id="modal_tipo_scadenza">
+        
+        <div id="dateFields" style="display: none;">
+          <div class="form-group">
+            <label>Nuova Data Scadenza</label>
+            <input type="date" name="nuova_data" id="modal_nuova_data" class="form-control">
+          </div>
+        </div>
+        
+        <div id="kmFields" style="display: none;">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Km Attuali</label>
+              <input type="number" name="km_attuali" id="modal_km_attuali" class="form-control">
+            </div>
+            <div class="form-group">
+              <label>Prossimo Tagliando (Km)</label>
+              <input type="number" name="prossimo_tagliando_km" id="modal_prossimo_tagliando" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Data Ultimo Tagliando</label>
+            <input type="date" name="ultimo_tagliando_data" id="modal_ultimo_tagliando_data" class="form-control">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Note</label>
+          <textarea name="note_manutenzione" id="modal_note" class="form-control" rows="3"></textarea>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Annulla</button>
+          <button type="submit" class="btn btn-primary">Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+
+    function applyFilters() {
+      const filterType = document.getElementById('filterType').value;
+      const filterUrgency = document.getElementById('filterUrgency').value;
+      
+      const rows = document.querySelectorAll('.scadenza-row');
+      rows.forEach(row => {
+        let show = true;
+        
+        if (filterType && row.dataset.tipo !== filterType) {
+          show = false;
+        }
+        
+        if (filterUrgency && row.dataset.urgency !== filterUrgency) {
+          show = false;
+        }
+        
+        row.style.display = show ? '' : 'none';
+      });
+    }
+
+    function updateScadenza(vehicleId, tipo) {
+      document.getElementById('modal_vehicle_id').value = vehicleId;
+      document.getElementById('modal_tipo_scadenza').value = tipo;
+      
+      if (tipo === 'tagliando') {
+        document.getElementById('modalTitle').textContent = '🔧 Aggiorna Tagliando';
+        document.getElementById('dateFields').style.display = 'none';
+        document.getElementById('kmFields').style.display = 'block';
+      } else {
+        let icon = '';
+        if (tipo === 'contratto') icon = '📄';
+        else if (tipo === 'assicurazione') icon = '🛡️';
+        else if (tipo === 'revisione') icon = '✅';
+        
+        document.getElementById('modalTitle').textContent = icon + ' Aggiorna ' + tipo.charAt(0).toUpperCase() + tipo.slice(1);
+        document.getElementById('dateFields').style.display = 'block';
+        document.getElementById('kmFields').style.display = 'none';
+      }
+      
+      document.getElementById('updateModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('updateModal').style.display = 'none';
+      document.getElementById('updateForm').reset();
+    }
+
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('✅ Service Worker registrato'))
+          .catch(err => console.error('❌ Errore Service Worker:', err));
+      });
+    }
+  </script>
+</body>
+</html>

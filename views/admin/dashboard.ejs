@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Admin - Gestionale Furgoni</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#4CAF50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ROBI Furgoni">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/images/icon.svg">
+  <link rel="apple-touch-icon" href="/images/icon-192x192.png">
+  
   <link rel="stylesheet" href="/css/clean-theme.css">
 </head>
 <body>
@@ -30,6 +40,7 @@
             <% } %>
           </a>
         </li>
+        <li><a href="/admin/scadenze">Scadenze</a></li>
         <li><a href="/auth/logout">Logout</a></li>
       </ul>
     </aside>
@@ -61,6 +72,35 @@
     <% if (error && error.length > 0) { %>
       <div class="alert alert-error">
         <%= error[0] %>
+      </div>
+    <% } %>
+
+    <!-- ALERT SCADENZE IMMINENTI -->
+    <% if (scadenzeAlert && scadenzeAlert.length > 0) { %>
+      <div class="alert" style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem 1.5rem; margin-bottom: 1.5rem; border-radius: 8px;">
+        <h4 style="margin: 0 0 0.5rem 0; color: #92400e; font-size: 1rem;">⚠️ Attenzione: <%= scadenzeAlert.length %> Scadenze Imminenti</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem;">
+          <% scadenzeAlert.slice(0, 5).forEach(alert => { %>
+            <div style="background: white; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid #f59e0b; font-size: 0.9rem;">
+              <strong><%= alert.targa %></strong>: <%= alert.tipo %> 
+              <% if (alert.giorni !== undefined) { %>
+                <% if (alert.giorni < 0) { %>
+                  <span style="color: #dc2626; font-weight: 600;">SCADUTO da <%= Math.abs(alert.giorni) %> giorni</span>
+                <% } else { %>
+                  tra <span style="color: #d97706; font-weight: 600;"><%= alert.giorni %> giorni</span>
+                <% } %>
+              <% } else if (alert.km !== undefined) { %>
+                tra <span style="color: #d97706; font-weight: 600;"><%= alert.km %> km</span>
+              <% } %>
+            </div>
+          <% }); %>
+          <% if (scadenzeAlert.length > 5) { %>
+            <div style="padding: 0.5rem 1rem; font-size: 0.9rem; color: #92400e;">
+              ...e altre <%= scadenzeAlert.length - 5 %> scadenze
+            </div>
+          <% } %>
+        </div>
+        <a href="/admin/scadenze" class="btn btn-warning btn-sm" style="margin-top: 1rem;">Vedi Tutte le Scadenze →</a>
       </div>
     <% } %>
 

@@ -113,22 +113,95 @@ router.get('/dashboard', requireAdmin, (req, res) => {
                 driversWithoutReport = [];
               }
               
-              res.render('admin/dashboard', {
-                user: {
-                  nome: req.session.nome,
-                  cognome: req.session.cognome
-                },
-                reports: filteredReports,
-                allReports: normalReports, // Tutti i report per i filtri
-                substitutionReports: substitutionReports,
-                drivers: drivers || [],
-                vehicles: vehicles || [],
-                driversWithoutReport: driversWithoutReport || [],
-                selectedDriver: driver || null,
-                searchFilters: { driver, data: req.query.data, rotta, targa },
-                pendingMaintenanceCount: pendingMaintenanceCount || 0,
-                success: req.flash('success'),
-                error: req.flash('error')
+              // Calcola scadenze imminenti
+              Vehicle.getAll((err, allVehicles) => {
+                const scadenzeAlert = [];
+                const todayDate = new Date();
+                
+                if (allVehicles) {
+                  allVehicles.forEach(vehicle => {
+                    // Controlla contratto
+                    if (vehicle.data_scadenza_contratto) {
+                      const scadenza = new Date(vehicle.data_scadenza_contratto);
+                      const diffDays = Math.ceil((scadenza - todayDate) / (1000 * 60 * 60 * 24));
+                      if (diffDays <= 30) {
+                        scadenzeAlert.push({
+                          targa: vehicle.targa,
+                          tipo: '📄 Contratto',
+                          giorni: diffDays
+                        });
+                      }
+                    }
+                    
+                    // Controlla assicurazione
+                    if (vehicle.data_scadenza_assicurazione) {
+                      const scadenza = new Date(vehicle.data_scadenza_assicurazione);
+                      const diffDays = Math.ceil((scadenza - todayDate) / (1000 * 60 * 60 * 24));
+                      if (diffDays <= 30) {
+                        scadenzeAlert.push({
+                          targa: vehicle.targa,
+                          tipo: '🛡️ Assicurazione',
+                          giorni: diffDays
+                        });
+                      }
+                    }
+                    
+                    // Controlla revisione
+                    if (vehicle.data_scadenza_revisione) {
+                      const scadenza = new Date(vehicle.data_scadenza_revisione);
+                      const diffDays = Math.ceil((scadenza - todayDate) / (1000 * 60 * 60 * 24));
+                      if (diffDays <= 30) {
+                        scadenzeAlert.push({
+                          targa: vehicle.targa,
+                          tipo: '✅ Revisione',
+                          giorni: diffDays
+                        });
+                      }
+                    }
+                    
+                    // Controlla tagliando
+                    if (vehicle.prossimo_tagliando_km && vehicle.km_attuali) {
+                      const kmMancanti = vehicle.prossimo_tagliando_km - vehicle.km_attuali;
+                      if (kmMancanti < 1000) {
+                        scadenzeAlert.push({
+                          targa: vehicle.targa,
+                          tipo: '🔧 Tagliando',
+                          km: kmMancanti
+                        });
+                      }
+                    }
+                  });
+                  
+                  // Ordina per urgenza (scaduti prima)
+                  scadenzeAlert.sort((a, b) => {
+                    if (a.giorni !== undefined && b.giorni !== undefined) {
+                      return a.giorni - b.giorni;
+                    }
+                    if (a.km !== undefined && b.km !== undefined) {
+                      return a.km - b.km;
+                    }
+                    return 0;
+                  });
+                }
+              
+                res.render('admin/dashboard', {
+                  user: {
+                    nome: req.session.nome,
+                    cognome: req.session.cognome
+                  },
+                  reports: filteredReports,
+                  allReports: normalReports, // Tutti i report per i filtri
+                  substitutionReports: substitutionReports,
+                  drivers: drivers || [],
+                  vehicles: vehicles || [],
+                  driversWithoutReport: driversWithoutReport || [],
+                  selectedDriver: driver || null,
+                  searchFilters: { driver, data: req.query.data, rotta, targa },
+                  pendingMaintenanceCount: pendingMaintenanceCount || 0,
+                  scadenzeAlert: scadenzeAlert,
+                  success: req.flash('success'),
+                  error: req.flash('error')
+                });
               });
             });
           });
@@ -1842,6 +1915,149 @@ router.post('/reports/:id/reassign-vehicle', requireAdmin, (req, res) => {
         });
       });
     });
+  });
+});
+
+// ============== SCADENZE FURGONI ==============
+
+// Pagina gestione scadenze
+router.get('/scadenze', requireAdmin, (req, res) => {
+  const db = require('../config/database');
+  
+  Vehicle.getAll((err, vehicles) => {
+    if (err) {
+      console.error('Error getting vehicles:', err);
+      req.flash('error', 'Errore nel caricamento dei furgoni');
+      return res.redirect('/admin/dashboard');
+    }
+    
+    const today = new Date();
+    let scadenzeScadute = 0;
+    let scadenzeImminenti = 0;
+    let tagliandiImminenti = 0;
+    let furgoniOk = 0;
+    
+    vehicles.forEach(vehicle => {
+      let hasAlert = false;
+      
+      // Controlla contratto
+      if (vehicle.data_scadenza_contratto) {
+        const scadenza = new Date(vehicle.data_scadenza_contratto);
+        const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+          scadenzeScadute++;
+          hasAlert = true;
+        } else if (diffDays <= 30) {
+          scadenzeImminenti++;
+          hasAlert = true;
+        }
+      }
+      
+      // Controlla assicurazione
+      if (vehicle.data_scadenza_assicurazione) {
+        const scadenza = new Date(vehicle.data_scadenza_assicurazione);
+        const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+          scadenzeScadute++;
+          hasAlert = true;
+        } else if (diffDays <= 30) {
+          scadenzeImminenti++;
+          hasAlert = true;
+        }
+      }
+      
+      // Controlla revisione
+      if (vehicle.data_scadenza_revisione) {
+        const scadenza = new Date(vehicle.data_scadenza_revisione);
+        const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+          scadenzeScadute++;
+          hasAlert = true;
+        } else if (diffDays <= 30) {
+          scadenzeImminenti++;
+          hasAlert = true;
+        }
+      }
+      
+      // Controlla tagliando
+      if (vehicle.prossimo_tagliando_km && vehicle.km_attuali) {
+        const kmMancanti = vehicle.prossimo_tagliando_km - vehicle.km_attuali;
+        if (kmMancanti < 0) {
+          scadenzeScadute++;
+          hasAlert = true;
+        } else if (kmMancanti < 1000) {
+          tagliandiImminenti++;
+          hasAlert = true;
+        }
+      }
+      
+      if (!hasAlert) furgoniOk++;
+    });
+    
+    getPendingMaintenanceCount((err, pendingMaintenanceCount) => {
+      res.render('admin/scadenze', {
+        vehicles,
+        scadenzeScadute,
+        scadenzeImminenti,
+        tagliandiImminenti,
+        furgoniOk,
+        pendingMaintenanceCount: pendingMaintenanceCount || 0
+      });
+    });
+  });
+});
+
+// Aggiorna scadenza di un furgone
+router.post('/vehicles/update-scadenza', requireAdmin, (req, res) => {
+  const db = require('../config/database');
+  const { vehicle_id, tipo_scadenza, nuova_data, km_attuali, prossimo_tagliando_km, ultimo_tagliando_data, note_manutenzione } = req.body;
+  
+  let updates = [];
+  let values = [];
+  
+  if (tipo_scadenza === 'tagliando') {
+    if (km_attuali) {
+      updates.push('km_attuali = ?');
+      values.push(parseInt(km_attuali));
+    }
+    if (prossimo_tagliando_km) {
+      updates.push('prossimo_tagliando_km = ?');
+      values.push(parseInt(prossimo_tagliando_km));
+    }
+    if (ultimo_tagliando_data) {
+      updates.push('ultimo_tagliando_data = ?');
+      values.push(ultimo_tagliando_data);
+    }
+  } else {
+    // Contratto, assicurazione, revisione
+    const campo = `data_scadenza_${tipo_scadenza}`;
+    updates.push(`${campo} = ?`);
+    values.push(nuova_data);
+  }
+  
+  if (note_manutenzione) {
+    updates.push('note_manutenzione = ?');
+    values.push(note_manutenzione);
+  }
+  
+  if (updates.length === 0) {
+    req.flash('error', 'Nessun campo da aggiornare');
+    return res.redirect('/admin/scadenze');
+  }
+  
+  values.push(vehicle_id);
+  
+  const query = `UPDATE vehicles SET ${updates.join(', ')} WHERE id = ?`;
+  
+  db.run(query, values, function(err) {
+    if (err) {
+      console.error('Error updating scadenza:', err);
+      req.flash('error', 'Errore aggiornamento scadenza');
+      return res.redirect('/admin/scadenze');
+    }
+    
+    req.flash('success', `Scadenza ${tipo_scadenza} aggiornata con successo`);
+    res.redirect('/admin/scadenze');
   });
 });
 
