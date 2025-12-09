@@ -289,12 +289,25 @@ router.post('/report/complete/:id', requireRider, (req, res) => {
         return;
       }
 
-      const kmPercorsi = parseInt(km_rientro) - parseInt(report.km_partenza);
-      logActivity(req.session.userId, 'REPORT_COMPLETATO', `Rientro completato per ${report.data_giorno} - KM percorsi: ${kmPercorsi}`, req);
-      req.flash('success', `✅ Rientro completato! KM percorsi: ${kmPercorsi}`);
-      req.session.save((saveErr) => {
-        if (saveErr) console.error('Errore save session:', saveErr);
-        res.redirect('/rider/dashboard');
+      // AGGIORNA KM ATTUALI DEL FURGONE
+      db.run(`
+        UPDATE vehicles 
+        SET km_attuali = ? 
+        WHERE targa = (
+          SELECT targa_furgone FROM daily_reports WHERE id = ?
+        )
+      `, [parseInt(km_rientro), reportId], (updateErr) => {
+        if (updateErr) {
+          console.error('Errore aggiornamento km furgone:', updateErr);
+        }
+
+        const kmPercorsi = parseInt(km_rientro) - parseInt(report.km_partenza);
+        logActivity(req.session.userId, 'REPORT_COMPLETATO', `Rientro completato per ${report.data_giorno} - KM percorsi: ${kmPercorsi}`, req);
+        req.flash('success', `✅ Rientro completato! KM percorsi: ${kmPercorsi}`);
+        req.session.save((saveErr) => {
+          if (saveErr) console.error('Errore save session:', saveErr);
+          res.redirect('/rider/dashboard');
+        });
       });
     });
   });

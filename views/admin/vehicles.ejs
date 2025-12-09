@@ -167,6 +167,10 @@
                         <span class="vehicle-assignment">-</span>
                       </td>
                       <td>
+                        <button onclick="editVehicle(<%= vehicle.id %>, '<%= vehicle.targa %>', '<%= vehicle.modello %>', <%= vehicle.anno %>, <%= vehicle.km_attuali || 0 %>, <%= vehicle.prossimo_tagliando_km || 0 %>, '<%= vehicle.ultimo_tagliando_data || '' %>', '<%= vehicle.data_scadenza_contratto || '' %>', '<%= vehicle.data_scadenza_assicurazione || '' %>', '<%= vehicle.data_scadenza_revisione || '' %>', '<%= (vehicle.note_manutenzione || '').replace(/'/g, "\\'") %>')" 
+                                class="btn btn-sm btn-primary" style="margin-right: 0.5rem;">
+                          Modifica
+                        </button>
                         <% if (vehicle.status !== 'assegnato') { %>
                           <form 
                             action="/admin/vehicles/delete/<%= vehicle.id %>" 
@@ -175,8 +179,6 @@
                             onsubmit="return confirm('Sei sicuro di voler eliminare questo veicolo?')">
                             <button type="submit" class="btn btn-sm btn-danger">Elimina</button>
                           </form>
-                        <% } else { %>
-                          <span class="text-muted">-</span>
                         <% } %>
                       </td>
                     </tr>
@@ -348,7 +350,7 @@
       document.getElementById('statAssegnati').textContent = '0';
       document.getElementById('statInUso').textContent = '0';
       document.getElementById('statManutenzione').textContent = countManutenzione;
-    }
+    });
 
     // Carica assegnazioni per la data selezionata all'avvio
     document.addEventListener('DOMContentLoaded', () => {
@@ -357,6 +359,84 @@
         loadAssignments(date);
       }
     });
+
+    // MODAL MODIFICA FURGONE
+    function editVehicle(id, targa, modello, anno, kmAttuali, prossimoTagliandoKm, ultimoTagliandoData, scadenzaContratto, scadenzaAssicurazione, scadenzaRevisione, note) {
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.style.display = 'flex';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 700px;">
+          <h3>🔧 Modifica Dati Furgone: ${targa}</h3>
+          <form method="POST" action="/admin/vehicles/update-data/${id}">
+            
+            <!-- Dati Base -->
+            <div class="form-row">
+              <div class="form-group">
+                <label>Modello</label>
+                <input type="text" name="modello" class="form-control" value="${modello}" required>
+              </div>
+              <div class="form-group">
+                <label>Anno</label>
+                <input type="number" name="anno" class="form-control" value="${anno}" min="1990" max="2030" required>
+              </div>
+            </div>
+
+            <!-- Km e Tagliando -->
+            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #2C3E50;">📊 Chilometraggio e Tagliando</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Km Attuali</label>
+                <input type="number" name="km_attuali" class="form-control" value="${kmAttuali}" min="0">
+                <small style="color: #6b7280;">Aggiornati automaticamente alla riconsegna</small>
+              </div>
+              <div class="form-group">
+                <label>Prossimo Tagliando (Km)</label>
+                <input type="number" name="prossimo_tagliando_km" class="form-control" value="${prossimoTagliandoKm}" min="0">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Data Ultimo Tagliando</label>
+              <input type="date" name="ultimo_tagliando_data" class="form-control" value="${ultimoTagliandoData}">
+            </div>
+
+            <!-- Scadenze -->
+            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #2C3E50;">📅 Scadenze Documenti</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Scadenza Contratto</label>
+                <input type="date" name="data_scadenza_contratto" class="form-control" value="${scadenzaContratto}">
+              </div>
+              <div class="form-group">
+                <label>Scadenza Assicurazione</label>
+                <input type="date" name="data_scadenza_assicurazione" class="form-control" value="${scadenzaAssicurazione}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Scadenza Revisione</label>
+              <input type="date" name="data_scadenza_revisione" class="form-control" value="${scadenzaRevisione}">
+            </div>
+
+            <!-- Note -->
+            <div class="form-group">
+              <label>Note Manutenzione</label>
+              <textarea name="note_manutenzione" class="form-control" rows="3">${note}</textarea>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annulla</button>
+              <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function closeEditModal() {
+      const modal = document.querySelector('.modal');
+      if (modal) modal.remove();
+    }
   </script>
 </body>
 </html>

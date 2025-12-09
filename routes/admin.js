@@ -1020,6 +1020,57 @@ router.post('/vehicles/create', requireAdmin, (req, res) => {
   });
 });
 
+// Aggiorna dati furgone (km, scadenze, note)
+router.post('/vehicles/update-data/:id', requireAdmin, (req, res) => {
+  const db = require('../config/database');
+  const vehicleId = req.params.id;
+  const {
+    modello,
+    anno,
+    km_attuali,
+    prossimo_tagliando_km,
+    ultimo_tagliando_data,
+    data_scadenza_contratto,
+    data_scadenza_assicurazione,
+    data_scadenza_revisione,
+    note_manutenzione
+  } = req.body;
+
+  db.run(`
+    UPDATE vehicles SET
+      modello = ?,
+      anno = ?,
+      km_attuali = ?,
+      prossimo_tagliando_km = ?,
+      ultimo_tagliando_data = ?,
+      data_scadenza_contratto = ?,
+      data_scadenza_assicurazione = ?,
+      data_scadenza_revisione = ?,
+      note_manutenzione = ?
+    WHERE id = ?
+  `, [
+    modello,
+    anno,
+    km_attuali || null,
+    prossimo_tagliando_km || null,
+    ultimo_tagliando_data || null,
+    data_scadenza_contratto || null,
+    data_scadenza_assicurazione || null,
+    data_scadenza_revisione || null,
+    note_manutenzione || null,
+    vehicleId
+  ], function(err) {
+    if (err) {
+      console.error('Error updating vehicle data:', err);
+      req.flash('error', 'Errore aggiornamento dati furgone');
+      return res.redirect('/admin/vehicles');
+    }
+
+    req.flash('success', 'Dati furgone aggiornati con successo');
+    res.redirect('/admin/vehicles');
+  });
+});
+
 // Elimina veicolo
 router.post('/vehicles/delete/:id', requireAdmin, (req, res) => {
   const vehicleId = req.params.id;
