@@ -207,6 +207,7 @@ router.post('/report/create', requireRider, upload.fields([
 
 // Completa rientro
 router.post('/report/complete/:id', requireRider, (req, res) => {
+  const db = require('../config/database');
   const reportId = req.params.id;
   const { km_rientro, orario_rientro, pacchi_ritornati, rifornimento_ip, rifornimento_dkv, metodo_rifornimento, numero_scheda_dkv } = req.body;
 
