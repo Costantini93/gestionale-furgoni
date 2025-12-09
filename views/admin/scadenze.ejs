@@ -61,7 +61,7 @@
           
           <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
             <div style="font-size: 2.5rem; font-weight: bold;"><%= tagliandiImminenti %></div>
-            <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">Tagliandi Vicini</div>
+            <div style="font-size: 0.9rem; opacity: 0.9; margin-top: 0.5rem;">Tagliandi Vicini (&lt;200km)</div>
           </div>
           
           <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
@@ -185,7 +185,7 @@
                     if (vehicle.prossimo_tagliando_km && vehicle.km_attuali) {
                       hasTagliandi = true;
                       const kmMancanti = vehicle.prossimo_tagliando_km - vehicle.km_attuali;
-                      const urgency = kmMancanti < 0 ? 'scaduto' : kmMancanti < 1000 ? 'imminente' : 'ok';
+                      const urgency = kmMancanti < 0 ? 'scaduto' : kmMancanti < 200 ? 'imminente' : 'ok';
                 %>
                     <tr class="scadenza-row" data-tipo="tagliando" data-giorni="999" data-urgency="<%= urgency %>">
                       <td><strong><%= vehicle.targa %></strong></td>
@@ -208,7 +208,7 @@
                       <td>
                         <% if (kmMancanti < 0) { %>
                           <span class="badge badge-danger">SCADUTO</span>
-                        <% } else if (kmMancanti < 1000) { %>
+                        <% } else if (kmMancanti < 200) { %>
                           <span class="badge badge-warning">IMMINENTE</span>
                         <% } else { %>
                           <span class="badge badge-success">OK</span>

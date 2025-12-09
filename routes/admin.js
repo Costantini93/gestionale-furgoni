@@ -2036,7 +2036,7 @@ router.get('/scadenze', requireAdmin, (req, res) => {
         if (kmMancanti < 0) {
           scadenzeScadute++;
           hasAlert = true;
-        } else if (kmMancanti < 1000) {
+        } else if (kmMancanti < 200) {
           tagliandiImminenti++;
           hasAlert = true;
         }
