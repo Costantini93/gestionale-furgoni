@@ -76,8 +76,6 @@
             <option value="">Tutte le Scadenze</option>
             <option value="tagliando">Solo Tagliandi</option>
             <option value="contratto">Solo Contratti</option>
-            <option value="assicurazione">Solo Assicurazioni</option>
-            <option value="revisione">Solo Revisioni</option>
           </select>
           
           <select id="filterUrgency" class="form-control" onchange="applyFilters()" style="max-width: 250px;">
@@ -121,28 +119,6 @@
                       });
                     }
                     
-                    // Controlla assicurazione
-                    if (vehicle.data_scadenza_assicurazione) {
-                      const scadenza = new Date(vehicle.data_scadenza_assicurazione);
-                      const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
-                      alerts.push({
-                        tipo: 'assicurazione',
-                        data: vehicle.data_scadenza_assicurazione,
-                        giorni: diffDays
-                      });
-                    }
-                    
-                    // Controlla revisione
-                    if (vehicle.data_scadenza_revisione) {
-                      const scadenza = new Date(vehicle.data_scadenza_revisione);
-                      const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
-                      alerts.push({
-                        tipo: 'revisione',
-                        data: vehicle.data_scadenza_revisione,
-                        giorni: diffDays
-                      });
-                    }
-                    
                     // Controlla tagliando
                     if (vehicle.prossimo_tagliando_km && vehicle.km_attuali) {
                       const kmMancanti = vehicle.prossimo_tagliando_km - vehicle.km_attuali;
@@ -166,10 +142,6 @@
                           🔧 Tagliando
                         <% } else if (alert.tipo === 'contratto') { %>
                           📄 Contratto
-                        <% } else if (alert.tipo === 'assicurazione') { %>
-                          🛡️ Assicurazione
-                        <% } else if (alert.tipo === 'revisione') { %>
-                          ✅ Revisione
                         <% } %>
                       </td>
                       <td>
@@ -308,13 +280,8 @@
         document.getElementById('modalTitle').textContent = '🔧 Aggiorna Tagliando';
         document.getElementById('dateFields').style.display = 'none';
         document.getElementById('kmFields').style.display = 'block';
-      } else {
-        let icon = '';
-        if (tipo === 'contratto') icon = '📄';
-        else if (tipo === 'assicurazione') icon = '🛡️';
-        else if (tipo === 'revisione') icon = '✅';
-        
-        document.getElementById('modalTitle').textContent = icon + ' Aggiorna ' + tipo.charAt(0).toUpperCase() + tipo.slice(1);
+      } else if (tipo === 'contratto') {
+        document.getElementById('modalTitle').textContent = '📄 Aggiorna Contratto';
         document.getElementById('dateFields').style.display = 'block';
         document.getElementById('kmFields').style.display = 'none';
       }

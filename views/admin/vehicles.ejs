@@ -284,7 +284,7 @@
       modal.className = 'modal';
       modal.style.display = 'flex';
       modal.innerHTML = `
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 900px;">
           <h3>🔧 Modifica Dati Furgone: ${escapeHtml(targa)}</h3>
           <form method="POST" action="/admin/vehicles/update-data/${id}">
             
@@ -300,50 +300,57 @@
               </div>
             </div>
 
-            <!-- Km e Tagliando -->
-            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #2C3E50;">📊 Chilometraggio e Tagliando</h4>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Km Attuali</label>
-                <input type="number" name="km_attuali" class="form-control" value="${kmAttuali}" min="0">
-                <small style="color: #6b7280;">Aggiornati automaticamente alla riconsegna</small>
+            <!-- DUE TABELLE AFFIANCATE -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+              
+              <!-- TABELLA 1: TAGLIANDO -->
+              <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 2px solid #27AE60;">
+                <h4 style="margin: 0 0 1rem 0; color: #27AE60; display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.5rem;">🔧</span>
+                  <span>Tagliando</span>
+                </h4>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label style="font-weight: 600; color: #2C3E50;">Km Attuali</label>
+                  <input type="number" name="km_attuali" class="form-control" value="${kmAttuali}" min="0" style="font-size: 1.1rem; font-weight: 600;">
+                  <small style="color: #6b7280; display: block; margin-top: 0.25rem;">
+                    ⚡ Aggiornati automaticamente alla riconsegna
+                  </small>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label style="font-weight: 600; color: #2C3E50;">Prossimo Tagliando (Km)</label>
+                  <input type="number" name="prossimo_tagliando_km" class="form-control" value="${prossimoTagliandoKm}" min="0" style="font-size: 1.1rem;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="font-weight: 600; color: #2C3E50;">Data Ultimo Tagliando</label>
+                  <input type="date" name="ultimo_tagliando_data" class="form-control" value="${ultimoTagliandoData}">
+                </div>
               </div>
-              <div class="form-group">
-                <label>Prossimo Tagliando (Km)</label>
-                <input type="number" name="prossimo_tagliando_km" class="form-control" value="${prossimoTagliandoKm}" min="0">
+
+              <!-- TABELLA 2: CONTRATTO -->
+              <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; border: 2px solid #3498db;">
+                <h4 style="margin: 0 0 1rem 0; color: #3498db; display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.5rem;">📄</span>
+                  <span>Contratto Noleggio</span>
+                </h4>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label style="font-weight: 600; color: #2C3E50;">Data Scadenza Contratto</label>
+                  <input type="date" name="data_scadenza_contratto" class="form-control" value="${scadenzaContratto}" style="font-size: 1.1rem;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label style="font-weight: 600; color: #2C3E50;">Note</label>
+                  <textarea name="note_manutenzione" class="form-control" rows="5" placeholder="Note su contratto, manutenzione, ecc...">${escapeHtml(note)}</textarea>
+                </div>
               </div>
-            </div>
-            <div class="form-group">
-              <label>Data Ultimo Tagliando</label>
-              <input type="date" name="ultimo_tagliando_data" class="form-control" value="${ultimoTagliandoData}">
             </div>
 
-            <!-- Scadenze -->
-            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #2C3E50;">📅 Scadenze Documenti</h4>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Scadenza Contratto</label>
-                <input type="date" name="data_scadenza_contratto" class="form-control" value="${scadenzaContratto}">
-              </div>
-              <div class="form-group">
-                <label>Scadenza Assicurazione</label>
-                <input type="date" name="data_scadenza_assicurazione" class="form-control" value="${scadenzaAssicurazione}">
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Scadenza Revisione</label>
-              <input type="date" name="data_scadenza_revisione" class="form-control" value="${scadenzaRevisione}">
-            </div>
-
-            <!-- Note -->
-            <div class="form-group">
-              <label>Note Manutenzione</label>
-              <textarea name="note_manutenzione" class="form-control" rows="3">${escapeHtml(note)}</textarea>
-            </div>
-
-            <div class="modal-actions">
+            <div class="modal-actions" style="margin-top: 2rem;">
               <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annulla</button>
-              <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+              <button type="submit" class="btn btn-primary">💾 Salva Modifiche</button>
             </div>
           </form>
         </div>
