@@ -86,113 +86,151 @@
           </select>
         </div>
 
-        <!-- LISTA SCADENZE -->
-        <div class="card">
+        <!-- TABELLA CONTRATTI -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <div style="padding: 1rem; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border-radius: 8px 8px 0 0;">
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.5rem;">📄</span>
+              <span>Scadenze Contratti Noleggio</span>
+            </h3>
+          </div>
           <div class="table-responsive">
             <table class="data-table">
               <thead>
                 <tr>
                   <th>Targa</th>
-                  <th>Tipo Scadenza</th>
                   <th>Data Scadenza</th>
                   <th>Giorni Mancanti</th>
-                  <th>Km Attuali</th>
-                  <th>Prossimo Tagliando</th>
                   <th>Stato</th>
                   <th>Azioni</th>
                 </tr>
               </thead>
-              <tbody id="scadenzeTableBody">
-                <% vehicles.forEach(vehicle => { %>
-                  <% 
-                    const today = new Date();
-                    const alerts = [];
-                    
-                    // Controlla contratto
+              <tbody>
+                <% 
+                  const today = new Date();
+                  let hasContratti = false;
+                  vehicles.forEach(vehicle => { 
                     if (vehicle.data_scadenza_contratto) {
+                      hasContratti = true;
                       const scadenza = new Date(vehicle.data_scadenza_contratto);
                       const diffDays = Math.ceil((scadenza - today) / (1000 * 60 * 60 * 24));
-                      alerts.push({
-                        tipo: 'contratto',
-                        data: vehicle.data_scadenza_contratto,
-                        giorni: diffDays
-                      });
-                    }
-                    
-                    // Controlla tagliando
-                    if (vehicle.prossimo_tagliando_km && vehicle.km_attuali) {
-                      const kmMancanti = vehicle.prossimo_tagliando_km - vehicle.km_attuali;
-                      alerts.push({
-                        tipo: 'tagliando',
-                        km: vehicle.prossimo_tagliando_km,
-                        kmMancanti: kmMancanti
-                      });
-                    }
-                  %>
-                  
-                  <% alerts.forEach(alert => { %>
-                    <tr class="scadenza-row" 
-                        data-targa="<%= vehicle.targa %>"
-                        data-tipo="<%= alert.tipo %>"
-                        data-giorni="<%= alert.giorni || 999 %>"
-                        data-urgency="<%= alert.giorni < 0 ? 'scaduto' : alert.giorni <= 30 ? 'imminente' : (alert.tipo === 'tagliando' && alert.kmMancanti < 1000) ? 'imminente' : 'ok' %>">
+                      const urgency = diffDays < 0 ? 'scaduto' : diffDays <= 30 ? 'imminente' : 'ok';
+                %>
+                    <tr class="scadenza-row" data-tipo="contratto" data-giorni="<%= diffDays %>" data-urgency="<%= urgency %>">
                       <td><strong><%= vehicle.targa %></strong></td>
+                      <td><%= scadenza.toLocaleDateString('it-IT') %></td>
                       <td>
-                        <% if (alert.tipo === 'tagliando') { %>
-                          🔧 Tagliando
-                        <% } else if (alert.tipo === 'contratto') { %>
-                          📄 Contratto
-                        <% } %>
-                      </td>
-                      <td>
-                        <% if (alert.data) { %>
-                          <%= new Date(alert.data).toLocaleDateString('it-IT') %>
+                        <% if (diffDays < 0) { %>
+                          <span style="color: #ef4444; font-weight: 600;">SCADUTO da <%= Math.abs(diffDays) %> giorni</span>
                         <% } else { %>
-                          -
+                          <%= diffDays %> giorni
                         <% } %>
                       </td>
                       <td>
-                        <% if (alert.giorni !== undefined) { %>
-                          <% if (alert.giorni < 0) { %>
-                            <span style="color: #ef4444; font-weight: 600;">SCADUTO da <%= Math.abs(alert.giorni) %> giorni</span>
-                          <% } else { %>
-                            <%= alert.giorni %> giorni
-                          <% } %>
-                        <% } else if (alert.kmMancanti !== undefined) { %>
-                          <% if (alert.kmMancanti < 0) { %>
-                            <span style="color: #ef4444; font-weight: 600;">SUPERATO di <%= Math.abs(alert.kmMancanti) %> km</span>
-                          <% } else { %>
-                            <%= alert.kmMancanti %> km
-                          <% } %>
-                        <% } else { %>
-                          -
-                        <% } %>
-                      </td>
-                      <td><%= vehicle.km_attuali || 0 %> km</td>
-                      <td>
-                        <% if (vehicle.prossimo_tagliando_km) { %>
-                          <%= vehicle.prossimo_tagliando_km %> km
-                        <% } else { %>
-                          <span style="opacity: 0.5;">Non impostato</span>
-                        <% } %>
-                      </td>
-                      <td>
-                        <% if (alert.giorni < 0 || (alert.kmMancanti !== undefined && alert.kmMancanti < 0)) { %>
+                        <% if (diffDays < 0) { %>
                           <span class="badge badge-danger">SCADUTO</span>
-                        <% } else if (alert.giorni <= 30 || (alert.kmMancanti !== undefined && alert.kmMancanti < 1000)) { %>
+                        <% } else if (diffDays <= 30) { %>
                           <span class="badge badge-warning">IMMINENTE</span>
                         <% } else { %>
                           <span class="badge badge-success">OK</span>
                         <% } %>
                       </td>
                       <td>
-                        <button onclick="updateScadenza('<%= vehicle.id %>', '<%= alert.tipo %>')" class="btn btn-sm btn-primary">
+                        <button onclick="updateScadenza('<%= vehicle.id %>', 'contratto')" class="btn btn-sm btn-primary">
                           Aggiorna
                         </button>
                       </td>
                     </tr>
-                  <% }); %>
-                <% }); %>
+                <% 
+                    }
+                  }); 
+                  if (!hasContratti) {
+                %>
+                  <tr>
+                    <td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">
+                      Nessuna scadenza contratto impostata
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TABELLA TAGLIANDI -->
+        <div class="card">
+          <div style="padding: 1rem; background: linear-gradient(135deg, #27AE60 0%, #229954 100%); color: white; border-radius: 8px 8px 0 0;">
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.5rem;">🔧</span>
+              <span>Tagliandi Manutenzione</span>
+            </h3>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Targa</th>
+                  <th>Km Attuali</th>
+                  <th>Prossimo Tagliando</th>
+                  <th>Km Mancanti</th>
+                  <th>Ultimo Tagliando</th>
+                  <th>Stato</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% 
+                  let hasTagliandi = false;
+                  vehicles.forEach(vehicle => { 
+                    if (vehicle.prossimo_tagliando_km && vehicle.km_attuali) {
+                      hasTagliandi = true;
+                      const kmMancanti = vehicle.prossimo_tagliando_km - vehicle.km_attuali;
+                      const urgency = kmMancanti < 0 ? 'scaduto' : kmMancanti < 1000 ? 'imminente' : 'ok';
+                %>
+                    <tr class="scadenza-row" data-tipo="tagliando" data-giorni="999" data-urgency="<%= urgency %>">
+                      <td><strong><%= vehicle.targa %></strong></td>
+                      <td><%= vehicle.km_attuali %> km</td>
+                      <td><%= vehicle.prossimo_tagliando_km %> km</td>
+                      <td>
+                        <% if (kmMancanti < 0) { %>
+                          <span style="color: #ef4444; font-weight: 600;">SUPERATO di <%= Math.abs(kmMancanti) %> km</span>
+                        <% } else { %>
+                          <%= kmMancanti %> km
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (vehicle.ultimo_tagliando_data) { %>
+                          <%= new Date(vehicle.ultimo_tagliando_data).toLocaleDateString('it-IT') %>
+                        <% } else { %>
+                          <span style="opacity: 0.5;">-</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (kmMancanti < 0) { %>
+                          <span class="badge badge-danger">SCADUTO</span>
+                        <% } else if (kmMancanti < 1000) { %>
+                          <span class="badge badge-warning">IMMINENTE</span>
+                        <% } else { %>
+                          <span class="badge badge-success">OK</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <button onclick="updateScadenza('<%= vehicle.id %>', 'tagliando')" class="btn btn-sm btn-primary">
+                          Aggiorna
+                        </button>
+                      </td>
+                    </tr>
+                <% 
+                    }
+                  }); 
+                  if (!hasTagliandi) {
+                %>
+                  <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">
+                      Nessun tagliando programmato
+                    </td>
+                  </tr>
+                <% } %>
               </tbody>
             </table>
           </div>
