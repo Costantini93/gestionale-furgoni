@@ -240,6 +240,8 @@
   </div>
 
   <script>
+    console.log('🔧 Script vehicles.ejs caricato');
+    
     function toggleSidebar() {
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('sidebarOverlay');
@@ -247,6 +249,120 @@
       sidebar.classList.toggle('active');
       overlay.classList.toggle('active');
     }
+
+    // MODAL MODIFICA FURGONE - Definizione globale PRIMA di tutto
+    window.editVehicle = function(vehicleId) {
+      console.log('✅ editVehicle chiamata con ID:', vehicleId);
+      console.log('📍 event.target:', event.target);
+      
+      const btn = event.target;
+      const id = vehicleId;
+      
+      console.log('📊 Dataset completo:', btn.dataset);
+      
+      const targa = btn.dataset.targa || '';
+      const modello = btn.dataset.modello || '';
+      const anno = btn.dataset.anno || '';
+      const kmAttuali = btn.dataset.km || 0;
+      const prossimoTagliandoKm = btn.dataset.tagliandoKm || 0;
+      const ultimoTagliandoData = btn.dataset.tagliandoData || '';
+      const scadenzaContratto = btn.dataset.contratto || '';
+      const scadenzaAssicurazione = btn.dataset.assicurazione || '';
+      const scadenzaRevisione = btn.dataset.revisione || '';
+      const note = (btn.dataset.note || '').replace(/&quot;/g, '"');
+      
+      console.log('📝 Dati estratti:', { targa, modello, anno, kmAttuali, note });
+      
+      // Escape per evitare XSS nel template literal
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+      
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.style.display = 'flex';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 700px;">
+          <h3>🔧 Modifica Dati Furgone: ${escapeHtml(targa)}</h3>
+          <form method="POST" action="/admin/vehicles/update-data/${id}">
+            
+            <!-- Dati Base -->
+            <div class="form-row">
+              <div class="form-group">
+                <label>Modello</label>
+                <input type="text" name="modello" class="form-control" value="${escapeHtml(modello)}" required>
+              </div>
+              <div class="form-group">
+                <label>Anno</label>
+                <input type="number" name="anno" class="form-control" value="${anno}" min="1990" max="2030" required>
+              </div>
+            </div>
+
+            <!-- Km e Tagliando -->
+            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #2C3E50;">📊 Chilometraggio e Tagliando</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Km Attuali</label>
+                <input type="number" name="km_attuali" class="form-control" value="${kmAttuali}" min="0">
+                <small style="color: #6b7280;">Aggiornati automaticamente alla riconsegna</small>
+              </div>
+              <div class="form-group">
+                <label>Prossimo Tagliando (Km)</label>
+                <input type="number" name="prossimo_tagliando_km" class="form-control" value="${prossimoTagliandoKm}" min="0">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Data Ultimo Tagliando</label>
+              <input type="date" name="ultimo_tagliando_data" class="form-control" value="${ultimoTagliandoData}">
+            </div>
+
+            <!-- Scadenze -->
+            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #2C3E50;">📅 Scadenze Documenti</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Scadenza Contratto</label>
+                <input type="date" name="data_scadenza_contratto" class="form-control" value="${scadenzaContratto}">
+              </div>
+              <div class="form-group">
+                <label>Scadenza Assicurazione</label>
+                <input type="date" name="data_scadenza_assicurazione" class="form-control" value="${scadenzaAssicurazione}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Scadenza Revisione</label>
+              <input type="date" name="data_scadenza_revisione" class="form-control" value="${scadenzaRevisione}">
+            </div>
+
+            <!-- Note -->
+            <div class="form-group">
+              <label>Note Manutenzione</label>
+              <textarea name="note_manutenzione" class="form-control" rows="3">${escapeHtml(note)}</textarea>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annulla</button>
+              <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+            </div>
+          </form>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      console.log('✅ Modal creato e aggiunto al DOM');
+    };
+
+    window.closeEditModal = function() {
+      console.log('🗑️ Chiusura modal');
+      const modal = document.querySelector('.modal');
+      if (modal) modal.remove();
+    };
+
+    console.log('✅ Funzioni globali registrate:', {
+      editVehicle: typeof window.editVehicle,
+      closeEditModal: typeof window.closeEditModal
+    });
 
     let currentAssignments = {};
 
@@ -362,110 +478,13 @@
       document.getElementById('statManutenzione').textContent = countManutenzione;
     });
 
-    // MODAL MODIFICA FURGONE - Definita prima per essere disponibile globalmente
-    function editVehicle(vehicleId) {
-      const btn = event.target;
-      const id = vehicleId;
-      const targa = btn.dataset.targa || '';
-      const modello = btn.dataset.modello || '';
-      const anno = btn.dataset.anno || '';
-      const kmAttuali = btn.dataset.km || 0;
-      const prossimoTagliandoKm = btn.dataset.tagliandoKm || 0;
-      const ultimoTagliandoData = btn.dataset.tagliandoData || '';
-      const scadenzaContratto = btn.dataset.contratto || '';
-      const scadenzaAssicurazione = btn.dataset.assicurazione || '';
-      const scadenzaRevisione = btn.dataset.revisione || '';
-      const note = (btn.dataset.note || '').replace(/&quot;/g, '"');
-      
-      // Escape per evitare XSS nel template literal
-      function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      }
-      
-      const modal = document.createElement('div');
-      modal.className = 'modal';
-      modal.style.display = 'flex';
-      modal.innerHTML = `
-        <div class="modal-content" style="max-width: 700px;">
-          <h3>🔧 Modifica Dati Furgone: ${escapeHtml(targa)}</h3>
-          <form method="POST" action="/admin/vehicles/update-data/${id}">
-            
-            <!-- Dati Base -->
-            <div class="form-row">
-              <div class="form-group">
-                <label>Modello</label>
-                <input type="text" name="modello" class="form-control" value="${escapeHtml(modello)}" required>
-              </div>
-              <div class="form-group">
-                <label>Anno</label>
-                <input type="number" name="anno" class="form-control" value="${anno}" min="1990" max="2030" required>
-              </div>
-            </div>
-
-            <!-- Km e Tagliando -->
-            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #2C3E50;">📊 Chilometraggio e Tagliando</h4>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Km Attuali</label>
-                <input type="number" name="km_attuali" class="form-control" value="${kmAttuali}" min="0">
-                <small style="color: #6b7280;">Aggiornati automaticamente alla riconsegna</small>
-              </div>
-              <div class="form-group">
-                <label>Prossimo Tagliando (Km)</label>
-                <input type="number" name="prossimo_tagliando_km" class="form-control" value="${prossimoTagliandoKm}" min="0">
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Data Ultimo Tagliando</label>
-              <input type="date" name="ultimo_tagliando_data" class="form-control" value="${ultimoTagliandoData}">
-            </div>
-
-            <!-- Scadenze -->
-            <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: #2C3E50;">📅 Scadenze Documenti</h4>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Scadenza Contratto</label>
-                <input type="date" name="data_scadenza_contratto" class="form-control" value="${scadenzaContratto}">
-              </div>
-              <div class="form-group">
-                <label>Scadenza Assicurazione</label>
-                <input type="date" name="data_scadenza_assicurazione" class="form-control" value="${scadenzaAssicurazione}">
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Scadenza Revisione</label>
-              <input type="date" name="data_scadenza_revisione" class="form-control" value="${scadenzaRevisione}">
-            </div>
-
-            <!-- Note -->
-            <div class="form-group">
-              <label>Note Manutenzione</label>
-              <textarea name="note_manutenzione" class="form-control" rows="3">${escapeHtml(note)}</textarea>
-            </div>
-
-            <div class="modal-actions">
-              <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annulla</button>
-              <button type="submit" class="btn btn-primary">Salva Modifiche</button>
-            </div>
-          </form>
-        </div>
-      `;
-      document.body.appendChild(modal);
-    }
-
-    function closeEditModal() {
-      const modal = document.querySelector('.modal');
-      if (modal) modal.remove();
-    }
-
     // Carica assegnazioni per la data selezionata all'avvio
     document.addEventListener('DOMContentLoaded', () => {
       const date = document.getElementById('assignmentDate').value;
       if (date) {
         loadAssignments(date);
       }
+      console.log('✅ DOMContentLoaded completato');
     });
   </script>
 </body>
